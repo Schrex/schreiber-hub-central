@@ -100,6 +100,133 @@ export type Database = {
           },
         ]
       }
+      dig_tickets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dig_end_date: string | null
+          dig_start_date: string | null
+          expiration_date: string | null
+          id: string
+          job_id: string
+          latitude: number | null
+          longitude: number | null
+          request_type: Database["public"]["Enums"]["dig_ticket_request_type"]
+          requested_at: string | null
+          requested_by_name: string | null
+          response_notes: string | null
+          status: Database["public"]["Enums"]["dig_ticket_status"]
+          ticket_number: string | null
+          updated_at: string
+          work_description: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dig_end_date?: string | null
+          dig_start_date?: string | null
+          expiration_date?: string | null
+          id?: string
+          job_id: string
+          latitude?: number | null
+          longitude?: number | null
+          request_type?: Database["public"]["Enums"]["dig_ticket_request_type"]
+          requested_at?: string | null
+          requested_by_name?: string | null
+          response_notes?: string | null
+          status?: Database["public"]["Enums"]["dig_ticket_status"]
+          ticket_number?: string | null
+          updated_at?: string
+          work_description?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dig_end_date?: string | null
+          dig_start_date?: string | null
+          expiration_date?: string | null
+          id?: string
+          job_id?: string
+          latitude?: number | null
+          longitude?: number | null
+          request_type?: Database["public"]["Enums"]["dig_ticket_request_type"]
+          requested_at?: string | null
+          requested_by_name?: string | null
+          response_notes?: string | null
+          status?: Database["public"]["Enums"]["dig_ticket_status"]
+          ticket_number?: string | null
+          updated_at?: string
+          work_description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dig_tickets_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_permits: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expiration_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_agency: string | null
+          job_id: string
+          notes: string | null
+          permit_number: string | null
+          permit_type: string
+          responsible_name: string | null
+          responsible_user_id: string | null
+          status: Database["public"]["Enums"]["permit_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expiration_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_agency?: string | null
+          job_id: string
+          notes?: string | null
+          permit_number?: string | null
+          permit_type: string
+          responsible_name?: string | null
+          responsible_user_id?: string | null
+          status?: Database["public"]["Enums"]["permit_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expiration_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_agency?: string | null
+          job_id?: string
+          notes?: string | null
+          permit_number?: string | null
+          permit_type?: string
+          responsible_name?: string | null
+          responsible_user_id?: string | null
+          status?: Database["public"]["Enums"]["permit_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_permits_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           address: string | null
@@ -236,7 +363,22 @@ export type Database = {
         | "received"
         | "distributed"
         | "cancelled"
+      dig_ticket_request_type: "normal" | "emergency" | "update" | "remark"
+      dig_ticket_status:
+        | "requested"
+        | "marked"
+        | "cleared"
+        | "expired"
+        | "cancelled"
       job_status: "active" | "on_hold" | "complete"
+      permit_status:
+        | "not_started"
+        | "applied"
+        | "in_review"
+        | "approved"
+        | "issued"
+        | "expired"
+        | "denied"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -372,7 +514,24 @@ export const Constants = {
         "distributed",
         "cancelled",
       ],
+      dig_ticket_request_type: ["normal", "emergency", "update", "remark"],
+      dig_ticket_status: [
+        "requested",
+        "marked",
+        "cleared",
+        "expired",
+        "cancelled",
+      ],
       job_status: ["active", "on_hold", "complete"],
+      permit_status: [
+        "not_started",
+        "applied",
+        "in_review",
+        "approved",
+        "issued",
+        "expired",
+        "denied",
+      ],
     },
   },
 } as const
