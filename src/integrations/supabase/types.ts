@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      jobs: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string | null
+          customer: string | null
+          end_date: string | null
+          gc: string | null
+          id: string
+          job_number: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          notes: string | null
+          on_site_contact_name: string | null
+          on_site_contact_phone: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer?: string | null
+          end_date?: string | null
+          gc?: string | null
+          id?: string
+          job_number?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          notes?: string | null
+          on_site_contact_name?: string | null
+          on_site_contact_phone?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer?: string | null
+          end_date?: string | null
+          gc?: string | null
+          id?: string
+          job_number?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          notes?: string | null
+          on_site_contact_name?: string | null
+          on_site_contact_phone?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -84,6 +144,7 @@ export type Database = {
     }
     Enums: {
       app_role: "employee" | "foreman" | "office" | "admin"
+      job_status: "active" | "on_hold" | "complete"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -212,6 +273,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["employee", "foreman", "office", "admin"],
+      job_status: ["active", "on_hold", "complete"],
     },
   },
 } as const
