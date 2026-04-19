@@ -108,6 +108,14 @@ const TimeOffPage = () => {
     setType("vacation"); setStartDate(undefined); setEndDate(undefined); setHalfDay("none"); setReason("");
   };
 
+  const noticeDaysFromNow = (d: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(d);
+    target.setHours(0, 0, 0, 0);
+    return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -116,6 +124,17 @@ const TimeOffPage = () => {
     }
     const parsed = formSchema.safeParse({ type, start_date: startDate, end_date: endDate, half_day: halfDay, reason });
     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Invalid"); return; }
+
+    // Notice check (vacation/personal only — sick & other are exempt)
+    const enforceNotice = type === "vacation" || type === "personal";
+    if (enforceNotice && !shortNoticeConfirm) {
+      const days = noticeDaysFromNow(startDate);
+      if (days < requiredNoticeDays) {
+        setShortNoticeConfirm(true);
+        return;
+      }
+    }
+
     setBusy(true);
     try {
       const { error } = await supabase.from("time_off_requests").insert({
@@ -129,7 +148,7 @@ const TimeOffPage = () => {
       });
       if (error) throw error;
       toast.success("Request submitted");
-      resetForm(); setOpen(false); load();
+      resetForm(); setOpen(false); setShortNoticeConfirm(false); load();
     } catch (err: any) {
       toast.error(err.message ?? "Failed to submit");
     } finally { setBusy(false); }
