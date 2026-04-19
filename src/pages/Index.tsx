@@ -32,7 +32,7 @@ type Tile = {
 
 const TILES: Tile[] = [
   { key: "schedule", label: "Schedule", hint: "Today + this week", icon: Calendar, roles: ["employee", "foreman", "office", "admin"], badge: "Today" },
-  { key: "jobs", label: "Jobs", hint: "Plans, GPS, contacts", icon: Briefcase, roles: ["employee", "foreman", "office", "admin"] },
+  { key: "jobs", label: "Jobs", hint: "Plans, GPS, contacts", icon: Briefcase, roles: ["employee", "foreman", "office", "admin"], to: "/jobs" },
   { key: "vendors", label: "Vendors", hint: "Suppliers + map", icon: Truck, roles: ["employee", "foreman", "office", "admin"] },
   { key: "maintenance", label: "Equipment", hint: "Log issues (HCSS)", icon: Wrench, roles: ["employee", "foreman", "office", "admin"], href: "https://mr.hcssapps.com" },
   { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], restricted: "foreman", href: "https://app.clearstory.build" },
