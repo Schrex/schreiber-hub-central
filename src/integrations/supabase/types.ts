@@ -14,6 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
+      clothing_items: {
+        Row: {
+          colors: string[]
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sizes: string[]
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          colors?: string[]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sizes?: string[]
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          colors?: string[]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sizes?: string[]
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clothing_orders: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          item_id: string
+          item_name: string
+          notes: string | null
+          quantity: number
+          size: string
+          status: Database["public"]["Enums"]["clothing_order_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          id?: string
+          item_id: string
+          item_name: string
+          notes?: string | null
+          quantity: number
+          size: string
+          status?: Database["public"]["Enums"]["clothing_order_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_name?: string
+          notes?: string | null
+          quantity?: number
+          size?: string
+          status?: Database["public"]["Enums"]["clothing_order_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clothing_orders_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "clothing_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           address: string | null
@@ -144,6 +230,12 @@ export type Database = {
     }
     Enums: {
       app_role: "employee" | "foreman" | "office" | "admin"
+      clothing_order_status:
+        | "requested"
+        | "ordered"
+        | "received"
+        | "distributed"
+        | "cancelled"
       job_status: "active" | "on_hold" | "complete"
     }
     CompositeTypes: {
@@ -273,6 +365,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["employee", "foreman", "office", "admin"],
+      clothing_order_status: [
+        "requested",
+        "ordered",
+        "received",
+        "distributed",
+        "cancelled",
+      ],
       job_status: ["active", "on_hold", "complete"],
     },
   },
