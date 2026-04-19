@@ -448,6 +448,60 @@ export type Database = {
         }
         Relationships: []
       }
+      time_off_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          denial_reason: string | null
+          end_date: string
+          half_day: Database["public"]["Enums"]["time_off_half_day"]
+          id: string
+          invites_sent_at: string | null
+          reason: string | null
+          requester_name: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["time_off_status"]
+          type: Database["public"]["Enums"]["time_off_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          denial_reason?: string | null
+          end_date: string
+          half_day?: Database["public"]["Enums"]["time_off_half_day"]
+          id?: string
+          invites_sent_at?: string | null
+          reason?: string | null
+          requester_name?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["time_off_status"]
+          type?: Database["public"]["Enums"]["time_off_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          denial_reason?: string | null
+          end_date?: string
+          half_day?: Database["public"]["Enums"]["time_off_half_day"]
+          id?: string
+          invites_sent_at?: string | null
+          reason?: string | null
+          requester_name?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["time_off_status"]
+          type?: Database["public"]["Enums"]["time_off_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -519,6 +573,9 @@ export type Database = {
         | "closed"
         | "rejected"
       referral_type: "hire" | "job"
+      time_off_half_day: "none" | "am" | "pm"
+      time_off_status: "pending" | "approved" | "denied" | "cancelled"
+      time_off_type: "vacation" | "sick" | "personal" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -682,6 +739,9 @@ export const Constants = {
         "rejected",
       ],
       referral_type: ["hire", "job"],
+      time_off_half_day: ["none", "am", "pm"],
+      time_off_status: ["pending", "approved", "denied", "cancelled"],
+      time_off_type: ["vacation", "sick", "personal", "other"],
     },
   },
 } as const
