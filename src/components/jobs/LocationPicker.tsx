@@ -159,6 +159,31 @@ export const LocationPicker = forwardRef<HTMLDivElement, Props>(({ value, onChan
     );
   };
 
+  const forceUseTyped = async () => {
+    const q = query.trim();
+    if (!q) return;
+    setSearching(true);
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&q=${encodeURIComponent(q)}`;
+      const r = await fetch(url, { headers: { Accept: "application/json" } });
+      const arr: Suggestion[] = await r.json();
+      if (arr && arr[0]) {
+        pick(arr[0]);
+        return;
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setSearching(false);
+    }
+    const lat = value?.lat ?? defaultCenter.lat;
+    const lon = value?.lon ?? defaultCenter.lon;
+    setAddressLabel(q);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    onChange({ lat, lon, address: q });
+  };
+
   return (
     <div ref={ref} className="space-y-2">
       <div className="relative">
@@ -171,6 +196,13 @@ export const LocationPicker = forwardRef<HTMLDivElement, Props>(({ value, onChan
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => suggestions.length && setShowSuggestions(true)}
             onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (suggestions[0]) pick(suggestions[0]);
+                else void forceUseTyped();
+              }
+            }}
             placeholder="e.g. Wegmans Pittsford, 123 Main St, Smith Farm"
             className="pl-8 pr-8"
             autoComplete="off"
@@ -193,6 +225,27 @@ export const LocationPicker = forwardRef<HTMLDivElement, Props>(({ value, onChan
                 <span className="flex-1 truncate">{s.display_name}</span>
               </button>
             ))}
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); void forceUseTyped(); }}
+              className="flex w-full items-center gap-2 border-t border-border bg-muted/40 px-3 py-2 text-left text-xs font-medium text-primary hover:bg-muted"
+            >
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              Use "{query}" as address
+            </button>
+          </div>
+        )}
+
+        {query.trim().length >= 3 && !searching && suggestions.length === 0 && query !== addressLabel && (
+          <div className="absolute left-0 right-0 top-full z-[1001] mt-1 rounded-lg border border-border bg-popover p-2 shadow-lg">
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); void forceUseTyped(); }}
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm font-medium text-primary hover:bg-muted"
+            >
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              No matches — use "{query}" anyway
+            </button>
           </div>
         )}
       </div>
