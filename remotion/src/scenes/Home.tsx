@@ -1,6 +1,7 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 import { C } from "../theme";
 import { PhoneFrame, SceneStage } from "../components/PhoneFrame";
+import { IconSun } from "../components/Icons";
 
 const tiles = [
   { l: "Schedule", b: "Today" },
