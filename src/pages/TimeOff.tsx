@@ -69,6 +69,8 @@ const datesOverlap = (aStart: string, aEnd: string, bStart: string, bEnd: string
 const TimeOffPage = () => {
   const { user, role, displayName } = useAuth();
   const isAdmin = role === "admin";
+  const isForeman = role === "foreman";
+  const requiredNoticeDays = isForeman ? 28 : 14;
   const [items, setItems] = useState<TimeOff[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -81,6 +83,7 @@ const TimeOffPage = () => {
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [halfDay, setHalfDay] = useState<HalfDay>("none");
   const [reason, setReason] = useState("");
+  const [shortNoticeConfirm, setShortNoticeConfirm] = useState(false);
 
   // approval state
   const [confirmApprove, setConfirmApprove] = useState<{ req: TimeOff; conflicts: TimeOff[] } | null>(null);
