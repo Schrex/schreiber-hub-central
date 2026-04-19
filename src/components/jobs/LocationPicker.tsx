@@ -69,6 +69,7 @@ export const LocationPicker = forwardRef<HTMLDivElement, Props>(({ value, onChan
   const [searching, setSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [addressLabel, setAddressLabel] = useState(value?.address ?? "");
+  const [layer, setLayer] = useState<"street" | "satellite">("street");
   const debounceRef = useRef<number | null>(null);
   const lastReverseRef = useRef(0);
 
@@ -88,7 +89,7 @@ export const LocationPicker = forwardRef<HTMLDivElement, Props>(({ value, onChan
     debounceRef.current = window.setTimeout(async () => {
       setSearching(true);
       try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=6&addressdetails=1&q=${encodeURIComponent(query)}`;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=8&addressdetails=1&countrycodes=us&q=${encodeURIComponent(query)}`;
         const r = await fetch(url, { headers: { Accept: "application/json" } });
         const arr: Suggestion[] = await r.json();
         setSuggestions(arr ?? []);
@@ -196,11 +197,29 @@ export const LocationPicker = forwardRef<HTMLDivElement, Props>(({ value, onChan
         )}
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-        <span>Tap the map or drag the pin to fine-tune.</span>
-        <button type="button" onClick={useMyLocation} className="font-medium text-primary hover:underline">
-          Use my location
-        </button>
+      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        <span className="truncate">Tap the map or drag the pin to fine-tune.</span>
+        <div className="flex shrink-0 items-center gap-3">
+          <div className="inline-flex overflow-hidden rounded-md border border-border">
+            <button
+              type="button"
+              onClick={() => setLayer("street")}
+              className={cn("px-2 py-0.5 text-[10px] font-semibold uppercase", layer === "street" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted")}
+            >
+              Map
+            </button>
+            <button
+              type="button"
+              onClick={() => setLayer("satellite")}
+              className={cn("border-l border-border px-2 py-0.5 text-[10px] font-semibold uppercase", layer === "satellite" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted")}
+            >
+              Satellite
+            </button>
+          </div>
+          <button type="button" onClick={useMyLocation} className="font-medium text-primary hover:underline">
+            Use my location
+          </button>
+        </div>
       </div>
 
       <div className={cn("h-64 w-full overflow-hidden rounded-lg border border-border")}>
@@ -211,10 +230,21 @@ export const LocationPicker = forwardRef<HTMLDivElement, Props>(({ value, onChan
           scrollWheelZoom
           keyboard={false}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          {layer === "street" ? (
+            <TileLayer
+              key="street"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={19}
+            />
+          ) : (
+            <TileLayer
+              key="satellite"
+              attribution='Tiles &copy; Esri World Imagery'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={19}
+            />
+          )}
           {value && (
             <>
               <Recenter lat={value.lat} lon={value.lon} />
