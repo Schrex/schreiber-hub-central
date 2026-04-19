@@ -19,6 +19,7 @@ interface UserRow {
   display_name: string | null;
   email: string | null;
   is_active: boolean;
+  is_driver: boolean;
   role: Role | null;
 }
 
@@ -33,7 +34,7 @@ const AdminUsers = () => {
   const load = async () => {
     setLoading(true);
     const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("user_id, display_name, email, is_active").order("created_at"),
+      supabase.from("profiles").select("user_id, display_name, email, is_active, is_driver").order("created_at"),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     const roleByUser = new Map<string, Role>();
@@ -48,6 +49,7 @@ const AdminUsers = () => {
         display_name: p.display_name,
         email: p.email,
         is_active: p.is_active,
+        is_driver: (p as { is_driver?: boolean }).is_driver ?? false,
         role: roleByUser.get(p.user_id) ?? null,
       })),
     );
@@ -71,6 +73,13 @@ const AdminUsers = () => {
     const { error } = await supabase.from("profiles").update({ is_active: value }).eq("user_id", userId);
     if (error) return toast.error(error.message);
     setRows((rs) => rs.map((r) => (r.user_id === userId ? { ...r, is_active: value } : r)));
+  };
+
+  const toggleDriver = async (userId: string, value: boolean) => {
+    const { error } = await supabase.from("profiles").update({ is_driver: value }).eq("user_id", userId);
+    if (error) return toast.error(error.message);
+    setRows((rs) => rs.map((r) => (r.user_id === userId ? { ...r, is_driver: value } : r)));
+    toast.success(value ? "Tagged as driver" : "Driver tag removed");
   };
 
   return (
@@ -107,6 +116,13 @@ const AdminUsers = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={r.is_driver}
+                    onCheckedChange={(v) => toggleDriver(r.user_id, v)}
+                  />
+                  <span className="text-xs text-muted-foreground">Driver</span>
+                </div>
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={r.is_active}

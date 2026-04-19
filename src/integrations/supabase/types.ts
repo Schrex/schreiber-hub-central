@@ -168,6 +168,83 @@ export type Database = {
           },
         ]
       }
+      dispatch_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer: string | null
+          dispatch_date: string
+          driver_name: string | null
+          driver_user_id: string | null
+          dump_location: string | null
+          gc: string | null
+          id: string
+          job_id: string | null
+          job_name: string | null
+          load_quantity: number | null
+          material: string | null
+          notes: string | null
+          pickup_location: string | null
+          sort_order: number
+          start_time: string | null
+          status: Database["public"]["Enums"]["dispatch_status"]
+          truck_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer?: string | null
+          dispatch_date?: string
+          driver_name?: string | null
+          driver_user_id?: string | null
+          dump_location?: string | null
+          gc?: string | null
+          id?: string
+          job_id?: string | null
+          job_name?: string | null
+          load_quantity?: number | null
+          material?: string | null
+          notes?: string | null
+          pickup_location?: string | null
+          sort_order?: number
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["dispatch_status"]
+          truck_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer?: string | null
+          dispatch_date?: string
+          driver_name?: string | null
+          driver_user_id?: string | null
+          dump_location?: string | null
+          gc?: string | null
+          id?: string
+          job_id?: string | null
+          job_name?: string | null
+          load_quantity?: number | null
+          material?: string | null
+          notes?: string | null
+          pickup_location?: string | null
+          sort_order?: number
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["dispatch_status"]
+          truck_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_orders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_permits: {
         Row: {
           created_at: string
@@ -294,6 +371,7 @@ export type Database = {
           email: string | null
           id: string
           is_active: boolean
+          is_driver: boolean
           updated_at: string
           user_id: string
         }
@@ -303,6 +381,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean
+          is_driver?: boolean
           updated_at?: string
           user_id: string
         }
@@ -312,6 +391,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean
+          is_driver?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -370,6 +450,7 @@ export type Database = {
         | "cleared"
         | "expired"
         | "cancelled"
+      dispatch_status: "scheduled" | "in_progress" | "complete" | "cancelled"
       job_status: "active" | "on_hold" | "complete"
       permit_status:
         | "not_started"
@@ -522,6 +603,7 @@ export const Constants = {
         "expired",
         "cancelled",
       ],
+      dispatch_status: ["scheduled", "in_progress", "complete", "cancelled"],
       job_status: ["active", "on_hold", "complete"],
       permit_status: [
         "not_started",
