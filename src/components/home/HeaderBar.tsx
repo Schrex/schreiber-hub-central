@@ -1,5 +1,6 @@
-import { Bell, HardHat } from "lucide-react";
+import { Bell } from "lucide-react";
 import type { Role } from "./RoleSwitcher";
+import logo from "@/assets/schreiber-logo.png";
 
 const roleLabel: Record<Role, string> = {
   employee: "Employee",
@@ -23,18 +24,12 @@ interface Props {
 export const HeaderBar = ({ name, role }: Props) => (
   <header className="bg-gradient-header">
     <div className="mx-auto flex max-w-2xl items-center justify-between px-4 pb-5 pt-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-tile">
-          <HardHat className="h-6 w-6" strokeWidth={2.5} />
-        </div>
-        <div>
-          <p className="font-display text-base uppercase leading-none tracking-[0.18em] text-primary">
-            Schreiber
-          </p>
-          <p className="mt-1 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-            Excavating
-          </p>
-        </div>
+      <div className="flex items-center">
+        <img
+          src={logo}
+          alt="Schreiber Excavating"
+          className="h-12 w-auto object-contain"
+        />
       </div>
 
       <button
