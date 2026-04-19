@@ -95,7 +95,14 @@ const Jobs = () => {
               <DialogTrigger asChild>
                 <Button size="sm"><Plus className="mr-1 h-4 w-4" /> New</Button>
               </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+              <DialogContent
+                className="max-h-[90vh] overflow-y-auto sm:max-w-lg"
+                onOpenAutoFocus={(e) => {
+                  e.preventDefault();
+                  // Focus the Name field instead of letting Radix grab the map
+                  setTimeout(() => document.getElementById("name")?.focus(), 0);
+                }}
+              >
                 <DialogHeader><DialogTitle>New Job</DialogTitle></DialogHeader>
                 <form onSubmit={submit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
