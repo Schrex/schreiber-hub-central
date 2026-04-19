@@ -13,6 +13,7 @@ import JobDetail from "./pages/JobDetail.tsx";
 import Apparel from "./pages/Apparel.tsx";
 import Dispatch from "./pages/Dispatch.tsx";
 import Referrals from "./pages/Referrals.tsx";
+import TimeOff from "./pages/TimeOff.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/apparel" element={<ProtectedRoute><Apparel /></ProtectedRoute>} />
             <Route path="/dispatch" element={<ProtectedRoute><Dispatch /></ProtectedRoute>} />
             <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
+            <Route path="/time-off" element={<ProtectedRoute><TimeOff /></ProtectedRoute>} />
             <Route
               path="/admin/users"
               element={<ProtectedRoute requireRole="admin"><AdminUsers /></ProtectedRoute>}
