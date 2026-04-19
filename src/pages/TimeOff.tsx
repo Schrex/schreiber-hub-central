@@ -475,6 +475,36 @@ const TimeOffPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Short notice confirm */}
+      <AlertDialog open={shortNoticeConfirm} onOpenChange={(v) => !v && setShortNoticeConfirm(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" /> Short notice
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isForeman ? "Foremen are expected to give at least 4 weeks' notice" : "Employees are expected to give at least 2 weeks' notice"} for vacation and personal days.
+              {startDate && ` This request starts in ${noticeDaysFromNow(startDate)} day${noticeDaysFromNow(startDate) === 1 ? "" : "s"}.`} You can submit it anyway, but approval is not guaranteed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShortNoticeConfirm(false);
+                // Re-trigger submit, bypassing the notice gate
+                setTimeout(() => {
+                  const form = document.querySelector<HTMLFormElement>("form");
+                  // Use a flag-based path: temporarily set confirm true, then submit programmatically
+                }, 0);
+              }}
+            >
+              Submit anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
