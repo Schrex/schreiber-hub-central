@@ -10,6 +10,7 @@ import Auth from "./pages/Auth.tsx";
 import AdminUsers from "./pages/AdminUsers.tsx";
 import Jobs from "./pages/Jobs.tsx";
 import JobDetail from "./pages/JobDetail.tsx";
+import Apparel from "./pages/Apparel.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
