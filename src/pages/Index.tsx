@@ -40,6 +40,7 @@ const TILES: Tile[] = [
   { key: "receipts", label: "Submit Receipt", hint: "Snap & send", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.bill.com/" },
   { key: "timeoff", label: "Time Off", hint: "Request vacation", icon: Palmtree, roles: ["employee", "foreman", "office", "admin"] },
   { key: "plans", label: "Project Plans", hint: "Latest drawings", icon: FileText, roles: ["employee", "foreman", "office", "admin"], badge: 3 },
+  { key: "apparel", label: "Order Apparel", hint: "Shirts, hats, vests", icon: ShoppingBag, roles: ["employee", "foreman", "office", "admin"], to: "/apparel" },
   { key: "newhire", label: "New Hires", hint: "Send onboarding", icon: UserPlus, roles: ["admin"], restricted: "admin" },
   { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, roles: ["admin"], restricted: "admin", to: "/admin/users" },
 ];
