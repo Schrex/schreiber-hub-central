@@ -497,11 +497,7 @@ const TimeOffPage = () => {
             <AlertDialogAction
               onClick={() => {
                 setShortNoticeConfirm(false);
-                // Re-trigger submit, bypassing the notice gate
-                setTimeout(() => {
-                  const form = document.querySelector<HTMLFormElement>("form");
-                  // Use a flag-based path: temporarily set confirm true, then submit programmatically
-                }, 0);
+                performSubmit();
               }}
             >
               Submit anyway
