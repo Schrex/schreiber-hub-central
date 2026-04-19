@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWeather } from "@/hooks/useWeather";
 import { WeatherCard } from "@/components/weather/WeatherCard";
 import { Button } from "@/components/ui/button";
+import { DigTicketsSection } from "@/components/jobs/DigTicketsSection";
+import { PermitsSection } from "@/components/jobs/PermitsSection";
 
 interface Job {
   id: string;
@@ -123,6 +125,9 @@ const JobDetail = () => {
             )}
           </section>
         )}
+
+        <PermitsSection jobId={job.id} />
+        <DigTicketsSection jobId={job.id} />
 
         {mapsUrl && (
           <Button asChild variant="outline" className="w-full">
