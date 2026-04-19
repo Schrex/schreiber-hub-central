@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Calendar,
   FileText,
@@ -10,11 +9,14 @@ import {
   Briefcase,
   Truck,
   UserPlus,
+  LogOut,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { HeaderBar } from "@/components/home/HeaderBar";
 import { WeatherStrip } from "@/components/home/WeatherStrip";
 import { AppTile } from "@/components/home/AppTile";
-import { RoleSwitcher, type Role } from "@/components/home/RoleSwitcher";
+import { useAuth, type Role } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 type Tile = {
   key: string;
@@ -24,40 +26,40 @@ type Tile = {
   roles: Role[];
   badge?: string | number;
   restricted?: "foreman" | "office" | "admin";
+  to?: string;
+  href?: string;
 };
 
 const TILES: Tile[] = [
   { key: "schedule", label: "Schedule", hint: "Today + this week", icon: Calendar, roles: ["employee", "foreman", "office", "admin"], badge: "Today" },
   { key: "jobs", label: "Jobs", hint: "Plans, GPS, contacts", icon: Briefcase, roles: ["employee", "foreman", "office", "admin"] },
   { key: "vendors", label: "Vendors", hint: "Suppliers + map", icon: Truck, roles: ["employee", "foreman", "office", "admin"] },
-  { key: "maintenance", label: "Equipment", hint: "Log issues (HCSS)", icon: Wrench, roles: ["employee", "foreman", "office", "admin"] },
-  { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], restricted: "foreman" },
+  { key: "maintenance", label: "Equipment", hint: "Log issues (HCSS)", icon: Wrench, roles: ["employee", "foreman", "office", "admin"], href: "https://mr.hcssapps.com" },
+  { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], restricted: "foreman", href: "https://app.clearstory.build" },
   { key: "receipts", label: "Submit Receipt", hint: "Snap & send", icon: Receipt, roles: ["employee", "foreman", "office", "admin"] },
   { key: "timeoff", label: "Time Off", hint: "Request vacation", icon: Palmtree, roles: ["employee", "foreman", "office", "admin"] },
   { key: "plans", label: "Project Plans", hint: "Latest drawings", icon: FileText, roles: ["employee", "foreman", "office", "admin"], badge: 3 },
-  { key: "newhire", label: "New Hires", hint: "Send onboarding", icon: UserPlus, roles: ["office", "admin"], restricted: "office" },
-  { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, roles: ["admin"], restricted: "admin" },
+  { key: "newhire", label: "New Hires", hint: "Send onboarding", icon: UserPlus, roles: ["admin"], restricted: "admin" },
+  { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, roles: ["admin"], restricted: "admin", to: "/admin/users" },
 ];
 
-const NAMES: Record<Role, string> = {
-  employee: "Tyler",
-  foreman: "Mike",
-  office: "Sarah",
-  admin: "Dan",
-};
-
 const Index = () => {
-  const [role, setRole] = useState<Role>("foreman");
-  const visible = TILES.filter((t) => t.roles.includes(role));
+  const { role, displayName, signOut } = useAuth();
+  const navigate = useNavigate();
+  const effectiveRole: Role = role ?? "employee";
+  const visible = TILES.filter((t) => t.roles.includes(effectiveRole));
+
+  const handleTile = (t: Tile) => {
+    if (t.to) navigate(t.to);
+    else if (t.href) window.open(t.href, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      <HeaderBar name={NAMES[role]} role={role} />
+      <HeaderBar name={displayName ?? "there"} role={effectiveRole} />
 
       <main className="mx-auto max-w-2xl space-y-5 px-4 pb-12">
         <WeatherStrip />
-
-        <RoleSwitcher value={role} onChange={setRole} />
 
         <section>
           <div className="mb-3 flex items-end justify-between">
@@ -78,13 +80,20 @@ const Index = () => {
                   hint={t.hint}
                   badge={t.badge}
                   restricted={t.restricted}
+                  onClick={() => handleTile(t)}
                 />
               </div>
             ))}
           </div>
         </section>
 
-        <p className="pt-4 text-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <div className="flex justify-center pt-2">
+          <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground">
+            <LogOut className="mr-2 h-4 w-4" /> Sign out
+          </Button>
+        </div>
+
+        <p className="text-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           Schreiber Excavating · Field App
         </p>
       </main>
