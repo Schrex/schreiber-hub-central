@@ -63,13 +63,17 @@ export const WeatherCard = ({ forecast, coords, loading, compact }: Props) => {
         <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-thin">
           {hourly.slice(0, compact ? 12 : 24).map((h) => {
             const i = weatherCodeInfo(h.code);
+            const hasPrecip = h.precipIn > 0;
             return (
-              <div key={h.time} className="flex min-w-12 flex-col items-center gap-1 rounded-lg px-1 py-2">
+              <div key={h.time} className="flex min-w-14 flex-col items-center gap-1 rounded-lg px-1 py-2">
                 <span className="text-[10px] text-muted-foreground">{fmtHour(h.time)}</span>
                 <span className="text-base">{i.emoji}</span>
                 <span className="text-xs font-semibold text-foreground">{h.tempF}°</span>
                 <span className={cn("text-[10px]", h.precipProb >= 30 ? "text-primary font-semibold" : "text-muted-foreground")}>
                   {h.precipProb}%
+                </span>
+                <span className={cn("text-[10px] tabular-nums", hasPrecip ? "text-primary font-semibold" : "text-muted-foreground/40")}>
+                  {hasPrecip ? `${h.precipIn.toFixed(2)}"` : "—"}
                 </span>
               </div>
             );
