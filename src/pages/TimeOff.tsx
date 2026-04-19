@@ -105,7 +105,7 @@ const TimeOffPage = () => {
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
-    setType("vacation"); setStartDate(undefined); setEndDate(undefined); setHalfDay("none"); setReason("");
+    setType("vacation"); setStartDate(undefined); setEndDate(undefined); setHalfDay("none"); setReason(""); setShortNoticeConfirm(false);
   };
 
   const noticeDaysFromNow = (d: Date) => {
