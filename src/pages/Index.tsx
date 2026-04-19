@@ -50,8 +50,29 @@ const Index = () => {
   const visible = TILES.filter((t) => t.roles.includes(effectiveRole));
 
   const handleTile = (t: Tile) => {
-    if (t.to) navigate(t.to);
-    else if (t.href) window.open(t.href, "_blank", "noopener,noreferrer");
+    if (t.to) {
+      navigate(t.to);
+      return;
+    }
+    if (t.key === "receipts") {
+      // Try to open the Bill.com mobile app, fall back to web after a short delay
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        const start = Date.now();
+        // Bill.com iOS/Android universal link
+        window.location.href = "billcom://";
+        setTimeout(() => {
+          // If the app didn't open (page still here), open web app
+          if (Date.now() - start < 2000) {
+            window.open("https://app.bill.com/", "_blank", "noopener,noreferrer");
+          }
+        }, 1200);
+        return;
+      }
+      window.open("https://app.bill.com/", "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (t.href) window.open(t.href, "_blank", "noopener,noreferrer");
   };
 
   return (
