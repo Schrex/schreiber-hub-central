@@ -36,7 +36,7 @@ const TILES: Tile[] = [
   { key: "vendors", label: "Vendors", hint: "Suppliers + map", icon: Truck, roles: ["employee", "foreman", "office", "admin"] },
   { key: "maintenance", label: "Equipment", hint: "Log issues (HCSS)", icon: Wrench, roles: ["employee", "foreman", "office", "admin"], href: "https://mr.hcssapps.com" },
   { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], restricted: "foreman", href: "https://app.clearstory.build" },
-  { key: "receipts", label: "Submit Receipt", hint: "Snap & send", icon: Receipt, roles: ["employee", "foreman", "office", "admin"] },
+  { key: "receipts", label: "Submit Receipt", hint: "Snap & send", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.bill.com/" },
   { key: "timeoff", label: "Time Off", hint: "Request vacation", icon: Palmtree, roles: ["employee", "foreman", "office", "admin"] },
   { key: "plans", label: "Project Plans", hint: "Latest drawings", icon: FileText, roles: ["employee", "foreman", "office", "admin"], badge: 3 },
   { key: "newhire", label: "New Hires", hint: "Send onboarding", icon: UserPlus, roles: ["admin"], restricted: "admin" },
@@ -50,8 +50,29 @@ const Index = () => {
   const visible = TILES.filter((t) => t.roles.includes(effectiveRole));
 
   const handleTile = (t: Tile) => {
-    if (t.to) navigate(t.to);
-    else if (t.href) window.open(t.href, "_blank", "noopener,noreferrer");
+    if (t.to) {
+      navigate(t.to);
+      return;
+    }
+    if (t.key === "receipts") {
+      // Try to open the Bill.com mobile app, fall back to web after a short delay
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        const start = Date.now();
+        // Bill.com iOS/Android universal link
+        window.location.href = "billcom://";
+        setTimeout(() => {
+          // If the app didn't open (page still here), open web app
+          if (Date.now() - start < 2000) {
+            window.open("https://app.bill.com/", "_blank", "noopener,noreferrer");
+          }
+        }, 1200);
+        return;
+      }
+      window.open("https://app.bill.com/", "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (t.href) window.open(t.href, "_blank", "noopener,noreferrer");
   };
 
   return (
