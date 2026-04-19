@@ -166,14 +166,8 @@ const TimeOffPage = () => {
         denial_reason: null,
       }).eq("id", req.id);
       if (error) throw error;
-      toast.success("Approved — sending calendar invites…");
-      // Fire-and-forget invite send
-      supabase.functions.invoke("send-time-off-invite", { body: { request_id: req.id } })
-        .then(({ error }) => {
-          if (error) toast.error(`Approved, but invite send failed: ${error.message}`);
-          else toast.success("Calendar invites sent");
-          load();
-        });
+      toast.success("Approved");
+      // Calendar invites will be wired up once Outlook is connected
       load();
     } catch (err: any) {
       toast.error(err.message ?? "Failed to approve");
