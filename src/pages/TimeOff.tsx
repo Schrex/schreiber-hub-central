@@ -69,6 +69,8 @@ const datesOverlap = (aStart: string, aEnd: string, bStart: string, bEnd: string
 const TimeOffPage = () => {
   const { user, role, displayName } = useAuth();
   const isAdmin = role === "admin";
+  const isForeman = role === "foreman";
+  const requiredNoticeDays = isForeman ? 28 : 14;
   const [items, setItems] = useState<TimeOff[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -81,6 +83,7 @@ const TimeOffPage = () => {
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [halfDay, setHalfDay] = useState<HalfDay>("none");
   const [reason, setReason] = useState("");
+  const [shortNoticeConfirm, setShortNoticeConfirm] = useState(false);
 
   // approval state
   const [confirmApprove, setConfirmApprove] = useState<{ req: TimeOff; conflicts: TimeOff[] } | null>(null);
@@ -102,17 +105,19 @@ const TimeOffPage = () => {
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
-    setType("vacation"); setStartDate(undefined); setEndDate(undefined); setHalfDay("none"); setReason("");
+    setType("vacation"); setStartDate(undefined); setEndDate(undefined); setHalfDay("none"); setReason(""); setShortNoticeConfirm(false);
   };
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    if (!startDate || !endDate) {
-      toast.error("Pick start and end dates"); return;
-    }
-    const parsed = formSchema.safeParse({ type, start_date: startDate, end_date: endDate, half_day: halfDay, reason });
-    if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Invalid"); return; }
+  const noticeDaysFromNow = (d: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(d);
+    target.setHours(0, 0, 0, 0);
+    return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  const performSubmit = async () => {
+    if (!user || !startDate || !endDate) return;
     setBusy(true);
     try {
       const { error } = await supabase.from("time_off_requests").insert({
@@ -126,10 +131,31 @@ const TimeOffPage = () => {
       });
       if (error) throw error;
       toast.success("Request submitted");
-      resetForm(); setOpen(false); load();
+      resetForm(); setOpen(false); setShortNoticeConfirm(false); load();
     } catch (err: any) {
       toast.error(err.message ?? "Failed to submit");
     } finally { setBusy(false); }
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    if (!startDate || !endDate) {
+      toast.error("Pick start and end dates"); return;
+    }
+    const parsed = formSchema.safeParse({ type, start_date: startDate, end_date: endDate, half_day: halfDay, reason });
+    if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Invalid"); return; }
+
+    // Notice check (vacation/personal only — sick & other are exempt)
+    const enforceNotice = type === "vacation" || type === "personal";
+    if (enforceNotice) {
+      const days = noticeDaysFromNow(startDate);
+      if (days < requiredNoticeDays) {
+        setShortNoticeConfirm(true);
+        return;
+      }
+    }
+    await performSubmit();
   };
 
   const cancelMine = async (id: string) => {
@@ -453,6 +479,32 @@ const TimeOffPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Short notice confirm */}
+      <AlertDialog open={shortNoticeConfirm} onOpenChange={(v) => !v && setShortNoticeConfirm(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" /> Short notice
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isForeman ? "Foremen are expected to give at least 4 weeks' notice" : "Employees are expected to give at least 2 weeks' notice"} for vacation and personal days.
+              {startDate && ` This request starts in ${noticeDaysFromNow(startDate)} day${noticeDaysFromNow(startDate) === 1 ? "" : "s"}.`} You can submit it anyway, but approval is not guaranteed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShortNoticeConfirm(false);
+                performSubmit();
+              }}
+            >
+              Submit anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
