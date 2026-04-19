@@ -7,93 +7,93 @@
 
 @layer base {
   :root {
-    /* Surfaces — deep steel navy worksite feel */
-    --background: 215 35% 11%;          /* deep navy */
-    --foreground: 40 25% 96%;           /* warm off-white */
+    /* Surfaces — clean white with charcoal text */
+    --background: 0 0% 100%;            /* white */
+    --foreground: 0 0% 8%;              /* near-black */
 
-    --surface: 215 30% 15%;             /* tile background */
-    --surface-elevated: 215 28% 19%;    /* hovered/elevated */
-    --surface-foreground: 40 25% 96%;
+    --surface: 0 0% 97%;                /* light gray tile bg */
+    --surface-elevated: 0 0% 94%;
+    --surface-foreground: 0 0% 8%;
 
-    --card: 215 30% 15%;
-    --card-foreground: 40 25% 96%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
 
-    --popover: 215 30% 15%;
-    --popover-foreground: 40 25% 96%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
 
-    /* Primary — safety yellow (high-vis) */
-    --primary: 46 100% 52%;
-    --primary-foreground: 215 40% 10%;
+    /* Primary — safety yellow */
+    --primary: 48 100% 50%;
+    --primary-foreground: 0 0% 8%;
 
-    /* Secondary — concrete gray */
-    --secondary: 215 15% 30%;
-    --secondary-foreground: 40 25% 96%;
+    /* Secondary — mid gray */
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 12%;
 
-    --muted: 215 20% 22%;
-    --muted-foreground: 215 15% 70%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 38%;
 
-    --accent: 18 90% 55%;               /* safety orange accent */
-    --accent-foreground: 215 40% 10%;
+    --accent: 48 100% 50%;              /* yellow accent (was orange) */
+    --accent-foreground: 0 0% 8%;
 
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 40 25% 96%;
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 142 60% 45%;
-    --success-foreground: 40 25% 96%;
+    --success: 142 55% 38%;
+    --success-foreground: 0 0% 100%;
 
-    --warning: 38 95% 55%;
-    --warning-foreground: 215 40% 10%;
+    --warning: 38 95% 50%;
+    --warning-foreground: 0 0% 8%;
 
-    --border: 215 20% 25%;
-    --input: 215 20% 25%;
-    --ring: 46 100% 52%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 48 100% 50%;
 
     --radius: 0.875rem;
 
-    /* Role badge tints */
-    --role-employee: 200 70% 50%;
-    --role-foreman: 46 100% 52%;
-    --role-office: 270 50% 60%;
-    --role-admin: 0 75% 55%;
+    /* Role badge tints — kept distinct, recolored to fit palette */
+    --role-employee: 0 0% 35%;          /* gray */
+    --role-foreman: 48 100% 45%;        /* yellow */
+    --role-office: 0 0% 12%;            /* black */
+    --role-admin: 0 75% 50%;            /* red — kept for clear admin signal */
 
     /* Gradients & shadows */
-    --gradient-header: linear-gradient(135deg, hsl(215 40% 14%) 0%, hsl(215 35% 9%) 100%);
-    --gradient-tile: linear-gradient(160deg, hsl(215 30% 17%) 0%, hsl(215 32% 13%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(46 100% 58%) 0%, hsl(38 100% 50%) 100%);
-    --shadow-tile: 0 1px 0 hsl(40 25% 96% / 0.04) inset, 0 8px 24px -12px hsl(0 0% 0% / 0.6);
-    --shadow-tile-hover: 0 1px 0 hsl(40 25% 96% / 0.06) inset, 0 16px 32px -12px hsl(0 0% 0% / 0.8);
+    --gradient-header: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 96%) 100%);
+    --gradient-tile: linear-gradient(160deg, hsl(0 0% 100%) 0%, hsl(0 0% 96%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(48 100% 55%) 0%, hsl(46 100% 48%) 100%);
+    --shadow-tile: 0 1px 0 hsl(0 0% 100% / 0.8) inset, 0 4px 14px -6px hsl(0 0% 0% / 0.12);
+    --shadow-tile-hover: 0 1px 0 hsl(0 0% 100% / 0.9) inset, 0 12px 24px -10px hsl(0 0% 0% / 0.18);
 
-    --sidebar-background: 215 35% 11%;
-    --sidebar-foreground: 40 25% 96%;
-    --sidebar-primary: 46 100% 52%;
-    --sidebar-primary-foreground: 215 40% 10%;
-    --sidebar-accent: 215 28% 19%;
-    --sidebar-accent-foreground: 40 25% 96%;
-    --sidebar-border: 215 20% 25%;
-    --sidebar-ring: 46 100% 52%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 8%;
+    --sidebar-primary: 48 100% 50%;
+    --sidebar-primary-foreground: 0 0% 8%;
+    --sidebar-accent: 0 0% 95%;
+    --sidebar-accent-foreground: 0 0% 8%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 48 100% 50%;
   }
 
   .dark {
-    /* Same — app is dark-first */
-    --background: 215 35% 11%;
-    --foreground: 40 25% 96%;
-    --card: 215 30% 15%;
-    --card-foreground: 40 25% 96%;
-    --popover: 215 30% 15%;
-    --popover-foreground: 40 25% 96%;
-    --primary: 46 100% 52%;
-    --primary-foreground: 215 40% 10%;
-    --secondary: 215 15% 30%;
-    --secondary-foreground: 40 25% 96%;
-    --muted: 215 20% 22%;
-    --muted-foreground: 215 15% 70%;
-    --accent: 18 90% 55%;
-    --accent-foreground: 215 40% 10%;
+    /* Dark mode — black surfaces, yellow primary, light text */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 48 100% 50%;
+    --primary-foreground: 0 0% 8%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 48 100% 50%;
+    --accent-foreground: 0 0% 8%;
     --destructive: 0 75% 55%;
-    --destructive-foreground: 40 25% 96%;
-    --border: 215 20% 25%;
-    --input: 215 20% 25%;
-    --ring: 46 100% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 22%;
+    --input: 0 0% 22%;
+    --ring: 48 100% 50%;
   }
 }
 
