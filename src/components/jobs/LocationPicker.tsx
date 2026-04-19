@@ -69,6 +69,7 @@ export const LocationPicker = forwardRef<HTMLDivElement, Props>(({ value, onChan
   const [searching, setSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [addressLabel, setAddressLabel] = useState(value?.address ?? "");
+  const [layer, setLayer] = useState<"street" | "satellite">("street");
   const debounceRef = useRef<number | null>(null);
   const lastReverseRef = useRef(0);
 
