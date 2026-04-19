@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -63,7 +63,7 @@ const ClickHandler = ({ onClick }: { onClick: (lat: number, lon: number) => void
   return null;
 };
 
-export const LocationPicker = ({ value, onChange, defaultCenter = DEFAULT_CENTER }: Props) => {
+export const LocationPicker = forwardRef<HTMLDivElement, Props>(({ value, onChange, defaultCenter = DEFAULT_CENTER }, ref) => {
   const [query, setQuery] = useState(value?.address ?? "");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [searching, setSearching] = useState(false);
@@ -159,7 +159,7 @@ export const LocationPicker = ({ value, onChange, defaultCenter = DEFAULT_CENTER
   };
 
   return (
-    <div className="space-y-2">
+    <div ref={ref} className="space-y-2">
       <div className="relative">
         <Label htmlFor="loc-search" className="text-xs">Search address, place, or business</Label>
         <div className="relative mt-1">
@@ -237,4 +237,5 @@ export const LocationPicker = ({ value, onChange, defaultCenter = DEFAULT_CENTER
       )}
     </div>
   );
-};
+});
+LocationPicker.displayName = "LocationPicker";
