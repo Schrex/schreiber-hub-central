@@ -397,6 +397,57 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          created_at: string
+          fee_amount: number | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          referee_email: string | null
+          referee_name: string
+          referee_phone: string | null
+          referrer_name: string | null
+          referrer_user_id: string
+          relationship: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          type: Database["public"]["Enums"]["referral_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fee_amount?: number | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          referee_email?: string | null
+          referee_name: string
+          referee_phone?: string | null
+          referrer_name?: string | null
+          referrer_user_id: string
+          relationship?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          type: Database["public"]["Enums"]["referral_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fee_amount?: number | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          referee_email?: string | null
+          referee_name?: string
+          referee_phone?: string | null
+          referrer_name?: string | null
+          referrer_user_id?: string
+          relationship?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          type?: Database["public"]["Enums"]["referral_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -460,6 +511,14 @@ export type Database = {
         | "issued"
         | "expired"
         | "denied"
+      referral_status:
+        | "new"
+        | "reviewing"
+        | "hired_won"
+        | "paid"
+        | "closed"
+        | "rejected"
+      referral_type: "hire" | "job"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -614,6 +673,15 @@ export const Constants = {
         "expired",
         "denied",
       ],
+      referral_status: [
+        "new",
+        "reviewing",
+        "hired_won",
+        "paid",
+        "closed",
+        "rejected",
+      ],
+      referral_type: ["hire", "job"],
     },
   },
 } as const
