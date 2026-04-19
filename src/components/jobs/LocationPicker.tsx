@@ -89,7 +89,7 @@ export const LocationPicker = forwardRef<HTMLDivElement, Props>(({ value, onChan
     debounceRef.current = window.setTimeout(async () => {
       setSearching(true);
       try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=6&addressdetails=1&q=${encodeURIComponent(query)}`;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=8&addressdetails=1&countrycodes=us&q=${encodeURIComponent(query)}`;
         const r = await fetch(url, { headers: { Accept: "application/json" } });
         const arr: Suggestion[] = await r.json();
         setSuggestions(arr ?? []);
