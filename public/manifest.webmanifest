@@ -1,0 +1,25 @@
+{
+  "name": "Schreiber Excavating — Field App",
+  "short_name": "Schreiber",
+  "description": "Crew app for schedule, plans, jobs, vendors, equipment, and time off.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F1A2B",
+  "theme_color": "#0F1A2B",
+  "icons": [
+    {
+      "src": "/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
