@@ -1,6 +1,7 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 import { C } from "../theme";
 import { PhoneFrame, SceneStage } from "../components/PhoneFrame";
+import { IconWarn } from "../components/Icons";
 
 export const TimeOff = () => {
   const frame = useCurrentFrame();
@@ -65,7 +66,7 @@ export const TimeOff = () => {
                 transform: `translateY(${(1 - warnIn) * 30}px) scale(${0.9 + warnIn * 0.1})`, opacity: warnIn,
                 display: "flex", gap: 12,
               }}>
-                <div style={{ fontSize: 28 }}>⚠️</div>
+                <IconWarn size={32} />
                 <div>
                   <p style={{ fontFamily: "Oswald", fontSize: 20, margin: 0, color: C.black, fontWeight: 700, letterSpacing: 1 }}>SHORT NOTICE</p>
                   <p style={{ fontFamily: "Inter", fontSize: 14, color: "#444", margin: "4px 0 0" }}>Vacation needs 14 days notice. Submit anyway?</p>

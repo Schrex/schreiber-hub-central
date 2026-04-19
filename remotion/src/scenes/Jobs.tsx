@@ -1,6 +1,7 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 import { C } from "../theme";
 import { PhoneFrame, SceneStage } from "../components/PhoneFrame";
+import { IconPin, IconDoc, IconShovel } from "../components/Icons";
 
 const jobs = [
   { name: "Elmwood Reconstruction", num: "#2415", tag: "ACTIVE", c: C.green, gc: "Picone Construction" },
@@ -39,9 +40,9 @@ export const Jobs = () => {
                       <span style={{ background: j.c, color: "#fff", fontFamily: "Oswald", fontSize: 14, padding: "4px 10px", borderRadius: 6, letterSpacing: 1 }}>{j.tag}</span>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-                      <span style={{ background: "#f3f3f3", padding: "6px 12px", borderRadius: 8, fontSize: 14, fontFamily: "Inter", color: "#444" }}>📍 GPS</span>
-                      <span style={{ background: "#f3f3f3", padding: "6px 12px", borderRadius: 8, fontSize: 14, fontFamily: "Inter", color: "#444" }}>📋 Plans</span>
-                      <span style={{ background: `${C.yellow}33`, padding: "6px 12px", borderRadius: 8, fontSize: 14, fontFamily: "Inter", color: C.black, fontWeight: 600 }}>⛏ 811 Dig</span>
+                      <span style={{ background: "#f3f3f3", padding: "6px 12px", borderRadius: 8, fontSize: 14, fontFamily: "Inter", color: "#444", display: "inline-flex", alignItems: "center", gap: 6 }}><IconPin size={14} /> GPS</span>
+                      <span style={{ background: "#f3f3f3", padding: "6px 12px", borderRadius: 8, fontSize: 14, fontFamily: "Inter", color: "#444", display: "inline-flex", alignItems: "center", gap: 6 }}><IconDoc size={14} /> Plans</span>
+                      <span style={{ background: `${C.yellow}33`, padding: "6px 12px", borderRadius: 8, fontSize: 14, fontFamily: "Inter", color: C.black, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6 }}><IconShovel size={14} /> 811 Dig</span>
                     </div>
                   </div>
                 );

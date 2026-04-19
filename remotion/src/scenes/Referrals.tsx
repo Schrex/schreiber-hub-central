@@ -1,6 +1,7 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 import { C } from "../theme";
 import { PhoneFrame, SceneStage } from "../components/PhoneFrame";
+import { IconHardHat, IconCrane } from "../components/Icons";
 
 export const Referrals = () => {
   const frame = useCurrentFrame();
@@ -28,8 +29,8 @@ export const Referrals = () => {
 
               <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {[
-                  { l: "REFER A HIRE", s: "$500 paid", icon: "👷" },
-                  { l: "REFER A JOB", s: "Up to $1,000", icon: "🏗️" },
+                  { l: "REFER A HIRE", s: "$500 paid", Icon: IconHardHat },
+                  { l: "REFER A JOB", s: "Up to $1,000", Icon: IconCrane },
                 ].map((b, i) => {
                   const bIn = spring({ frame: frame - 40 - i * 8, fps, config: { damping: 18 } });
                   return (
@@ -37,7 +38,7 @@ export const Referrals = () => {
                       background: C.yellow, borderRadius: 18, padding: 18,
                       transform: `scale(${bIn})`, opacity: bIn,
                     }}>
-                      <div style={{ fontSize: 32 }}>{b.icon}</div>
+                      <b.Icon size={32} />
                       <p style={{ fontFamily: "Oswald", fontSize: 20, margin: "8px 0 2px", color: C.black, fontWeight: 700, letterSpacing: 1 }}>{b.l}</p>
                       <p style={{ fontFamily: "Inter", fontSize: 13, color: C.black, margin: 0 }}>{b.s}</p>
                     </div>

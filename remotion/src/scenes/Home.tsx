@@ -33,8 +33,8 @@ export const Home = () => {
                 <div style={{ background: C.yellow, color: C.black, fontWeight: 700, padding: "8px 14px", borderRadius: 8, fontFamily: "Oswald", letterSpacing: 2, fontSize: 18 }}>FOREMAN</div>
               </div>
 
-              <div style={{ background: C.black, color: C.yellow, padding: 16, borderRadius: 16, fontFamily: "Oswald", fontSize: 22, letterSpacing: 1, display: "flex", justifyContent: "space-between" }}>
-                <span>☀ 64°F · LIGHT WIND</span>
+              <div style={{ background: C.black, color: C.yellow, padding: 16, borderRadius: 16, fontFamily: "Oswald", fontSize: 22, letterSpacing: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><IconSun size={22} /> 64°F · LIGHT WIND</span>
                 <span style={{ color: "#888" }}>BUFFALO</span>
               </div>
 

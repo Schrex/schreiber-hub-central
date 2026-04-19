@@ -1,6 +1,7 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 import { C } from "../theme";
 import { PhoneFrame, SceneStage } from "../components/PhoneFrame";
+import { IconTruck } from "../components/Icons";
 
 const orders = [
   { truck: "T-14", driver: "J. Alvarez", mat: "#2 Stone", from: "Buffalo Crushed", to: "Elmwood", status: "IN PROGRESS", c: C.yellow },
@@ -48,8 +49,8 @@ export const Dispatch = () => {
                     background: "#fff", border: "1px solid #eee", borderRadius: 16, padding: 16, marginBottom: 12,
                     transform: `translateX(${(1 - oIn) * 80}px)`, opacity: oIn, display: "flex", gap: 14, alignItems: "center",
                   }}>
-                    <div style={{ width: 60, height: 60, background: C.black, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: C.yellow, fontFamily: "Oswald", fontSize: 22, fontWeight: 700, position: "relative", overflow: "hidden" }}>
-                      🚛
+                    <div style={{ width: 60, height: 60, background: C.black, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: C.yellow, position: "relative", overflow: "hidden" }}>
+                      <IconTruck size={32} />
                       {i === 0 && <div style={{ position: "absolute", bottom: 4, right: 4, width: 12, height: 12, border: `2px solid ${C.yellow}`, borderRadius: "50%", borderTopColor: "transparent", transform: `rotate(${wheel}deg)` }} />}
                     </div>
                     <div style={{ flex: 1 }}>

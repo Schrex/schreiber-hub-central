@@ -1,12 +1,13 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 import { C } from "../theme";
 import { PhoneFrame, SceneStage } from "../components/PhoneFrame";
+import { IconShirt, IconJacket, IconHardHat } from "../components/Icons";
 
 const items = [
-  { name: "Hi-Vis Tee", price: "Issued", colors: ["#FFD60A", "#E03131"] },
-  { name: "Beanie", price: "Issued", colors: ["#222", "#888"] },
-  { name: "Soft-Shell Jacket", price: "Issued", colors: ["#222", "#FFD60A"] },
-  { name: "Class 3 Vest", price: "Issued", colors: ["#FFD60A"] },
+  { name: "Hi-Vis Tee", price: "Issued", colors: ["#FFD60A", "#E03131"], Icon: IconShirt },
+  { name: "Beanie", price: "Issued", colors: ["#222", "#888"], Icon: IconHardHat },
+  { name: "Soft-Shell Jacket", price: "Issued", colors: ["#222", "#FFD60A"], Icon: IconJacket },
+  { name: "Class 3 Vest", price: "Issued", colors: ["#FFD60A"], Icon: IconShirt },
 ];
 
 export const Apparel = () => {
@@ -23,7 +24,7 @@ export const Apparel = () => {
             <div style={{ padding: "70px 24px 24px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <h2 style={{ fontFamily: "Oswald", fontSize: 44, margin: 0, color: C.black, letterSpacing: 1, textTransform: "uppercase" }}>Order Gear</h2>
-                <div style={{ width: 50, height: 50, borderRadius: 14, background: C.yellow, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, transform: `scale(${cartBounce})` }}>🧥</div>
+                <div style={{ width: 50, height: 50, borderRadius: 14, background: C.yellow, display: "flex", alignItems: "center", justifyContent: "center", transform: `scale(${cartBounce})` }}><IconJacket size={26} /></div>
               </div>
               <p style={{ fontFamily: "Inter", fontSize: 16, color: "#666", margin: "0 0 18px" }}>Pick size & color. Office handles the rest.</p>
 
@@ -35,7 +36,7 @@ export const Apparel = () => {
                       background: "#fff", border: "1px solid #eee", borderRadius: 18, padding: 14,
                       transform: `translateY(${(1 - iIn) * 40}px) scale(${0.92 + iIn * 0.08})`, opacity: iIn,
                     }}>
-                      <div style={{ height: 140, background: "#f3f3f3", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 56 }}>👕</div>
+                      <div style={{ height: 140, background: "#f3f3f3", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}><it.Icon size={68} color="#888" /></div>
                       <p style={{ fontFamily: "Oswald", fontSize: 22, margin: "10px 0 4px", color: C.black, fontWeight: 700 }}>{it.name}</p>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span style={{ fontFamily: "Oswald", fontSize: 13, background: C.black, color: C.yellow, padding: "3px 8px", borderRadius: 6, letterSpacing: 1 }}>{it.price}</span>
