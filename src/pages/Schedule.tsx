@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { format, addDays, startOfWeek, isToday, parseISO } from "date-fns";
+import { format, addDays, startOfWeek, isToday, parseISO, isBefore, startOfDay } from "date-fns";
 import {
   ArrowLeft,
   Calendar as CalendarIcon,
@@ -10,6 +10,9 @@ import {
   Plus,
   Trash2,
   Users,
+  ChevronLeft,
+  ChevronRight,
+  Lock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -197,9 +200,16 @@ const Schedule = () => {
     loadAll();
   };
 
+  const today = startOfDay(new Date());
+  const todayIso = format(today, "yyyy-MM-dd");
+  const isPastDay = isBefore(parseISO(selectedDate), today);
   const dateLabel = isToday(parseISO(selectedDate))
     ? "Today"
     : format(parseISO(selectedDate), "EEE, MMM d");
+
+  const shiftWeek = (dir: -1 | 1) => {
+    setSelectedDate(format(addDays(parseISO(selectedDate), dir * 7), "yyyy-MM-dd"));
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -212,14 +222,15 @@ const Schedule = () => {
             <h1 className="font-display text-lg font-semibold">Schedule</h1>
             <p className="text-xs text-muted-foreground">Crews assigned to jobs</p>
           </div>
-          {canEdit && (
+          {canEdit && !isPastDay && (
             <Dialog
               open={dialogOpen}
               onOpenChange={(o) => {
                 setDialogOpen(o);
                 if (o) {
-                  setFormStartDate(selectedDate);
-                  setFormEndDate(selectedDate);
+                  const base = isBefore(parseISO(selectedDate), today) ? todayIso : selectedDate;
+                  setFormStartDate(base);
+                  setFormEndDate(base);
                 }
               }}
             >
@@ -252,6 +263,7 @@ const Schedule = () => {
                       <Label>Start date</Label>
                       <Input
                         type="date"
+                        min={todayIso}
                         value={formStartDate}
                         onChange={(e) => {
                           setFormStartDate(e.target.value);
@@ -265,7 +277,7 @@ const Schedule = () => {
                       <Label>End date</Label>
                       <Input
                         type="date"
-                        min={formStartDate}
+                        min={formStartDate < todayIso ? todayIso : formStartDate}
                         value={formEndDate}
                         onChange={(e) => setFormEndDate(e.target.value)}
                       />
@@ -350,27 +362,50 @@ const Schedule = () => {
             </Dialog>
           )}
         </div>
-        {/* Week strip */}
-        <div className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-4 pb-3">
-          {weekDays.map((d) => {
-            const ds = format(d, "yyyy-MM-dd");
-            const active = ds === selectedDate;
-            return (
-              <button
-                key={ds}
-                onClick={() => setSelectedDate(ds)}
-                className={`flex min-w-[56px] flex-col items-center rounded-lg border px-2 py-2 text-xs transition ${
-                  active
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card hover:bg-muted"
-                }`}
-              >
-                <span className="uppercase tracking-wide opacity-80">{format(d, "EEE")}</span>
-                <span className="text-base font-semibold">{format(d, "d")}</span>
-              </button>
-            );
-          })}
+        {/* Week strip with prev/next nav */}
+        <div className="mx-auto flex max-w-3xl items-center gap-1 px-2 pb-3">
+          <Button variant="ghost" size="icon" onClick={() => shiftWeek(-1)} aria-label="Previous week">
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex flex-1 gap-1 overflow-x-auto px-1">
+            {weekDays.map((d) => {
+              const ds = format(d, "yyyy-MM-dd");
+              const active = ds === selectedDate;
+              const past = isBefore(d, today);
+              return (
+                <button
+                  key={ds}
+                  onClick={() => setSelectedDate(ds)}
+                  className={`flex min-w-[56px] flex-col items-center rounded-lg border px-2 py-2 text-xs transition ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : past
+                      ? "border-border bg-muted/40 text-muted-foreground hover:bg-muted"
+                      : "border-border bg-card hover:bg-muted"
+                  }`}
+                >
+                  <span className="uppercase tracking-wide opacity-80">{format(d, "EEE")}</span>
+                  <span className="text-base font-semibold">{format(d, "d")}</span>
+                </button>
+              );
+            })}
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => shiftWeek(1)} aria-label="Next week">
+            <ChevronRight className="h-5 w-5" />
+          </Button>
         </div>
+        {isPastDay && (
+          <div className="mx-auto flex max-w-3xl items-center justify-center gap-2 border-t bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
+            <Lock className="h-3 w-3" />
+            History — this day is locked and cannot be edited
+            <button
+              onClick={() => setSelectedDate(todayIso)}
+              className="ml-2 text-primary hover:underline"
+            >
+              Jump to today
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-5">
@@ -462,7 +497,7 @@ const Schedule = () => {
                             {a.role_on_job ?? "—"}
                           </div>
                         </div>
-                        {canEdit && (
+                        {canEdit && !isPastDay && (
                           <Button
                             size="icon"
                             variant="ghost"
