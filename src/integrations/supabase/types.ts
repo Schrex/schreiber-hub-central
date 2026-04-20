@@ -535,6 +535,53 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_assignments: {
+        Row: {
+          assignment_date: string
+          created_at: string
+          created_by: string | null
+          id: string
+          job_id: string
+          notes: string | null
+          role_on_job: string | null
+          start_time: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assignment_date: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          job_id: string
+          notes?: string | null
+          role_on_job?: string | null
+          start_time?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assignment_date?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          job_id?: string
+          notes?: string | null
+          role_on_job?: string | null
+          start_time?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_assignments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppressed_emails: {
         Row: {
           created_at: string
