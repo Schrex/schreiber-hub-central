@@ -200,9 +200,16 @@ const Schedule = () => {
     loadAll();
   };
 
+  const today = startOfDay(new Date());
+  const todayIso = format(today, "yyyy-MM-dd");
+  const isPastDay = isBefore(parseISO(selectedDate), today);
   const dateLabel = isToday(parseISO(selectedDate))
     ? "Today"
     : format(parseISO(selectedDate), "EEE, MMM d");
+
+  const shiftWeek = (dir: -1 | 1) => {
+    setSelectedDate(format(addDays(parseISO(selectedDate), dir * 7), "yyyy-MM-dd"));
+  };
 
   return (
     <div className="min-h-screen bg-background">
