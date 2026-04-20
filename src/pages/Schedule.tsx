@@ -67,7 +67,7 @@ const Schedule = () => {
   // form
   const [formJob, setFormJob] = useState<string>("");
   const [formUserIds, setFormUserIds] = useState<string[]>([]);
-  const [formStart, setFormStart] = useState<string>("");
+  const [formStart, setFormStart] = useState<string>("07:00");
   const [formRole, setFormRole] = useState<string>("");
   const [formNotes, setFormNotes] = useState<string>("");
   const [formStartDate, setFormStartDate] = useState<string>(todayStr());
@@ -129,7 +129,7 @@ const Schedule = () => {
   const resetForm = () => {
     setFormJob("");
     setFormUserIds([]);
-    setFormStart("");
+    setFormStart("07:00");
     setFormRole("");
     setFormNotes("");
     setFormStartDate(selectedDate);
