@@ -15,6 +15,8 @@ import Dispatch from "./pages/Dispatch.tsx";
 import Referrals from "./pages/Referrals.tsx";
 import TimeOff from "./pages/TimeOff.tsx";
 import Schedule from "./pages/Schedule.tsx";
+import Tools from "./pages/Tools.tsx";
+import TruckingCalculator from "./pages/TruckingCalculator.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
             <Route path="/time-off" element={<ProtectedRoute><TimeOff /></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
+            <Route path="/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
+            <Route path="/tools/trucking" element={<ProtectedRoute><TruckingCalculator /></ProtectedRoute>} />
             <Route
               path="/admin/users"
               element={<ProtectedRoute requireRole="admin"><AdminUsers /></ProtectedRoute>}
