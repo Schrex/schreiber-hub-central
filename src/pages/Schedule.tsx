@@ -65,10 +65,13 @@ const Schedule = () => {
 
   // form
   const [formJob, setFormJob] = useState<string>("");
-  const [formUser, setFormUser] = useState<string>("");
+  const [formUserIds, setFormUserIds] = useState<string[]>([]);
   const [formStart, setFormStart] = useState<string>("");
   const [formRole, setFormRole] = useState<string>("");
   const [formNotes, setFormNotes] = useState<string>("");
+  const [formStartDate, setFormStartDate] = useState<string>(todayStr());
+  const [formEndDate, setFormEndDate] = useState<string>(todayStr());
+  const [formSkipWeekends, setFormSkipWeekends] = useState<boolean>(true);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(parseISO(selectedDate), { weekStartsOn: 1 });
