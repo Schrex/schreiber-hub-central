@@ -46,6 +46,7 @@ const TILES: Tile[] = [
   { key: "plans", label: "Project Plans", hint: "Latest drawings", icon: FileText, roles: ["employee", "foreman", "office", "admin"], badge: 3 },
   { key: "apparel", label: "Order Apparel", hint: "Shirts, hats, vests", icon: ShoppingBag, roles: ["employee", "foreman", "office", "admin"], to: "/apparel" },
   { key: "referrals", label: "Referrals", hint: "Refer hires & jobs — earn $", icon: HandCoins, roles: ["employee", "foreman", "office", "admin"], to: "/referrals" },
+  { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, roles: ["employee", "foreman", "office", "admin"], to: "/tools" },
   { key: "newhire", label: "New Hires", hint: "Send onboarding", icon: UserPlus, roles: ["admin"] },
   { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, roles: ["admin"], to: "/admin/users" },
 ];
