@@ -142,6 +142,37 @@ const Schedule = () => {
     }));
   }, [assignments]);
 
+  // Per-employee roster: assigned (with jobs), off (approved time-off), or unassigned
+  const roster = useMemo(() => {
+    const offMap = new Map<string, TimeOff>();
+    timeOff.forEach((t) => offMap.set(t.user_id, t));
+    const asgMap = new Map<string, Assignment[]>();
+    assignments.forEach((a) => {
+      const arr = asgMap.get(a.user_id) ?? [];
+      arr.push(a);
+      asgMap.set(a.user_id, arr);
+    });
+    return profiles.map((p) => {
+      const off = offMap.get(p.user_id);
+      const asg = asgMap.get(p.user_id) ?? [];
+      let status: "assigned" | "off" | "unassigned";
+      if (off && asg.length === 0) status = "off";
+      else if (asg.length > 0) status = "assigned";
+      else status = "unassigned";
+      return { profile: p, off, assignments: asg, status };
+    });
+  }, [profiles, assignments, timeOff]);
+
+  const counts = useMemo(() => {
+    return roster.reduce(
+      (acc, r) => {
+        acc[r.status]++;
+        return acc;
+      },
+      { assigned: 0, off: 0, unassigned: 0 } as Record<string, number>,
+    );
+  }, [roster]);
+
   const resetForm = () => {
     setFormJob("");
     setFormUserIds([]);
