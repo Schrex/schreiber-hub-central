@@ -89,7 +89,7 @@ const statusBadge = (s: Status) => {
   const map = {
     draft: "bg-muted text-muted-foreground",
     submitted: "bg-primary/15 text-primary ring-1 ring-primary/30",
-    acknowledged: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30",
+    acknowledged: "bg-accent text-accent-foreground ring-1 ring-accent/40",
   };
   return map[s];
 };
@@ -283,7 +283,7 @@ const PerformanceReviews = () => {
       )}
 
       {r.employee_acknowledgment && (
-        <div className="rounded-md bg-emerald-500/10 p-2 text-xs">
+        <div className="rounded-md bg-accent/40 p-2 text-xs">
           <span className="font-semibold">Employee response:</span> {r.employee_acknowledgment}
         </div>
       )}
