@@ -497,7 +497,7 @@ const Schedule = () => {
                             {a.role_on_job ?? "—"}
                           </div>
                         </div>
-                        {canEdit && (
+                        {canEdit && !isPastDay && (
                           <Button
                             size="icon"
                             variant="ghost"
