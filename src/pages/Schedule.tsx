@@ -558,6 +558,84 @@ const Schedule = () => {
             </div>
           )}
         </section>
+
+        {/* Everyone roster — office/admin only */}
+        {canEdit && (
+          <section>
+            <div className="mb-2 flex items-end justify-between">
+              <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                Everyone · {dateLabel}
+              </h2>
+              <div className="flex gap-2 text-[10px] uppercase tracking-wider">
+                <span className="rounded bg-primary/10 px-2 py-0.5 text-primary">
+                  {counts.assigned} assigned
+                </span>
+                <span className="rounded bg-amber-500/10 px-2 py-0.5 text-amber-600 dark:text-amber-400">
+                  {counts.off} off
+                </span>
+                <span className="rounded bg-muted px-2 py-0.5 text-muted-foreground">
+                  {counts.unassigned} unassigned
+                </span>
+              </div>
+            </div>
+            <Card className="divide-y">
+              {roster.length === 0 ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">
+                  No active employees.
+                </div>
+              ) : (
+                roster.map(({ profile, off, assignments: asg, status }) => (
+                  <div
+                    key={profile.user_id}
+                    className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium">{profile.display_name ?? "Unnamed"}</div>
+                      {status === "assigned" && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          {asg
+                            .map((a) =>
+                              `${a.jobs?.name ?? "Job"}${
+                                a.start_time ? ` · ${a.start_time.slice(0, 5)}` : ""
+                              }${a.role_on_job ? ` · ${a.role_on_job}` : ""}`,
+                            )
+                            .join(" / ")}
+                        </div>
+                      )}
+                      {status === "off" && off && (
+                        <div className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+                          Off — {off.type}
+                          {off.half_day !== "none" ? ` (${off.half_day.toUpperCase()} only)` : ""}
+                        </div>
+                      )}
+                      {status === "unassigned" && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          Not assigned
+                        </div>
+                      )}
+                    </div>
+                    <Badge
+                      variant={status === "assigned" ? "default" : "outline"}
+                      className={
+                        status === "off"
+                          ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                          : status === "unassigned"
+                          ? "text-muted-foreground"
+                          : ""
+                      }
+                    >
+                      {status === "assigned"
+                        ? `${asg.length} job${asg.length > 1 ? "s" : ""}`
+                        : status === "off"
+                        ? "Off"
+                        : "Open"}
+                    </Badge>
+                  </div>
+                ))
+              )}
+            </Card>
+          </section>
+        )}
       </main>
     </div>
   );
