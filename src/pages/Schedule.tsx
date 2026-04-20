@@ -263,6 +263,7 @@ const Schedule = () => {
                       <Label>Start date</Label>
                       <Input
                         type="date"
+                        min={todayIso}
                         value={formStartDate}
                         onChange={(e) => {
                           setFormStartDate(e.target.value);
@@ -276,7 +277,7 @@ const Schedule = () => {
                       <Label>End date</Label>
                       <Input
                         type="date"
-                        min={formStartDate}
+                        min={formStartDate < todayIso ? todayIso : formStartDate}
                         value={formEndDate}
                         onChange={(e) => setFormEndDate(e.target.value)}
                       />
