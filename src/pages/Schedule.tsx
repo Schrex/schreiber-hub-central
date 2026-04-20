@@ -52,6 +52,11 @@ type Assignment = {
   jobs?: Job | null;
   profile_name?: string | null;
 };
+type TimeOff = {
+  user_id: string;
+  type: "vacation" | "sick" | "personal" | "other";
+  half_day: "none" | "am" | "pm";
+};
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
