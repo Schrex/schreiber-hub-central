@@ -332,6 +332,48 @@ export type Database = {
         }
         Relationships: []
       }
+      handbook_documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          is_current: boolean
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+          version: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          is_current?: boolean
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          version?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          is_current?: boolean
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
       job_permits: {
         Row: {
           created_at: string
@@ -447,6 +489,87 @@ export type Database = {
           on_site_contact_phone?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      performance_reviews: {
+        Row: {
+          acknowledged_at: string | null
+          areas_for_improvement: string | null
+          attendance: number | null
+          comments: string | null
+          created_at: string
+          created_by: string | null
+          employee_acknowledgment: string | null
+          employee_name: string | null
+          employee_user_id: string
+          goals: string | null
+          id: string
+          overall_rating: number | null
+          productivity: number | null
+          quality_of_work: number | null
+          review_date: string
+          review_period_end: string | null
+          review_period_start: string | null
+          reviewer_name: string | null
+          reviewer_user_id: string | null
+          safety: number | null
+          status: Database["public"]["Enums"]["performance_review_status"]
+          strengths: string | null
+          teamwork: number | null
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          areas_for_improvement?: string | null
+          attendance?: number | null
+          comments?: string | null
+          created_at?: string
+          created_by?: string | null
+          employee_acknowledgment?: string | null
+          employee_name?: string | null
+          employee_user_id: string
+          goals?: string | null
+          id?: string
+          overall_rating?: number | null
+          productivity?: number | null
+          quality_of_work?: number | null
+          review_date?: string
+          review_period_end?: string | null
+          review_period_start?: string | null
+          reviewer_name?: string | null
+          reviewer_user_id?: string | null
+          safety?: number | null
+          status?: Database["public"]["Enums"]["performance_review_status"]
+          strengths?: string | null
+          teamwork?: number | null
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          areas_for_improvement?: string | null
+          attendance?: number | null
+          comments?: string | null
+          created_at?: string
+          created_by?: string | null
+          employee_acknowledgment?: string | null
+          employee_name?: string | null
+          employee_user_id?: string
+          goals?: string | null
+          id?: string
+          overall_rating?: number | null
+          productivity?: number | null
+          quality_of_work?: number | null
+          review_date?: string
+          review_period_end?: string | null
+          review_period_start?: string | null
+          reviewer_name?: string | null
+          reviewer_user_id?: string | null
+          safety?: number | null
+          status?: Database["public"]["Enums"]["performance_review_status"]
+          strengths?: string | null
+          teamwork?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -740,6 +863,7 @@ export type Database = {
         | "cancelled"
       dispatch_status: "scheduled" | "in_progress" | "complete" | "cancelled"
       job_status: "active" | "on_hold" | "complete"
+      performance_review_status: "draft" | "submitted" | "acknowledged"
       permit_status:
         | "not_started"
         | "applied"
@@ -904,6 +1028,7 @@ export const Constants = {
       ],
       dispatch_status: ["scheduled", "in_progress", "complete", "cancelled"],
       job_status: ["active", "on_hold", "complete"],
+      performance_review_status: ["draft", "submitted", "acknowledged"],
       permit_status: [
         "not_started",
         "applied",
