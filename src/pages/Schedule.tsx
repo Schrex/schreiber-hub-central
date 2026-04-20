@@ -52,6 +52,11 @@ type Assignment = {
   jobs?: Job | null;
   profile_name?: string | null;
 };
+type TimeOff = {
+  user_id: string;
+  type: "vacation" | "sick" | "personal" | "other";
+  half_day: "none" | "am" | "pm";
+};
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
@@ -64,6 +69,7 @@ const Schedule = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [timeOff, setTimeOff] = useState<TimeOff[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -84,7 +90,7 @@ const Schedule = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: a }, { data: j }, { data: p }] = await Promise.all([
+    const [{ data: a }, { data: j }, { data: p }, { data: t }] = await Promise.all([
       supabase
         .from("schedule_assignments")
         .select("*, jobs(id,name,address,job_number)")
@@ -96,6 +102,12 @@ const Schedule = () => {
         .eq("status", "active")
         .order("name"),
       supabase.from("profiles").select("user_id,display_name").eq("is_active", true).order("display_name"),
+      supabase
+        .from("time_off_requests")
+        .select("user_id,type,half_day")
+        .eq("status", "approved")
+        .lte("start_date", selectedDate)
+        .gte("end_date", selectedDate),
     ]);
 
     const profMap = new Map((p ?? []).map((x) => [x.user_id, x.display_name]));
@@ -106,6 +118,7 @@ const Schedule = () => {
     setAssignments(enriched);
     setJobs(j ?? []);
     setProfiles(p ?? []);
+    setTimeOff((t ?? []) as TimeOff[]);
     setLoading(false);
   };
 
@@ -128,6 +141,37 @@ const Schedule = () => {
       job_id,
     }));
   }, [assignments]);
+
+  // Per-employee roster: assigned (with jobs), off (approved time-off), or unassigned
+  const roster = useMemo(() => {
+    const offMap = new Map<string, TimeOff>();
+    timeOff.forEach((t) => offMap.set(t.user_id, t));
+    const asgMap = new Map<string, Assignment[]>();
+    assignments.forEach((a) => {
+      const arr = asgMap.get(a.user_id) ?? [];
+      arr.push(a);
+      asgMap.set(a.user_id, arr);
+    });
+    return profiles.map((p) => {
+      const off = offMap.get(p.user_id);
+      const asg = asgMap.get(p.user_id) ?? [];
+      let status: "assigned" | "off" | "unassigned";
+      if (off && asg.length === 0) status = "off";
+      else if (asg.length > 0) status = "assigned";
+      else status = "unassigned";
+      return { profile: p, off, assignments: asg, status };
+    });
+  }, [profiles, assignments, timeOff]);
+
+  const counts = useMemo(() => {
+    return roster.reduce(
+      (acc, r) => {
+        acc[r.status]++;
+        return acc;
+      },
+      { assigned: 0, off: 0, unassigned: 0 } as Record<string, number>,
+    );
+  }, [roster]);
 
   const resetForm = () => {
     setFormJob("");
@@ -514,6 +558,84 @@ const Schedule = () => {
             </div>
           )}
         </section>
+
+        {/* Everyone roster — office/admin only */}
+        {canEdit && (
+          <section>
+            <div className="mb-2 flex items-end justify-between">
+              <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                Everyone · {dateLabel}
+              </h2>
+              <div className="flex gap-2 text-[10px] uppercase tracking-wider">
+                <span className="rounded bg-primary/10 px-2 py-0.5 text-primary">
+                  {counts.assigned} assigned
+                </span>
+                <span className="rounded bg-amber-500/10 px-2 py-0.5 text-amber-600 dark:text-amber-400">
+                  {counts.off} off
+                </span>
+                <span className="rounded bg-muted px-2 py-0.5 text-muted-foreground">
+                  {counts.unassigned} unassigned
+                </span>
+              </div>
+            </div>
+            <Card className="divide-y">
+              {roster.length === 0 ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">
+                  No active employees.
+                </div>
+              ) : (
+                roster.map(({ profile, off, assignments: asg, status }) => (
+                  <div
+                    key={profile.user_id}
+                    className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium">{profile.display_name ?? "Unnamed"}</div>
+                      {status === "assigned" && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          {asg
+                            .map((a) =>
+                              `${a.jobs?.name ?? "Job"}${
+                                a.start_time ? ` · ${a.start_time.slice(0, 5)}` : ""
+                              }${a.role_on_job ? ` · ${a.role_on_job}` : ""}`,
+                            )
+                            .join(" / ")}
+                        </div>
+                      )}
+                      {status === "off" && off && (
+                        <div className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+                          Off — {off.type}
+                          {off.half_day !== "none" ? ` (${off.half_day.toUpperCase()} only)` : ""}
+                        </div>
+                      )}
+                      {status === "unassigned" && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          Not assigned
+                        </div>
+                      )}
+                    </div>
+                    <Badge
+                      variant={status === "assigned" ? "default" : "outline"}
+                      className={
+                        status === "off"
+                          ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                          : status === "unassigned"
+                          ? "text-muted-foreground"
+                          : ""
+                      }
+                    >
+                      {status === "assigned"
+                        ? `${asg.length} job${asg.length > 1 ? "s" : ""}`
+                        : status === "off"
+                        ? "Off"
+                        : "Open"}
+                    </Badge>
+                  </div>
+                ))
+              )}
+            </Card>
+          </section>
+        )}
       </main>
     </div>
   );
