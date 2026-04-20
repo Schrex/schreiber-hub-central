@@ -128,31 +128,61 @@ const Schedule = () => {
 
   const resetForm = () => {
     setFormJob("");
-    setFormUser("");
+    setFormUserIds([]);
     setFormStart("");
     setFormRole("");
     setFormNotes("");
+    setFormStartDate(selectedDate);
+    setFormEndDate(selectedDate);
+  };
+
+  const buildDateRange = (start: string, end: string, skipWeekends: boolean): string[] => {
+    const out: string[] = [];
+    let d = parseISO(start);
+    const e = parseISO(end);
+    if (e < d) return out;
+    while (d <= e) {
+      const dow = d.getDay();
+      if (!skipWeekends || (dow !== 0 && dow !== 6)) {
+        out.push(format(d, "yyyy-MM-dd"));
+      }
+      d = addDays(d, 1);
+    }
+    return out;
   };
 
   const submitAssignment = async () => {
-    if (!formJob || !formUser) {
-      toast({ title: "Job and crew member required", variant: "destructive" });
+    if (!formJob || formUserIds.length === 0) {
+      toast({ title: "Pick a job and at least one crew member", variant: "destructive" });
       return;
     }
-    const { error } = await supabase.from("schedule_assignments").insert({
-      job_id: formJob,
-      user_id: formUser,
-      assignment_date: selectedDate,
-      start_time: formStart || null,
-      role_on_job: formRole || null,
-      notes: formNotes || null,
-      created_by: user?.id ?? null,
-    });
+    const dates = buildDateRange(formStartDate, formEndDate, formSkipWeekends);
+    if (dates.length === 0) {
+      toast({ title: "Date range is empty", variant: "destructive" });
+      return;
+    }
+    const rows = dates.flatMap((dt) =>
+      formUserIds.map((uid) => ({
+        job_id: formJob,
+        user_id: uid,
+        assignment_date: dt,
+        start_time: formStart || null,
+        role_on_job: formRole || null,
+        notes: formNotes || null,
+        created_by: user?.id ?? null,
+      })),
+    );
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .upsert(rows, { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: true });
     if (error) {
       toast({ title: "Could not assign", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Assigned" });
+    toast({
+      title: "Assigned",
+      description: `${formUserIds.length} × ${dates.length} day${dates.length > 1 ? "s" : ""}`,
+    });
     resetForm();
     setDialogOpen(false);
     loadAll();
