@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { format, addDays, startOfWeek, isToday, parseISO } from "date-fns";
+import { format, addDays, startOfWeek, isToday, parseISO, isBefore, startOfDay } from "date-fns";
 import {
   ArrowLeft,
   Calendar as CalendarIcon,
@@ -10,6 +10,9 @@ import {
   Plus,
   Trash2,
   Users,
+  ChevronLeft,
+  ChevronRight,
+  Lock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
