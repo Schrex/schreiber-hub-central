@@ -39,14 +39,14 @@ const TILES: Tile[] = [
   { key: "dispatch", label: "Dispatch", hint: "Today's truck orders", icon: TruckIcon, roles: ["employee", "foreman", "office", "admin"], to: "/dispatch" },
   { key: "vendors", label: "Vendors", hint: "Suppliers + map", icon: Truck, roles: ["employee", "foreman", "office", "admin"] },
   { key: "maintenance", label: "Equipment", hint: "Log issues (HCSS)", icon: Wrench, roles: ["employee", "foreman", "office", "admin"], href: "https://mr.hcssapps.com" },
-  { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], restricted: "foreman", href: "https://app.clearstory.build" },
+  { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], href: "https://app.clearstory.build" },
   { key: "receipts", label: "Submit Receipt", hint: "Snap & send", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.bill.com/" },
   { key: "timeoff", label: "Time Off", hint: "Request vacation", icon: Palmtree, roles: ["employee", "foreman", "office", "admin"], to: "/time-off" },
   { key: "plans", label: "Project Plans", hint: "Latest drawings", icon: FileText, roles: ["employee", "foreman", "office", "admin"], badge: 3 },
   { key: "apparel", label: "Order Apparel", hint: "Shirts, hats, vests", icon: ShoppingBag, roles: ["employee", "foreman", "office", "admin"], to: "/apparel" },
   { key: "referrals", label: "Referrals", hint: "Refer hires & jobs — earn $", icon: HandCoins, roles: ["employee", "foreman", "office", "admin"], to: "/referrals" },
-  { key: "newhire", label: "New Hires", hint: "Send onboarding", icon: UserPlus, roles: ["admin"], restricted: "admin" },
-  { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, roles: ["admin"], restricted: "admin", to: "/admin/users" },
+  { key: "newhire", label: "New Hires", hint: "Send onboarding", icon: UserPlus, roles: ["admin"] },
+  { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, roles: ["admin"], to: "/admin/users" },
 ];
 
 const Index = () => {
