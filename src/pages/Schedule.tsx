@@ -90,7 +90,7 @@ const Schedule = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: a }, { data: j }, { data: p }] = await Promise.all([
+    const [{ data: a }, { data: j }, { data: p }, { data: t }] = await Promise.all([
       supabase
         .from("schedule_assignments")
         .select("*, jobs(id,name,address,job_number)")
@@ -102,6 +102,12 @@ const Schedule = () => {
         .eq("status", "active")
         .order("name"),
       supabase.from("profiles").select("user_id,display_name").eq("is_active", true).order("display_name"),
+      supabase
+        .from("time_off_requests")
+        .select("user_id,type,half_day")
+        .eq("status", "approved")
+        .lte("start_date", selectedDate)
+        .gte("end_date", selectedDate),
     ]);
 
     const profMap = new Map((p ?? []).map((x) => [x.user_id, x.display_name]));
@@ -112,6 +118,7 @@ const Schedule = () => {
     setAssignments(enriched);
     setJobs(j ?? []);
     setProfiles(p ?? []);
+    setTimeOff((t ?? []) as TimeOff[]);
     setLoading(false);
   };
 
