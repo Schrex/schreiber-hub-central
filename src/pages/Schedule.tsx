@@ -362,28 +362,50 @@ const Schedule = () => {
             </Dialog>
           )}
         </div>
-        {/* Week strip */}
-        <div className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-4 pb-3">
-          {weekDays.map((d) => {
-            const ds = format(d, "yyyy-MM-dd");
-            const active = ds === selectedDate;
-            return (
-              <button
-                key={ds}
-                onClick={() => setSelectedDate(ds)}
-                className={`flex min-w-[56px] flex-col items-center rounded-lg border px-2 py-2 text-xs transition ${
-                  active
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card hover:bg-muted"
-                }`}
-              >
-                <span className="uppercase tracking-wide opacity-80">{format(d, "EEE")}</span>
-                <span className="text-base font-semibold">{format(d, "d")}</span>
-              </button>
-            );
-          })}
+        {/* Week strip with prev/next nav */}
+        <div className="mx-auto flex max-w-3xl items-center gap-1 px-2 pb-3">
+          <Button variant="ghost" size="icon" onClick={() => shiftWeek(-1)} aria-label="Previous week">
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex flex-1 gap-1 overflow-x-auto px-1">
+            {weekDays.map((d) => {
+              const ds = format(d, "yyyy-MM-dd");
+              const active = ds === selectedDate;
+              const past = isBefore(d, today);
+              return (
+                <button
+                  key={ds}
+                  onClick={() => setSelectedDate(ds)}
+                  className={`flex min-w-[56px] flex-col items-center rounded-lg border px-2 py-2 text-xs transition ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : past
+                      ? "border-border bg-muted/40 text-muted-foreground hover:bg-muted"
+                      : "border-border bg-card hover:bg-muted"
+                  }`}
+                >
+                  <span className="uppercase tracking-wide opacity-80">{format(d, "EEE")}</span>
+                  <span className="text-base font-semibold">{format(d, "d")}</span>
+                </button>
+              );
+            })}
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => shiftWeek(1)} aria-label="Next week">
+            <ChevronRight className="h-5 w-5" />
+          </Button>
         </div>
-      </header>
+        {isPastDay && (
+          <div className="mx-auto flex max-w-3xl items-center justify-center gap-2 border-t bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
+            <Lock className="h-3 w-3" />
+            History — this day is locked and cannot be edited
+            <button
+              onClick={() => setSelectedDate(todayIso)}
+              className="ml-2 text-primary hover:underline"
+            >
+              Jump to today
+            </button>
+          </div>
+        )}
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-5">
         {/* My today card */}
