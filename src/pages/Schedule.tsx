@@ -129,7 +129,7 @@ const Schedule = () => {
   const resetForm = () => {
     setFormJob("");
     setFormUserIds([]);
-    setFormStart("");
+    setFormStart("07:00");
     setFormRole("");
     setFormNotes("");
     setFormStartDate(selectedDate);
