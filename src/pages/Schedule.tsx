@@ -213,7 +213,16 @@ const Schedule = () => {
             <p className="text-xs text-muted-foreground">Crews assigned to jobs</p>
           </div>
           {canEdit && (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(o) => {
+                setDialogOpen(o);
+                if (o) {
+                  setFormStartDate(selectedDate);
+                  setFormEndDate(selectedDate);
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Plus className="mr-1 h-4 w-4" /> Assign
