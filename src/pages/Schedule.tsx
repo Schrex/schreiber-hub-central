@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
@@ -65,10 +66,13 @@ const Schedule = () => {
 
   // form
   const [formJob, setFormJob] = useState<string>("");
-  const [formUser, setFormUser] = useState<string>("");
+  const [formUserIds, setFormUserIds] = useState<string[]>([]);
   const [formStart, setFormStart] = useState<string>("");
   const [formRole, setFormRole] = useState<string>("");
   const [formNotes, setFormNotes] = useState<string>("");
+  const [formStartDate, setFormStartDate] = useState<string>(todayStr());
+  const [formEndDate, setFormEndDate] = useState<string>(todayStr());
+  const [formSkipWeekends, setFormSkipWeekends] = useState<boolean>(true);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(parseISO(selectedDate), { weekStartsOn: 1 });
@@ -124,31 +128,61 @@ const Schedule = () => {
 
   const resetForm = () => {
     setFormJob("");
-    setFormUser("");
+    setFormUserIds([]);
     setFormStart("");
     setFormRole("");
     setFormNotes("");
+    setFormStartDate(selectedDate);
+    setFormEndDate(selectedDate);
+  };
+
+  const buildDateRange = (start: string, end: string, skipWeekends: boolean): string[] => {
+    const out: string[] = [];
+    let d = parseISO(start);
+    const e = parseISO(end);
+    if (e < d) return out;
+    while (d <= e) {
+      const dow = d.getDay();
+      if (!skipWeekends || (dow !== 0 && dow !== 6)) {
+        out.push(format(d, "yyyy-MM-dd"));
+      }
+      d = addDays(d, 1);
+    }
+    return out;
   };
 
   const submitAssignment = async () => {
-    if (!formJob || !formUser) {
-      toast({ title: "Job and crew member required", variant: "destructive" });
+    if (!formJob || formUserIds.length === 0) {
+      toast({ title: "Pick a job and at least one crew member", variant: "destructive" });
       return;
     }
-    const { error } = await supabase.from("schedule_assignments").insert({
-      job_id: formJob,
-      user_id: formUser,
-      assignment_date: selectedDate,
-      start_time: formStart || null,
-      role_on_job: formRole || null,
-      notes: formNotes || null,
-      created_by: user?.id ?? null,
-    });
+    const dates = buildDateRange(formStartDate, formEndDate, formSkipWeekends);
+    if (dates.length === 0) {
+      toast({ title: "Date range is empty", variant: "destructive" });
+      return;
+    }
+    const rows = dates.flatMap((dt) =>
+      formUserIds.map((uid) => ({
+        job_id: formJob,
+        user_id: uid,
+        assignment_date: dt,
+        start_time: formStart || null,
+        role_on_job: formRole || null,
+        notes: formNotes || null,
+        created_by: user?.id ?? null,
+      })),
+    );
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .upsert(rows, { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: true });
     if (error) {
       toast({ title: "Could not assign", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Assigned" });
+    toast({
+      title: "Assigned",
+      description: `${formUserIds.length} × ${dates.length} day${dates.length > 1 ? "s" : ""}`,
+    });
     resetForm();
     setDialogOpen(false);
     loadAll();
@@ -179,15 +213,24 @@ const Schedule = () => {
             <p className="text-xs text-muted-foreground">Crews assigned to jobs</p>
           </div>
           {canEdit && (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(o) => {
+                setDialogOpen(o);
+                if (o) {
+                  setFormStartDate(selectedDate);
+                  setFormEndDate(selectedDate);
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Plus className="mr-1 h-4 w-4" /> Assign
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Assign crew to job — {dateLabel}</DialogTitle>
+                  <DialogTitle>Assign crew to job</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3">
                   <div>
@@ -203,19 +246,90 @@ const Schedule = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label>Crew member</Label>
-                    <Select value={formUser} onValueChange={setFormUser}>
-                      <SelectTrigger><SelectValue placeholder="Select person" /></SelectTrigger>
-                      <SelectContent>
-                        {profiles.map((p) => (
-                          <SelectItem key={p.user_id} value={p.user_id}>
-                            {p.display_name ?? "Unnamed"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Start date</Label>
+                      <Input
+                        type="date"
+                        value={formStartDate}
+                        onChange={(e) => {
+                          setFormStartDate(e.target.value);
+                          if (parseISO(e.target.value) > parseISO(formEndDate)) {
+                            setFormEndDate(e.target.value);
+                          }
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>End date</Label>
+                      <Input
+                        type="date"
+                        min={formStartDate}
+                        value={formEndDate}
+                        onChange={(e) => setFormEndDate(e.target.value)}
+                      />
+                    </div>
                   </div>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Checkbox
+                      checked={formSkipWeekends}
+                      onCheckedChange={(v) => setFormSkipWeekends(!!v)}
+                    />
+                    Skip weekends
+                  </label>
+
+                  <div>
+                    <div className="mb-1 flex items-center justify-between">
+                      <Label>Crew members</Label>
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline"
+                        onClick={() =>
+                          setFormUserIds(
+                            formUserIds.length === profiles.length
+                              ? []
+                              : profiles.map((p) => p.user_id),
+                          )
+                        }
+                      >
+                        {formUserIds.length === profiles.length ? "Clear all" : "Select all"}
+                      </button>
+                    </div>
+                    <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border p-2">
+                      {profiles.map((p) => {
+                        const checked = formUserIds.includes(p.user_id);
+                        return (
+                          <label
+                            key={p.user_id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(v) =>
+                                setFormUserIds((prev) =>
+                                  v
+                                    ? [...prev, p.user_id]
+                                    : prev.filter((x) => x !== p.user_id),
+                                )
+                              }
+                            />
+                            {p.display_name ?? "Unnamed"}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {formUserIds.length > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formUserIds.length} selected ·{" "}
+                        {buildDateRange(formStartDate, formEndDate, formSkipWeekends).length} day(s) ={" "}
+                        {formUserIds.length *
+                          buildDateRange(formStartDate, formEndDate, formSkipWeekends).length}{" "}
+                        assignments
+                      </p>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Start time</Label>
@@ -230,7 +344,7 @@ const Schedule = () => {
                     <Label>Notes</Label>
                     <Textarea rows={2} value={formNotes} onChange={(e) => setFormNotes(e.target.value)} />
                   </div>
-                  <Button className="w-full" onClick={submitAssignment}>Save assignment</Button>
+                  <Button className="w-full" onClick={submitAssignment}>Save assignments</Button>
                 </div>
               </DialogContent>
             </Dialog>
