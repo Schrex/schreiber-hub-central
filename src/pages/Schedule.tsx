@@ -222,14 +222,15 @@ const Schedule = () => {
             <h1 className="font-display text-lg font-semibold">Schedule</h1>
             <p className="text-xs text-muted-foreground">Crews assigned to jobs</p>
           </div>
-          {canEdit && (
+          {canEdit && !isPastDay && (
             <Dialog
               open={dialogOpen}
               onOpenChange={(o) => {
                 setDialogOpen(o);
                 if (o) {
-                  setFormStartDate(selectedDate);
-                  setFormEndDate(selectedDate);
+                  const base = isBefore(parseISO(selectedDate), today) ? todayIso : selectedDate;
+                  setFormStartDate(base);
+                  setFormEndDate(base);
                 }
               }}
             >
