@@ -14,6 +14,7 @@ import Apparel from "./pages/Apparel.tsx";
 import Dispatch from "./pages/Dispatch.tsx";
 import Referrals from "./pages/Referrals.tsx";
 import TimeOff from "./pages/TimeOff.tsx";
+import Schedule from "./pages/Schedule.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
