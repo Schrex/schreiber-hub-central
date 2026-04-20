@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Truck, Wrench } from "lucide-react";
+import { ArrowLeft, Truck, Wrench, ClipboardCheck, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -19,6 +19,20 @@ const TOOLS: Tool[] = [
     hint: "Estimate haul cost by load, distance, and rate",
     icon: Truck,
     to: "/tools/trucking",
+  },
+  {
+    key: "reviews",
+    label: "Performance Reviews",
+    hint: "View and manage employee reviews",
+    icon: ClipboardCheck,
+    to: "/tools/performance-reviews",
+  },
+  {
+    key: "handbook",
+    label: "Employee Handbook",
+    hint: "Company policies & procedures",
+    icon: BookOpen,
+    to: "/tools/handbook",
   },
 ];
 
