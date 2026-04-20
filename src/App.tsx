@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/dispatch" element={<ProtectedRoute><Dispatch /></ProtectedRoute>} />
             <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
             <Route path="/time-off" element={<ProtectedRoute><TimeOff /></ProtectedRoute>} />
+            <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route
               path="/admin/users"
               element={<ProtectedRoute requireRole="admin"><AdminUsers /></ProtectedRoute>}
