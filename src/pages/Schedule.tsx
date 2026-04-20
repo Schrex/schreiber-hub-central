@@ -219,9 +219,9 @@ const Schedule = () => {
                   <Plus className="mr-1 h-4 w-4" /> Assign
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Assign crew to job — {dateLabel}</DialogTitle>
+                  <DialogTitle>Assign crew to job</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3">
                   <div>
@@ -237,19 +237,90 @@ const Schedule = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label>Crew member</Label>
-                    <Select value={formUser} onValueChange={setFormUser}>
-                      <SelectTrigger><SelectValue placeholder="Select person" /></SelectTrigger>
-                      <SelectContent>
-                        {profiles.map((p) => (
-                          <SelectItem key={p.user_id} value={p.user_id}>
-                            {p.display_name ?? "Unnamed"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Start date</Label>
+                      <Input
+                        type="date"
+                        value={formStartDate}
+                        onChange={(e) => {
+                          setFormStartDate(e.target.value);
+                          if (parseISO(e.target.value) > parseISO(formEndDate)) {
+                            setFormEndDate(e.target.value);
+                          }
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label>End date</Label>
+                      <Input
+                        type="date"
+                        min={formStartDate}
+                        value={formEndDate}
+                        onChange={(e) => setFormEndDate(e.target.value)}
+                      />
+                    </div>
                   </div>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Checkbox
+                      checked={formSkipWeekends}
+                      onCheckedChange={(v) => setFormSkipWeekends(!!v)}
+                    />
+                    Skip weekends
+                  </label>
+
+                  <div>
+                    <div className="mb-1 flex items-center justify-between">
+                      <Label>Crew members</Label>
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline"
+                        onClick={() =>
+                          setFormUserIds(
+                            formUserIds.length === profiles.length
+                              ? []
+                              : profiles.map((p) => p.user_id),
+                          )
+                        }
+                      >
+                        {formUserIds.length === profiles.length ? "Clear all" : "Select all"}
+                      </button>
+                    </div>
+                    <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border p-2">
+                      {profiles.map((p) => {
+                        const checked = formUserIds.includes(p.user_id);
+                        return (
+                          <label
+                            key={p.user_id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(v) =>
+                                setFormUserIds((prev) =>
+                                  v
+                                    ? [...prev, p.user_id]
+                                    : prev.filter((x) => x !== p.user_id),
+                                )
+                              }
+                            />
+                            {p.display_name ?? "Unnamed"}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {formUserIds.length > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formUserIds.length} selected ·{" "}
+                        {buildDateRange(formStartDate, formEndDate, formSkipWeekends).length} day(s) ={" "}
+                        {formUserIds.length *
+                          buildDateRange(formStartDate, formEndDate, formSkipWeekends).length}{" "}
+                        assignments
+                      </p>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Start time</Label>
@@ -264,7 +335,7 @@ const Schedule = () => {
                     <Label>Notes</Label>
                     <Textarea rows={2} value={formNotes} onChange={(e) => setFormNotes(e.target.value)} />
                   </div>
-                  <Button className="w-full" onClick={submitAssignment}>Save assignment</Button>
+                  <Button className="w-full" onClick={submitAssignment}>Save assignments</Button>
                 </div>
               </DialogContent>
             </Dialog>
