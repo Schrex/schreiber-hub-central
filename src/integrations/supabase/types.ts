@@ -1217,6 +1217,9 @@ export type Database = {
         | "plumbing"
         | "electrical"
         | "architectural"
+        | "gps_model"
+        | "surface"
+        | "linework"
       referral_status:
         | "new"
         | "reviewing"
@@ -1389,6 +1392,9 @@ export const Constants = {
         "plumbing",
         "electrical",
         "architectural",
+        "gps_model",
+        "surface",
+        "linework",
       ],
       referral_status: [
         "new",
