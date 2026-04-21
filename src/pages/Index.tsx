@@ -14,6 +14,8 @@ import {
   HandCoins,
   Calculator,
   LogOut,
+  IdCard,
+  DollarSign,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { HeaderBar } from "@/components/home/HeaderBar";
@@ -47,12 +49,14 @@ const TILES: Tile[] = [
   { key: "apparel", label: "Order Apparel", hint: "Shirts, hats, vests", icon: ShoppingBag, roles: ["employee", "foreman", "office", "admin"], to: "/apparel" },
   { key: "referrals", label: "Referrals", hint: "Refer hires & jobs — earn $", icon: HandCoins, roles: ["employee", "foreman", "office", "admin"], to: "/referrals" },
   { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, roles: ["employee", "foreman", "office", "admin"], to: "/tools" },
+  { key: "myposition", label: "My Position", hint: "Title, pay & range — private", icon: IdCard, roles: ["employee", "foreman", "office", "admin"], to: "/my-position" },
   { key: "newhire", label: "New Hires", hint: "Send onboarding", icon: UserPlus, roles: ["admin"] },
+  { key: "positions", label: "Positions & Pay", hint: "Roles, ranges, assignments", icon: DollarSign, roles: ["admin"], to: "/admin/positions" },
   { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, roles: ["admin"], to: "/admin/users" },
 ];
 
 const Index = () => {
-  const { role, displayName, signOut } = useAuth();
+  const { role, displayName, positionTitle, signOut } = useAuth();
   const navigate = useNavigate();
   const effectiveRole: Role = role ?? "employee";
   const visible = TILES.filter((t) => t.roles.includes(effectiveRole));
@@ -85,7 +89,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <HeaderBar name={displayName ?? "there"} role={effectiveRole} />
+      <HeaderBar name={displayName ?? "there"} role={effectiveRole} positionTitle={positionTitle} />
 
       <main className="mx-auto max-w-2xl space-y-5 px-4 pb-12">
         <WeatherStrip />

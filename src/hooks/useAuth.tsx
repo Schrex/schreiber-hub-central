@@ -9,6 +9,7 @@ interface AuthContextValue {
   user: User | null;
   role: Role | null;
   displayName: string | null;
+  positionTitle: string | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [positionTitle, setPositionTitle] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!s?.user) {
         setRole(null);
         setDisplayName(null);
+        setPositionTitle(null);
       } else {
         // Defer DB calls
         setTimeout(() => loadProfile(s.user.id), 0);
@@ -55,12 +58,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const loadProfile = async (userId: string) => {
-    const [{ data: roles }, { data: profile }] = await Promise.all([
+    const today = new Date().toISOString().slice(0, 10);
+    const [{ data: roles }, { data: profile }, { data: pos }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase.from("profiles").select("display_name").eq("user_id", userId).maybeSingle(),
+      supabase
+        .from("employee_positions")
+        .select("position:positions(title), effective_date, end_date")
+        .eq("user_id", userId)
+        .lte("effective_date", today)
+        .order("effective_date", { ascending: false })
+        .limit(5),
     ]);
     setRole(pickPrimary((roles ?? []).map((r) => r.role as Role)));
     setDisplayName(profile?.display_name ?? null);
+    const current = (pos ?? []).find((p: { end_date: string | null }) => !p.end_date || p.end_date >= today);
+    const title = (current?.position as { title?: string } | null)?.title ?? null;
+    setPositionTitle(title);
   };
 
   const signOut = async () => {
@@ -68,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, role, displayName, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user, role, displayName, positionTitle, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
