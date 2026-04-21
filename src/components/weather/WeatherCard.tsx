@@ -1,4 +1,4 @@
-import { Cloud, Droplets, Wind, MapPin } from "lucide-react";
+import { Cloud, Droplets, Wind, MapPin, Navigation } from "lucide-react";
 import type { Forecast, Coords } from "@/lib/weather";
 import { weatherCodeInfo } from "@/lib/weather";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,8 @@ interface Props {
   coords: Coords | null;
   loading?: boolean;
   compact?: boolean;
+  needsPermission?: boolean;
+  onRequestLocation?: () => void;
 }
 
 const fmtHour = (iso: string) =>
@@ -18,11 +20,20 @@ const fmtDay = (date: string, idx: number) => {
   return new Date(date).toLocaleDateString([], { weekday: "short" });
 };
 
-export const WeatherCard = ({ forecast, coords, loading, compact }: Props) => {
+export const WeatherCard = ({ forecast, coords, loading, compact, needsPermission, onRequestLocation }: Props) => {
   if (loading || !forecast) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-4">
+      <div className="rounded-2xl border border-border bg-surface p-4 space-y-2">
         <p className="text-xs text-muted-foreground">Loading weather…</p>
+        {needsPermission && onRequestLocation && (
+          <button
+            type="button"
+            onClick={onRequestLocation}
+            className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary hover:bg-primary/25"
+          >
+            <Navigation className="h-3 w-3" /> Use my location
+          </button>
+        )}
       </div>
     );
   }
@@ -44,6 +55,15 @@ export const WeatherCard = ({ forecast, coords, loading, compact }: Props) => {
             <span className="text-sm text-muted-foreground">{info.label}</span>
           </div>
           <p className="text-xs text-muted-foreground">Feels {current.apparentTempF}°</p>
+          {needsPermission && onRequestLocation && (
+            <button
+              type="button"
+              onClick={onRequestLocation}
+              className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary hover:bg-primary/25"
+            >
+              <Navigation className="h-3 w-3" /> Use my location
+            </button>
+          )}
         </div>
         <div className="text-5xl leading-none">{info.emoji}</div>
       </div>
