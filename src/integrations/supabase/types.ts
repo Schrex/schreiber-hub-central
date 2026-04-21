@@ -609,6 +609,65 @@ export type Database = {
           },
         ]
       }
+      job_plans: {
+        Row: {
+          category: Database["public"]["Enums"]["plan_category"]
+          created_at: string
+          file_path: string
+          file_size: number | null
+          id: string
+          is_current: boolean
+          job_id: string
+          mime_type: string | null
+          notes: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+          version: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["plan_category"]
+          created_at?: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          is_current?: boolean
+          job_id: string
+          mime_type?: string | null
+          notes?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          version?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["plan_category"]
+          created_at?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          is_current?: boolean
+          job_id?: string
+          mime_type?: string | null
+          notes?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_plans_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           address: string | null
@@ -1152,6 +1211,12 @@ export type Database = {
         | "issued"
         | "expired"
         | "denied"
+      plan_category:
+        | "civil"
+        | "structural"
+        | "plumbing"
+        | "electrical"
+        | "architectural"
       referral_status:
         | "new"
         | "reviewing"
@@ -1317,6 +1382,13 @@ export const Constants = {
         "issued",
         "expired",
         "denied",
+      ],
+      plan_category: [
+        "civil",
+        "structural",
+        "plumbing",
+        "electrical",
+        "architectural",
       ],
       referral_status: [
         "new",
