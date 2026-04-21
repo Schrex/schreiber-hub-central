@@ -8,6 +8,7 @@ interface Props {
   coords: Coords | null;
   loading?: boolean;
   compact?: boolean;
+  error?: string | null;
   needsPermission?: boolean;
   onRequestLocation?: () => void;
 }
@@ -20,11 +21,11 @@ const fmtDay = (date: string, idx: number) => {
   return new Date(date).toLocaleDateString([], { weekday: "short" });
 };
 
-export const WeatherCard = ({ forecast, coords, loading, compact, needsPermission, onRequestLocation }: Props) => {
+export const WeatherCard = ({ forecast, coords, loading, compact, error, needsPermission, onRequestLocation }: Props) => {
   if (loading || !forecast) {
     return (
       <div className="rounded-2xl border border-border bg-surface p-4 space-y-2">
-        <p className="text-xs text-muted-foreground">Loading weather…</p>
+        <p className="text-xs text-muted-foreground">{error ?? "Loading weather…"}</p>
         {needsPermission && onRequestLocation && (
           <button
             type="button"
@@ -55,6 +56,7 @@ export const WeatherCard = ({ forecast, coords, loading, compact, needsPermissio
             <span className="text-sm text-muted-foreground">{info.label}</span>
           </div>
           <p className="text-xs text-muted-foreground">Feels {current.apparentTempF}°</p>
+          {error && <p className="mt-2 text-xs text-muted-foreground">{error}</p>}
           {needsPermission && onRequestLocation && (
             <button
               type="button"
