@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
+import { WeekGrid } from "@/components/schedule/WeekGrid";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
 type Profile = { user_id: string; display_name: string | null };
