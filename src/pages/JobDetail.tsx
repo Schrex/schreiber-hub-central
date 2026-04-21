@@ -8,6 +8,7 @@ import { WeatherCard } from "@/components/weather/WeatherCard";
 import { Button } from "@/components/ui/button";
 import { DigTicketsSection } from "@/components/jobs/DigTicketsSection";
 import { PermitsSection } from "@/components/jobs/PermitsSection";
+import { PlansSection } from "@/components/jobs/PlansSection";
 
 interface Job {
   id: string;
@@ -126,6 +127,7 @@ const JobDetail = () => {
           </section>
         )}
 
+        <PlansSection jobId={job.id} />
         <PermitsSection jobId={job.id} />
         <DigTicketsSection jobId={job.id} />
 
