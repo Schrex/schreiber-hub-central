@@ -332,6 +332,53 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_positions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          pay_rate: number
+          position_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          pay_rate: number
+          position_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          pay_rate?: number
+          position_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_positions_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       handbook_documents: {
         Row: {
           created_at: string
@@ -570,6 +617,42 @@ export type Database = {
           status?: Database["public"]["Enums"]["performance_review_status"]
           strengths?: string | null
           teamwork?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      positions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          max_pay_rate: number
+          min_pay_rate: number
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_pay_rate: number
+          min_pay_rate: number
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_pay_rate?: number
+          min_pay_rate?: number
+          sort_order?: number
+          title?: string
           updated_at?: string
         }
         Relationships: []
