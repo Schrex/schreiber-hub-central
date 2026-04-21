@@ -699,6 +699,8 @@ const Schedule = () => {
             </Card>
           </section>
         )}
+        </>
+        )}
       </main>
     </div>
   );
