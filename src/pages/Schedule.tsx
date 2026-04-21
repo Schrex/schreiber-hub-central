@@ -501,6 +501,21 @@ const Schedule = () => {
       </header>
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-5">
+        {viewMode === "week" && canEdit && (
+          <WeekGrid
+            weekDays={weekDays}
+            profiles={profiles}
+            assignments={weekAssignments}
+            timeOff={weekTimeOff}
+            onCellClick={(ds) => {
+              setSelectedDate(ds);
+              setViewMode("day");
+            }}
+          />
+        )}
+
+        {viewMode === "day" && (
+        <>
         {/* My today card */}
         <section>
           <h2 className="mb-2 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
