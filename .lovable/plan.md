@@ -1,69 +1,26 @@
 
-# Roles + Clearstory + HCSS Maintenance
 
-Three related additions to the Schreiber app.
+## Fix: pay validation trigger crash on `employee_compensation_history`
 
-## 1. Per-person access levels (roles)
+### The bug
+The shared `validate_pay_record()` trigger references `NEW.annual_value`, `NEW.end_date`, and `NEW.effective_date` — but `employee_compensation_history` has none of those fields. PL/pgSQL resolves `NEW.<field>` against the actual triggering row type at runtime, so the moment you insert a comp-history row the trigger throws `record "new" has no field "annual_value"`.
 
-Standard secure pattern — roles in their own table, never on `profiles`.
+The session replay confirms this fired when saving a comp-history record with notes "Current rate as of December 2025."
 
-**Roles**
-- `employee` — schedule, weather, plans (read), receipts, vacation requests
-- `foreman` — everything employee has + Clearstory + (optionally) approve their crew's vacation
-- `office` — Bill.com receipt review, schedule posting
-- `admin` — manage users, assign roles, change settings
+### Plan
 
-**How it works**
-- `user_roles` table (`user_id`, `role`) — separate from profiles
-- `has_role()` security-definer function used in all RLS policies (avoids recursion)
-- **Admin → Users page**: list every employee, change their role from a dropdown, deactivate accounts
-- Each app tile (Schedule, Plans, Clearstory, Maintenance, Vacation, Receipts) only renders if the user's role allows it
-- Server-side checks in every edge function — never trust the client
+1. **Migration — split validation into per-table functions** so each only references fields that exist on its own table:
+   - `validate_employee_position()` — checks `pay_rate >= 0` and `end_date >= effective_date`
+   - `validate_employee_benefit()` — checks `annual_value >= 0` and `end_date >= effective_date`
+   - Keep existing `validate_comp_history()` as-is (already correct, has its own function)
+2. **Drop** the existing combined `validate_pay_record` triggers from `employee_positions` and `employee_benefits` (and from `employee_compensation_history` if it was attached there by mistake).
+3. **Re-attach** the new per-table validation triggers to the correct tables.
+4. **Drop** the now-unused `validate_pay_record()` function.
+5. No frontend changes needed — the existing `AdminPositions.tsx` flow and any comp-history insert UI will start working immediately.
 
-## 2. Clearstory (foreman-only)
+### Verification after applying
+- Insert an `employee_compensation_history` row → succeeds, `total_compensation` auto-computed.
+- Try negative `pay_rate` on `employee_positions` → blocked.
+- Try negative `annual_value` on `employee_benefits` → blocked.
+- Try `end_date < effective_date` on either table → blocked.
 
-Clearstory has no Lovable connector and their public API is limited to enterprise accounts. Practical approach:
-
-**Smart launcher tile** visible only to `foreman` and `admin` roles
-- Big "Open Clearstory" button → opens `app.clearstory.build` (or your tenant URL) in a new tab / native app if installed
-- Single sign-on if your Clearstory account uses SSO; otherwise the foreman logs in once and the browser remembers
-- Optional: a short "What is this for?" helper line for new foremen
-
-If you later get Clearstory API access, we can layer in pulling recent CORs/RFIs directly into the app — but the launcher gives value today with zero integration work.
-
-## 3. HCSS Equipment Maintenance launcher
-
-Same pattern — `mr.hcssapps.com` is HCSS Equipment360 web app. No public connector.
-
-**Maintenance tile** visible to `employee`, `foreman`, `admin`
-- Button opens `https://mr.hcssapps.com` in a new tab
-- HCSS handles its own login (employees use their HCSS credentials)
-- Optional: short instructions ("Log issue → select unit → describe problem → submit")
-
-## Updated app home screen
-```text
-┌──────────────────────────────┐
-│  Schreiber Excavating        │
-│  Hi, Mike (Foreman)          │
-├──────────────────────────────┤
-│  ☀ 64° Partly Cloudy         │
-├──────────────────────────────┤
-│  📅 Schedule                 │
-│  📐 Project Plans            │
-│  🔧 Equipment Maintenance    │
-│  📋 Clearstory   (foreman)   │
-│  🧾 Submit Receipt           │
-│  🏖  Request Time Off         │
-│  ⚙  Admin       (admin only) │
-└──────────────────────────────┘
-```
-
-Tiles auto-hide based on role.
-
-## Quick questions
-1. **Role list** — does `employee / foreman / office / admin` cover it, or do you want more (e.g. `mechanic`, `estimator`)?
-2. **Who assigns roles** — only `admin`, or should `office` also be able to?
-3. **Default role** — when a new user signs up, should they start as `employee` (admin promotes later) or stay role-less until approved?
-4. **Clearstory URL** — is it the standard `app.clearstory.build` login, or do you have a custom tenant URL?
-
-Reply with answers (or "go with defaults": four roles above, admin-only assigns, new signups default to `employee`, standard Clearstory URL) and this slots into the build alongside the other features.
