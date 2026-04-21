@@ -154,6 +154,8 @@ const Schedule = () => {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, selectedDate, canEdit]);
+
+  const myAssignments = assignments.filter((a) => a.user_id === user?.id);
   const allByJob = useMemo(() => {
     const map = new Map<string, Assignment[]>();
     assignments.forEach((a) => {
