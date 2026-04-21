@@ -1,4 +1,4 @@
-import { Cloud, Droplets, Wind, MapPin } from "lucide-react";
+import { Cloud, Droplets, Wind, MapPin, Navigation } from "lucide-react";
 import type { Forecast, Coords } from "@/lib/weather";
 import { weatherCodeInfo } from "@/lib/weather";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,8 @@ interface Props {
   coords: Coords | null;
   loading?: boolean;
   compact?: boolean;
+  needsPermission?: boolean;
+  onRequestLocation?: () => void;
 }
 
 const fmtHour = (iso: string) =>
