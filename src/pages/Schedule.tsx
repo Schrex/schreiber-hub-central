@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
+import { WeekGrid } from "@/components/schedule/WeekGrid";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
 type Profile = { user_id: string; display_name: string | null };
@@ -67,11 +68,14 @@ const Schedule = () => {
 
   const [selectedDate, setSelectedDate] = useState<string>(todayStr());
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [weekAssignments, setWeekAssignments] = useState<Assignment[]>([]);
+  const [weekTimeOff, setWeekTimeOff] = useState<Array<{ user_id: string; start_date: string; end_date: string; type: string; half_day: string }>>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [timeOff, setTimeOff] = useState<TimeOff[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"day" | "week">("day");
 
   // form
   const [formJob, setFormJob] = useState<string>("");
@@ -126,6 +130,31 @@ const Schedule = () => {
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
+
+  // Load full-week data when manager week view is active
+  useEffect(() => {
+    if (viewMode !== "week" || !canEdit) return;
+    const weekStart = format(weekDays[0], "yyyy-MM-dd");
+    const weekEnd = format(weekDays[6], "yyyy-MM-dd");
+    (async () => {
+      const [{ data: a }, { data: t }] = await Promise.all([
+        supabase
+          .from("schedule_assignments")
+          .select("*, jobs(id,name,address,job_number)")
+          .gte("assignment_date", weekStart)
+          .lte("assignment_date", weekEnd),
+        supabase
+          .from("time_off_requests")
+          .select("user_id,start_date,end_date,type,half_day")
+          .eq("status", "approved")
+          .lte("start_date", weekEnd)
+          .gte("end_date", weekStart),
+      ]);
+      setWeekAssignments((a ?? []) as Assignment[]);
+      setWeekTimeOff((t ?? []) as typeof weekTimeOff);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, selectedDate, canEdit]);
 
   const myAssignments = assignments.filter((a) => a.user_id === user?.id);
   const allByJob = useMemo(() => {
@@ -266,6 +295,26 @@ const Schedule = () => {
             <h1 className="font-display text-lg font-semibold">Schedule</h1>
             <p className="text-xs text-muted-foreground">Crews assigned to jobs</p>
           </div>
+          {canEdit && (
+            <div className="mr-1 inline-flex rounded-md border bg-muted/40 p-0.5 text-xs">
+              <button
+                onClick={() => setViewMode("day")}
+                className={`rounded px-2.5 py-1 font-medium transition ${
+                  viewMode === "day" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                Day
+              </button>
+              <button
+                onClick={() => setViewMode("week")}
+                className={`rounded px-2.5 py-1 font-medium transition ${
+                  viewMode === "week" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                Week
+              </button>
+            </div>
+          )}
           {canEdit && !isPastDay && (
             <Dialog
               open={dialogOpen}
@@ -453,6 +502,21 @@ const Schedule = () => {
       </header>
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-5">
+        {viewMode === "week" && canEdit && (
+          <WeekGrid
+            weekDays={weekDays}
+            profiles={profiles}
+            assignments={weekAssignments}
+            timeOff={weekTimeOff}
+            onCellClick={(ds) => {
+              setSelectedDate(ds);
+              setViewMode("day");
+            }}
+          />
+        )}
+
+        {viewMode === "day" && (
+        <>
         {/* My today card */}
         <section>
           <h2 className="mb-2 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
@@ -635,6 +699,8 @@ const Schedule = () => {
               )}
             </Card>
           </section>
+        )}
+        </>
         )}
       </main>
     </div>
