@@ -19,6 +19,7 @@ const roleColor: Record<Role, string> = {
 interface Props {
   name: string;
   role: Role;
+  positionTitle?: string | null;
 }
 
 const roleRing: Record<Role, string> = {
@@ -28,7 +29,7 @@ const roleRing: Record<Role, string> = {
   admin: "ring-role-admin/40",
 };
 
-export const HeaderBar = ({ name, role }: Props) => (
+export const HeaderBar = ({ name, role, positionTitle }: Props) => (
   <header className="bg-gradient-header">
     <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 pb-5 pt-6">
       <div className="flex min-w-0 items-center">
@@ -57,6 +58,11 @@ export const HeaderBar = ({ name, role }: Props) => (
     <div className="mx-auto max-w-2xl px-4 pb-6">
       <p className="text-sm text-muted-foreground">Welcome back,</p>
       <h1 className="mt-1 font-display text-3xl uppercase tracking-wide text-foreground">{name}</h1>
+      {positionTitle && (
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {positionTitle}
+        </p>
+      )}
     </div>
   </header>
 );
