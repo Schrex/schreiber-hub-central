@@ -67,11 +67,14 @@ const Schedule = () => {
 
   const [selectedDate, setSelectedDate] = useState<string>(todayStr());
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [weekAssignments, setWeekAssignments] = useState<Assignment[]>([]);
+  const [weekTimeOff, setWeekTimeOff] = useState<Array<{ user_id: string; start_date: string; end_date: string; type: string; half_day: string }>>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [timeOff, setTimeOff] = useState<TimeOff[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"day" | "week">("day");
 
   // form
   const [formJob, setFormJob] = useState<string>("");
