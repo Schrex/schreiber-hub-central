@@ -34,10 +34,30 @@ export const useWeather = (override?: Coords | null) => {
       return () => { cancelled = true; };
     }
 
+    const reverseGeocode = async (lat: number, lon: number): Promise<string> => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`,
+          { headers: { Accept: "application/json" } },
+        );
+        if (!res.ok) return "Your location";
+        const j = await res.json();
+        const a = j.address ?? {};
+        const city = a.city || a.town || a.village || a.hamlet || a.county;
+        const state = a.state_code || a.state;
+        return [city, state].filter(Boolean).join(", ") || "Your location";
+      } catch {
+        return "Your location";
+      }
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => load({ lat: pos.coords.latitude, lon: pos.coords.longitude, label: "Your location" }),
+      async (pos) => {
+        const label = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+        if (!cancelled) load({ lat: pos.coords.latitude, lon: pos.coords.longitude, label });
+      },
       () => load(ONTARIO_NY),
-      { timeout: 6000, maximumAge: 5 * 60 * 1000 },
+      { timeout: 12000, maximumAge: 5 * 60 * 1000, enableHighAccuracy: false },
     );
 
     return () => { cancelled = true; };
