@@ -186,10 +186,10 @@ const AdminPositions = () => {
         <h1 className="mt-4 font-display text-2xl uppercase tracking-wide">Positions & Pay</h1>
         <p className="text-sm text-muted-foreground">Manage job positions, pay ranges, and employee assignments.</p>
 
-        <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
-          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs">
+          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
           <div>
-            <div className="font-semibold text-amber-700 dark:text-amber-400">Sensitive data — all access is logged</div>
+            <div className="font-semibold text-destructive">Sensitive data — all access is logged</div>
             <p className="mt-0.5 text-muted-foreground">
               Pay and compensation data is protected under the NY SHIELD Act. Every change you make is recorded with your identity, timestamp, and the previous values. See <code className="rounded bg-muted px-1">SECURITY.md</code> for the full policy.
             </p>
