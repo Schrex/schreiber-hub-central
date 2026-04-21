@@ -499,6 +499,13 @@ export type Database = {
             referencedRelation: "positions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "employee_positions_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       handbook_documents: {
@@ -659,6 +666,45 @@ export type Database = {
           start_date?: string | null
           status?: Database["public"]["Enums"]["job_status"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      pay_audit_log: {
+        Row: {
+          action: string
+          affected_user_id: string | null
+          changed_by: string | null
+          changed_by_email: string | null
+          created_at: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          action: string
+          affected_user_id?: string | null
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          action?: string
+          affected_user_id?: string | null
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string
+          table_name?: string
         }
         Relationships: []
       }
@@ -1014,7 +1060,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      positions_public: {
+        Row: {
+          description: string | null
+          id: string | null
+          is_active: boolean | null
+          is_salaried: boolean | null
+          sort_order: number | null
+          title: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_salaried?: boolean | null
+          sort_order?: number | null
+          title?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_salaried?: boolean | null
+          sort_order?: number | null
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       delete_email: {

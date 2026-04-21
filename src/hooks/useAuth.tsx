@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       supabase.from("profiles").select("display_name").eq("user_id", userId).maybeSingle(),
       supabase
         .from("employee_positions")
-        .select("position:positions(title), effective_date, end_date")
+        .select("position:positions_public(title), effective_date, end_date")
         .eq("user_id", userId)
         .lte("effective_date", today)
         .order("effective_date", { ascending: false })
