@@ -294,6 +294,26 @@ const Schedule = () => {
             <h1 className="font-display text-lg font-semibold">Schedule</h1>
             <p className="text-xs text-muted-foreground">Crews assigned to jobs</p>
           </div>
+          {canEdit && (
+            <div className="mr-1 inline-flex rounded-md border bg-muted/40 p-0.5 text-xs">
+              <button
+                onClick={() => setViewMode("day")}
+                className={`rounded px-2.5 py-1 font-medium transition ${
+                  viewMode === "day" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                Day
+              </button>
+              <button
+                onClick={() => setViewMode("week")}
+                className={`rounded px-2.5 py-1 font-medium transition ${
+                  viewMode === "week" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                Week
+              </button>
+            </div>
+          )}
           {canEdit && !isPastDay && (
             <Dialog
               open={dialogOpen}
