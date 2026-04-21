@@ -45,7 +45,7 @@ const TILES: Tile[] = [
   { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], href: "https://app.clearstory.build" },
   { key: "receipts", label: "Submit Receipt", hint: "Snap & send", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.bill.com/" },
   { key: "timeoff", label: "Time Off", hint: "Request vacation", icon: Palmtree, roles: ["employee", "foreman", "office", "admin"], to: "/time-off" },
-  { key: "plans", label: "Project Plans", hint: "Latest drawings", icon: FileText, roles: ["employee", "foreman", "office", "admin"], badge: 3 },
+  { key: "plans", label: "Project Plans", hint: "Pick a job to view plans", icon: FileText, roles: ["employee", "foreman", "office", "admin"], to: "/jobs" },
   { key: "apparel", label: "Order Apparel", hint: "Shirts, hats, vests", icon: ShoppingBag, roles: ["employee", "foreman", "office", "admin"], to: "/apparel" },
   { key: "referrals", label: "Referrals", hint: "Refer hires & jobs — earn $", icon: HandCoins, roles: ["employee", "foreman", "office", "admin"], to: "/referrals" },
   { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, roles: ["employee", "foreman", "office", "admin"], to: "/tools" },
