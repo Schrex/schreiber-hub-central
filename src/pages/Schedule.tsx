@@ -569,11 +569,18 @@ const Schedule = () => {
           )}
         </section>
 
-        {/* All crews on this day */}
+        {/* All crews on this day — grouped by job */}
         <section>
-          <h2 className="mb-2 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
-            All crews · {dateLabel}
-          </h2>
+          <div className="mb-2 flex items-end justify-between">
+            <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
+              Jobs · {dateLabel}
+            </h2>
+            {!loading && allByJob.length > 0 && (
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                {allByJob.length} job{allByJob.length === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : allByJob.length === 0 ? (
@@ -582,43 +589,122 @@ const Schedule = () => {
             </Card>
           ) : (
             <div className="space-y-3">
-              {allByJob.map(({ job, list, job_id }) => (
-                <Card key={job_id} className="p-4">
-                  <div className="mb-2 flex items-start justify-between">
-                    <div>
-                      <div className="font-semibold">{job?.name}</div>
-                      {job?.address && (
-                        <div className="text-xs text-muted-foreground">{job.address}</div>
-                      )}
-                    </div>
-                    <Badge variant="outline" className="gap-1">
-                      <Users className="h-3 w-3" /> {list.length}
-                    </Badge>
-                  </div>
-                  <ul className="divide-y">
-                    {list.map((a) => (
-                      <li key={a.id} className="flex items-center justify-between py-2 text-sm">
-                        <div>
-                          <div className="font-medium">{a.profile_name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {a.start_time && <>{a.start_time.slice(0, 5)} · </>}
-                            {a.role_on_job ?? "—"}
-                          </div>
+              {allByJob.map(({ job, list, job_id }) => {
+                const foremen = list.filter((a) =>
+                  (a.role_on_job ?? "").toLowerCase().includes("foreman"),
+                );
+                const crew = list.filter(
+                  (a) => !(a.role_on_job ?? "").toLowerCase().includes("foreman"),
+                );
+                const earliest = list
+                  .map((a) => a.start_time)
+                  .filter((t): t is string => !!t)
+                  .sort()[0];
+                return (
+                  <Card key={job_id} className="overflow-hidden">
+                    {/* Clickable job header */}
+                    <button
+                      onClick={() => navigate(`/jobs/${job_id}`)}
+                      className="group flex w-full items-start justify-between gap-3 bg-primary/5 px-4 py-3 text-left transition hover:bg-primary/10"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          {(job as Job)?.job_number && (
+                            <span className="rounded bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary">
+                              #{(job as Job).job_number}
+                            </span>
+                          )}
+                          <span className="truncate font-semibold group-hover:underline">
+                            {job?.name}
+                          </span>
                         </div>
-                        {canEdit && !isPastDay && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => removeAssignment(a.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-muted-foreground" />
-                          </Button>
+                        {(job as Job)?.address && (
+                          <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{(job as Job).address}</span>
+                          </div>
                         )}
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              ))}
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <Badge variant="secondary" className="gap-1">
+                          <Users className="h-3 w-3" /> {list.length}
+                        </Badge>
+                        {earliest && (
+                          <Badge variant="outline" className="gap-1 text-[10px]">
+                            <Clock className="h-3 w-3" /> {earliest.slice(0, 5)}
+                          </Badge>
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Foreman highlight */}
+                    {foremen.length > 0 && (
+                      <div className="border-b bg-amber-500/5 px-4 py-2">
+                        <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+                          Foreman
+                        </div>
+                        <ul className="space-y-1">
+                          {foremen.map((a) => (
+                            <li
+                              key={a.id}
+                              className="flex items-center justify-between gap-2 text-sm"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                <span className="font-semibold">{a.profile_name}</span>
+                                {a.start_time && (
+                                  <span className="text-xs text-muted-foreground">
+                                    · {a.start_time.slice(0, 5)}
+                                  </span>
+                                )}
+                              </div>
+                              {canEdit && !isPastDay && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7"
+                                  onClick={() => removeAssignment(a.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                </Button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Crew list */}
+                    {crew.length > 0 && (
+                      <ul className="divide-y">
+                        {crew.map((a) => (
+                          <li
+                            key={a.id}
+                            className="flex items-center justify-between px-4 py-2 text-sm"
+                          >
+                            <div>
+                              <div className="font-medium">{a.profile_name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {a.start_time && <>{a.start_time.slice(0, 5)} · </>}
+                                {a.role_on_job ?? "—"}
+                              </div>
+                            </div>
+                            {canEdit && !isPastDay && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => removeAssignment(a.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </section>
