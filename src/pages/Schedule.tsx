@@ -130,7 +130,30 @@ const Schedule = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
 
-  const myAssignments = assignments.filter((a) => a.user_id === user?.id);
+  // Load full-week data when manager week view is active
+  useEffect(() => {
+    if (viewMode !== "week" || !canEdit) return;
+    const weekStart = format(weekDays[0], "yyyy-MM-dd");
+    const weekEnd = format(weekDays[6], "yyyy-MM-dd");
+    (async () => {
+      const [{ data: a }, { data: t }] = await Promise.all([
+        supabase
+          .from("schedule_assignments")
+          .select("*, jobs(id,name,address,job_number)")
+          .gte("assignment_date", weekStart)
+          .lte("assignment_date", weekEnd),
+        supabase
+          .from("time_off_requests")
+          .select("user_id,start_date,end_date,type,half_day")
+          .eq("status", "approved")
+          .lte("start_date", weekEnd)
+          .gte("end_date", weekStart),
+      ]);
+      setWeekAssignments((a ?? []) as Assignment[]);
+      setWeekTimeOff((t ?? []) as typeof weekTimeOff);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, selectedDate, canEdit]);
   const allByJob = useMemo(() => {
     const map = new Map<string, Assignment[]>();
     assignments.forEach((a) => {
