@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      benefit_types: {
+        Row: {
+          created_at: string
+          default_annual_value: number | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_annual_value?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_annual_value?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clothing_items: {
         Row: {
           colors: string[]
@@ -332,6 +365,95 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_benefits: {
+        Row: {
+          annual_value: number
+          benefit_type_id: string
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          annual_value: number
+          benefit_type_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          annual_value?: number
+          benefit_type_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_benefits_benefit_type_id_fkey"
+            columns: ["benefit_type_id"]
+            isOneToOne: false
+            referencedRelation: "benefit_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_compensation_history: {
+        Row: {
+          base_salary: number
+          benefits_value: number
+          bonus: number
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          total_compensation: number | null
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          base_salary?: number
+          benefits_value?: number
+          bonus?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          total_compensation?: number | null
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          base_salary?: number
+          benefits_value?: number
+          bonus?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          total_compensation?: number | null
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       employee_positions: {
         Row: {
           created_at: string
@@ -627,6 +749,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_salaried: boolean
           max_pay_rate: number
           min_pay_rate: number
           sort_order: number
@@ -638,6 +761,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_salaried?: boolean
           max_pay_rate: number
           min_pay_rate: number
           sort_order?: number
@@ -649,6 +773,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_salaried?: boolean
           max_pay_rate?: number
           min_pay_rate?: number
           sort_order?: number
