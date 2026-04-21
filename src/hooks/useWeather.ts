@@ -32,15 +32,27 @@ export const useWeather = (override?: Coords | null) => {
   });
   const cancelledRef = useRef(false);
 
-  const load = useCallback(async (c: Coords) => {
+  const load = useCallback(async (c: Coords, options?: { needsPermission?: boolean }) => {
     try {
       const forecast = await fetchForecast(c.lat, c.lon);
       if (!cancelledRef.current) {
-        setState({ forecast, coords: c, loading: false, error: null, needsPermission: false });
+        setState({
+          forecast,
+          coords: c,
+          loading: false,
+          error: null,
+          needsPermission: options?.needsPermission ?? false,
+        });
       }
     } catch (e: any) {
       if (!cancelledRef.current) {
-        setState({ forecast: null, coords: c, loading: false, error: e.message ?? "Failed", needsPermission: false });
+        setState({
+          forecast: null,
+          coords: c,
+          loading: false,
+          error: e.message ?? "Failed",
+          needsPermission: options?.needsPermission ?? false,
+        });
       }
     }
   }, []);
@@ -59,10 +71,9 @@ export const useWeather = (override?: Coords | null) => {
       (err) => {
         // PERMISSION_DENIED = 1
         if (err.code === 1) {
-          setState((s) => ({ ...s, loading: false, needsPermission: true }));
-          load(ONTARIO_NY);
+          load(ONTARIO_NY, { needsPermission: true });
         } else {
-          load(ONTARIO_NY);
+          load(ONTARIO_NY, { needsPermission: true });
         }
       },
       { timeout: 12000, maximumAge: 5 * 60 * 1000, enableHighAccuracy: false },
@@ -91,16 +102,14 @@ export const useWeather = (override?: Coords | null) => {
           return;
         }
         if (perm?.state === "denied") {
-          setState({ forecast: null, coords: null, loading: true, error: null, needsPermission: true });
-          load(ONTARIO_NY);
+          load(ONTARIO_NY, { needsPermission: true });
           return;
         }
         // "prompt" or unknown — show fallback + button so user can tap to allow
-        setState({ forecast: null, coords: null, loading: true, error: null, needsPermission: true });
-        load(ONTARIO_NY);
+        load(ONTARIO_NY, { needsPermission: true });
       } catch {
-        // Permissions API unavailable (older Safari) — try directly
-        requestLocation();
+        // Permissions API unavailable (older Safari) — keep fallback visible with manual trigger
+        load(ONTARIO_NY, { needsPermission: true });
       }
     };
 
