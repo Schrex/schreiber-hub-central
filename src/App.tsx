@@ -19,6 +19,8 @@ import Tools from "./pages/Tools.tsx";
 import TruckingCalculator from "./pages/TruckingCalculator.tsx";
 import PerformanceReviews from "./pages/PerformanceReviews.tsx";
 import Handbook from "./pages/Handbook.tsx";
+import MyPosition from "./pages/MyPosition.tsx";
+import AdminPositions from "./pages/AdminPositions.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -44,6 +46,11 @@ const App = () => (
             <Route path="/tools/trucking" element={<ProtectedRoute><TruckingCalculator /></ProtectedRoute>} />
             <Route path="/tools/performance-reviews" element={<ProtectedRoute><PerformanceReviews /></ProtectedRoute>} />
             <Route path="/tools/handbook" element={<ProtectedRoute><Handbook /></ProtectedRoute>} />
+            <Route path="/my-position" element={<ProtectedRoute><MyPosition /></ProtectedRoute>} />
+            <Route
+              path="/admin/positions"
+              element={<ProtectedRoute requireRole="admin"><AdminPositions /></ProtectedRoute>}
+            />
             <Route
               path="/admin/users"
               element={<ProtectedRoute requireRole="admin"><AdminUsers /></ProtectedRoute>}
