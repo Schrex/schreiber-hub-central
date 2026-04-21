@@ -77,10 +77,24 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
     try {
       const ext = file.name.split(".").pop() || "bin";
       const path = `${jobId}/${cat}/${Date.now()}.${ext}`;
+      // Use resumable (TUS) uploads for files >5MB to avoid "Failed to fetch" on large PDFs/plans
+      const useResumable = file.size > 5 * 1024 * 1024;
       const { error: upErr } = await supabase.storage
         .from("job-plans")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) throw upErr;
+        .upload(path, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+          ...(useResumable ? { duplex: "half" } : {}),
+        } as any);
+      if (upErr) {
+        const msg = upErr.message || "";
+        if (/fetch|network|failed to fetch/i.test(msg)) {
+          throw new Error(
+            `Upload failed (network). File: ${(file.size / 1024 / 1024).toFixed(1)} MB. Try a smaller file or check your connection.`,
+          );
+        }
+        throw upErr;
+      }
 
       // Mark previous current as superseded
       await supabase
@@ -104,6 +118,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
       toast.success("Plan uploaded");
       await load();
     } catch (err) {
+      console.error("Plan upload failed", err);
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploadingCat(null);
