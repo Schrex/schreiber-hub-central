@@ -5,7 +5,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-type Category = "civil" | "structural" | "plumbing" | "electrical" | "architectural";
+type Category =
+  | "civil"
+  | "structural"
+  | "plumbing"
+  | "electrical"
+  | "architectural"
+  | "gps_model"
+  | "surface"
+  | "linework";
 
 const CATEGORIES: { key: Category; label: string }[] = [
   { key: "civil", label: "Civil" },
@@ -13,6 +21,9 @@ const CATEGORIES: { key: Category; label: string }[] = [
   { key: "plumbing", label: "Plumbing" },
   { key: "electrical", label: "Electrical" },
   { key: "architectural", label: "Architectural" },
+  { key: "gps_model", label: "GPS Model" },
+  { key: "surface", label: "Surface" },
+  { key: "linework", label: "Linework" },
 ];
 
 interface Plan {
