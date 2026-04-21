@@ -9,6 +9,11 @@ interface State {
   needsPermission: boolean;
 }
 
+interface LoadOptions {
+  needsPermission?: boolean;
+  error?: string | null;
+}
+
 const reverseGeocode = async (lat: number, lon: number): Promise<string> => {
   try {
     const res = await fetch(
@@ -32,7 +37,7 @@ export const useWeather = (override?: Coords | null) => {
   });
   const cancelledRef = useRef(false);
 
-  const load = useCallback(async (c: Coords, options?: { needsPermission?: boolean }) => {
+  const load = useCallback(async (c: Coords, options?: LoadOptions) => {
     try {
       const forecast = await fetchForecast(c.lat, c.lon);
       if (!cancelledRef.current) {
@@ -40,7 +45,7 @@ export const useWeather = (override?: Coords | null) => {
           forecast,
           coords: c,
           loading: false,
-          error: null,
+          error: options?.error ?? null,
           needsPermission: options?.needsPermission ?? false,
         });
       }
@@ -50,7 +55,7 @@ export const useWeather = (override?: Coords | null) => {
           forecast: null,
           coords: c,
           loading: false,
-          error: e.message ?? "Failed",
+          error: options?.error ?? e.message ?? "Failed",
           needsPermission: options?.needsPermission ?? false,
         });
       }
@@ -59,22 +64,37 @@ export const useWeather = (override?: Coords | null) => {
 
   const requestLocation = useCallback(() => {
     if (!("geolocation" in navigator)) {
-      load(ONTARIO_NY);
+      load(ONTARIO_NY, {
+        needsPermission: true,
+        error: "Location isn’t available on this device/browser.",
+      });
       return;
     }
-    setState((s) => ({ ...s, loading: true, needsPermission: false }));
+    setState((s) => ({
+      ...s,
+      loading: true,
+      needsPermission: true,
+      error: "Requesting your location…",
+    }));
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const label = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
         load({ lat: pos.coords.latitude, lon: pos.coords.longitude, label });
       },
       (err) => {
-        // PERMISSION_DENIED = 1
-        if (err.code === 1) {
-          load(ONTARIO_NY, { needsPermission: true });
-        } else {
-          load(ONTARIO_NY, { needsPermission: true });
-        }
+        const blockedByPreview = /permissions policy|iframe|document is not allowed/i.test(err.message || "");
+        const message = blockedByPreview
+          ? "Location is blocked in this preview. Open the app in a new tab or allow location access in your browser."
+          : err.code === 1
+            ? "Location access was denied. Allow it in your browser settings, then try again."
+            : err.code === 3
+              ? "Location request timed out. Try again where your phone has better signal."
+              : "Couldn’t get your location. Try again in a moment.";
+
+        load(ONTARIO_NY, {
+          needsPermission: true,
+          error: message,
+        });
       },
       { timeout: 12000, maximumAge: 5 * 60 * 1000, enableHighAccuracy: false },
     );
@@ -102,14 +122,23 @@ export const useWeather = (override?: Coords | null) => {
           return;
         }
         if (perm?.state === "denied") {
-          load(ONTARIO_NY, { needsPermission: true });
+          load(ONTARIO_NY, {
+            needsPermission: true,
+            error: "Allow location access to switch weather to your current area.",
+          });
           return;
         }
         // "prompt" or unknown — show fallback + button so user can tap to allow
-        load(ONTARIO_NY, { needsPermission: true });
+        load(ONTARIO_NY, {
+          needsPermission: true,
+          error: "Tap Use my location to switch weather to your current area.",
+        });
       } catch {
         // Permissions API unavailable (older Safari) — keep fallback visible with manual trigger
-        load(ONTARIO_NY, { needsPermission: true });
+        load(ONTARIO_NY, {
+          needsPermission: true,
+          error: "Tap Use my location to switch weather to your current area.",
+        });
       }
     };
 
