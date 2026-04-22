@@ -326,6 +326,57 @@ const Dispatch = () => {
                       <Label>Notes</Label>
                       <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                     </div>
+
+                    <div className="sm:col-span-2 mt-2 border-t border-border pt-3">
+                      <h3 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">Billing</h3>
+                    </div>
+                    <div>
+                      <Label>Bill To</Label>
+                      <Input value={form.bill_to} onChange={(e) => setForm({ ...form, bill_to: e.target.value })} placeholder="Customer to invoice" />
+                    </div>
+                    <div>
+                      <Label>PO / Reference #</Label>
+                      <Input value={form.po_number} onChange={(e) => setForm({ ...form, po_number: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Rate Type</Label>
+                      <Select value={form.rate_type} onValueChange={(v) => setForm({ ...form, rate_type: v as RateType })}>
+                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          {(Object.keys(RATE_LABEL) as RateType[]).map((r) => (
+                            <SelectItem key={r} value={r}>{RATE_LABEL[r]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Rate ($)</Label>
+                      <Input type="number" step="0.01" value={form.rate_amount} onChange={(e) => setForm({ ...form, rate_amount: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Billed Qty</Label>
+                      <Input type="number" step="0.01" value={form.billed_quantity} onChange={(e) => setForm({ ...form, billed_quantity: e.target.value })} placeholder="hrs / loads / tons" />
+                    </div>
+                    <div>
+                      <Label>Invoice Status</Label>
+                      <Select value={form.invoice_status} onValueChange={(v) => setForm({ ...form, invoice_status: v as InvoiceStatus })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {(Object.keys(INVOICE_LABEL) as InvoiceStatus[]).map((s) => (
+                            <SelectItem key={s} value={s}>{INVOICE_LABEL[s]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label>Billing Notes</Label>
+                      <Textarea rows={2} value={form.billing_notes} onChange={(e) => setForm({ ...form, billing_notes: e.target.value })} />
+                    </div>
+                    {form.rate_amount && form.billed_quantity && (
+                      <div className="sm:col-span-2 rounded-md bg-muted/50 px-3 py-2 text-sm">
+                        Estimated Total: <span className="font-medium">{fmtMoney(Number(form.rate_amount) * Number(form.billed_quantity))}</span>
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
