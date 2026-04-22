@@ -451,9 +451,130 @@ const Dispatch = () => {
           </div>
         </div>
 
+        {/* View tabs + range navigation */}
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)}>
+            <TabsList>
+              <TabsTrigger value="day">Day</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="month">Month</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => shiftDate(-1)} aria-label="Previous">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="min-w-[180px] text-center text-sm font-medium">{rangeLabel}</div>
+            <Button variant="outline" size="icon" onClick={() => shiftDate(1)} aria-label="Next">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setDate(todayStr())}>Today</Button>
+          </div>
+        </div>
+
         <div className="mt-6 space-y-6">
           {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
-          {!loading && orders.length === 0 && (
+
+          {/* WEEK VIEW */}
+          {!loading && view === "week" && (() => {
+            const start = startOfWeek(parseISO(date));
+            const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+            const totalCount = orders.length;
+            return (
+              <div>
+                <p className="mb-3 text-xs text-muted-foreground">{totalCount} order{totalCount === 1 ? "" : "s"} this week</p>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+                  {days.map((d) => {
+                    const iso = toISO(d);
+                    const list = ordersByDate.get(iso) ?? [];
+                    const isToday = iso === todayStr();
+                    return (
+                      <button
+                        key={iso}
+                        onClick={() => { setDate(iso); setView("day"); }}
+                        className={`group rounded-xl border p-3 text-left transition hover:border-primary ${isToday ? "border-primary bg-primary/5" : "border-border bg-surface"}`}
+                      >
+                        <div className="flex items-baseline justify-between">
+                          <div className="font-display text-xs uppercase tracking-wider text-muted-foreground">
+                            {d.toLocaleDateString(undefined, { weekday: "short" })}
+                          </div>
+                          <div className="text-lg font-semibold">{d.getDate()}</div>
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          {list.length === 0 ? "No orders" : `${list.length} order${list.length === 1 ? "" : "s"}`}
+                        </div>
+                        {list.length > 0 && (
+                          <ul className="mt-2 space-y-1">
+                            {list.slice(0, 3).map((o) => (
+                              <li key={o.id} className="truncate text-xs">
+                                <span className="text-muted-foreground">{o.start_time?.slice(0, 5) ?? "—"}</span>{" "}
+                                {o.driver_name ?? "Unassigned"} · {o.job_name ?? "—"}
+                              </li>
+                            ))}
+                            {list.length > 3 && (
+                              <li className="text-xs text-muted-foreground">+{list.length - 3} more</li>
+                            )}
+                          </ul>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* MONTH VIEW */}
+          {!loading && view === "month" && (() => {
+            const cur = parseISO(date);
+            const gridStart = startOfMonthGrid(cur);
+            const gridEnd = endOfMonthGrid(cur);
+            const days: Date[] = [];
+            for (let d = new Date(gridStart); d <= gridEnd; d = addDays(d, 1)) days.push(new Date(d));
+            return (
+              <div>
+                <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-display uppercase tracking-wider text-muted-foreground">
+                  {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d) => <div key={d}>{d}</div>)}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {days.map((d) => {
+                    const iso = toISO(d);
+                    const list = ordersByDate.get(iso) ?? [];
+                    const inMonth = d.getMonth() === cur.getMonth();
+                    const isToday = iso === todayStr();
+                    return (
+                      <button
+                        key={iso}
+                        onClick={() => { setDate(iso); setView("day"); }}
+                        className={`min-h-[72px] rounded-md border p-1.5 text-left transition hover:border-primary ${
+                          isToday ? "border-primary bg-primary/5" :
+                          inMonth ? "border-border bg-surface" : "border-border/50 bg-muted/20 text-muted-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium">{d.getDate()}</span>
+                          {list.length > 0 && (
+                            <Badge variant="secondary" className="h-4 px-1 text-[10px]">{list.length}</Badge>
+                          )}
+                        </div>
+                        {list.slice(0, 2).map((o) => (
+                          <div key={o.id} className="mt-0.5 truncate text-[10px] leading-tight">
+                            {o.driver_name?.split(" ")[0] ?? "—"}
+                          </div>
+                        ))}
+                        {list.length > 2 && (
+                          <div className="text-[10px] text-muted-foreground">+{list.length - 2}</div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* DAY VIEW (existing) */}
+          {!loading && view === "day" && dayOrders.length === 0 && (
             <div className="rounded-xl border border-dashed border-border p-8 text-center">
               <Truck className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">No dispatch orders for {date}.</p>
