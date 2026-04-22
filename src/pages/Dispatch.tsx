@@ -164,6 +164,13 @@ const Dispatch = () => {
       load_quantity: o.load_quantity?.toString() ?? "",
       start_time: o.start_time ?? "",
       notes: o.notes ?? "",
+      bill_to: o.bill_to ?? "",
+      po_number: o.po_number ?? "",
+      rate_type: (o.rate_type ?? "") as RateType | "",
+      rate_amount: o.rate_amount?.toString() ?? "",
+      billed_quantity: o.billed_quantity?.toString() ?? "",
+      invoice_status: o.invoice_status ?? "not_billed",
+      billing_notes: o.billing_notes ?? "",
     });
     setOpen(true);
   };
