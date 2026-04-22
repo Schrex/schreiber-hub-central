@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import * as tus from "tus-js-client";
+import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
 
 const SUPABASE_URL = "https://bitogpfplcquovpdjprk.supabase.co";
 const RESUMABLE_THRESHOLD = 6 * 1024 * 1024; // 6MB
@@ -20,7 +20,7 @@ const resumableUpload = async (
   if (!token) throw new Error("Not authenticated");
 
   await new Promise<void>((resolve, reject) => {
-    const upload = new tus.Upload(file, {
+    const upload = new TusUpload(file, {
       endpoint: `${SUPABASE_URL}/storage/v1/upload/resumable`,
       retryDelays: [0, 1000, 3000, 5000, 10000],
       headers: {
