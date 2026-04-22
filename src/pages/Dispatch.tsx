@@ -580,7 +580,7 @@ const Dispatch = () => {
               <p className="text-sm text-muted-foreground">No dispatch orders for {date}.</p>
             </div>
           )}
-          {grouped.map((g) => (
+          {!loading && view === "day" && grouped.map((g) => (
             <section key={g.name}>
               <h2 className="mb-2 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
                 {g.name} <span className="text-muted-foreground/60">· {g.orders.length}</span>
