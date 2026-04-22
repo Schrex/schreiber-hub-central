@@ -196,7 +196,9 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
         ref={fileInputRef}
         type="file"
         accept="application/pdf,image/*"
-        className="hidden"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
         onChange={handleFile}
       />
 
