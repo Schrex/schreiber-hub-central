@@ -184,16 +184,6 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
         </h2>
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/pdf,image/*"
-        className="sr-only"
-        tabIndex={-1}
-        aria-hidden="true"
-        onChange={handleFile}
-      />
-
       {loading ? (
         <p className="text-xs text-muted-foreground">Loading…</p>
       ) : (
