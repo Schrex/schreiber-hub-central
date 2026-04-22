@@ -257,17 +257,49 @@ const Dispatch = () => {
     setOrders((os) => os.filter((o) => o.id !== id));
   };
 
-  // Group by driver
+  // Group selected day's orders by driver
+  const dayOrders = useMemo(() => orders.filter((o) => o.dispatch_date === date), [orders, date]);
   const grouped = useMemo(() => {
     const map = new Map<string, { name: string; orders: DispatchOrder[] }>();
-    orders.forEach((o) => {
+    dayOrders.forEach((o) => {
       const key = o.driver_user_id ?? `__${o.driver_name ?? "Unassigned"}`;
       const name = o.driver_name ?? "Unassigned";
       if (!map.has(key)) map.set(key, { name, orders: [] });
       map.get(key)!.orders.push(o);
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [dayOrders]);
+
+  // Orders bucketed by date (for week & month views)
+  const ordersByDate = useMemo(() => {
+    const map = new Map<string, DispatchOrder[]>();
+    orders.forEach((o) => {
+      if (!map.has(o.dispatch_date)) map.set(o.dispatch_date, []);
+      map.get(o.dispatch_date)!.push(o);
+    });
+    return map;
   }, [orders]);
+
+  const shiftDate = (n: number) => {
+    const d = parseISO(date);
+    if (view === "day") setDate(toISO(addDays(d, n)));
+    else if (view === "week") setDate(toISO(addDays(d, n * 7)));
+    else setDate(toISO(new Date(d.getFullYear(), d.getMonth() + n, 1)));
+  };
+
+  const rangeLabel = useMemo(() => {
+    const d = parseISO(date);
+    if (view === "day") return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    if (view === "week") {
+      const s = startOfWeek(d), e = endOfWeek(d);
+      const sameMonth = s.getMonth() === e.getMonth();
+      const sFmt = s.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      const eFmt = e.toLocaleDateString(undefined, { month: sameMonth ? undefined : "short", day: "numeric", year: "numeric" });
+      return `${sFmt} – ${eFmt}`;
+    }
+    return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  }, [date, view]);
+
 
   return (
     <div className="min-h-screen bg-background">
