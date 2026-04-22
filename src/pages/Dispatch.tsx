@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 type DispatchStatus = "scheduled" | "in_progress" | "complete" | "cancelled";
+type RateType = "hourly" | "per_load" | "per_ton" | "flat" | "other";
+type InvoiceStatus = "not_billed" | "billed" | "paid";
 
 interface DispatchOrder {
   id: string;
@@ -35,7 +37,38 @@ interface DispatchOrder {
   start_time: string | null;
   status: DispatchStatus;
   notes: string | null;
+  bill_to: string | null;
+  po_number: string | null;
+  rate_type: RateType | null;
+  rate_amount: number | null;
+  billed_quantity: number | null;
+  billing_total: number | null;
+  invoice_status: InvoiceStatus;
+  billing_notes: string | null;
 }
+
+const RATE_LABEL: Record<RateType, string> = {
+  hourly: "Hourly",
+  per_load: "Per Load",
+  per_ton: "Per Ton",
+  flat: "Flat",
+  other: "Other",
+};
+
+const INVOICE_LABEL: Record<InvoiceStatus, string> = {
+  not_billed: "Not Billed",
+  billed: "Billed",
+  paid: "Paid",
+};
+
+const INVOICE_VARIANT: Record<InvoiceStatus, "default" | "secondary" | "outline"> = {
+  not_billed: "outline",
+  billed: "secondary",
+  paid: "default",
+};
+
+const fmtMoney = (n: number | null | undefined) =>
+  n == null ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(n));
 
 interface JobOpt { id: string; name: string; job_number: string | null; gc: string | null; customer: string | null }
 interface DriverOpt { user_id: string; display_name: string | null; email: string | null }
