@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { FileText, Upload, Download, Trash2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
 
@@ -84,8 +85,6 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
   const [loading, setLoading] = useState(true);
   const [uploadingCat, setUploadingCat] = useState<Category | null>(null);
   const [uploadPct, setUploadPct] = useState<number>(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const pendingCatRef = useRef<Category | null>(null);
 
   const load = async () => {
     const { data } = await supabase
@@ -102,17 +101,10 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
-  const triggerUpload = (cat: Category) => {
-    console.log("[PlansSection] Add clicked", cat, { hasInput: !!fileInputRef.current, canManage });
-    pendingCatRef.current = cat;
-    fileInputRef.current?.click();
-  };
-
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (cat: Category, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    const cat = pendingCatRef.current;
     e.target.value = "";
-    if (!file || !cat) return;
+    if (!file) return;
 
     setUploadingCat(cat);
     setUploadPct(0);
@@ -163,7 +155,6 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
     } finally {
       setUploadingCat(null);
       setUploadPct(0);
-      pendingCatRef.current = null;
     }
   };
 
