@@ -103,6 +103,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
   }, [jobId]);
 
   const triggerUpload = (cat: Category) => {
+    console.log("[PlansSection] Add clicked", cat, { hasInput: !!fileInputRef.current, canManage });
     pendingCatRef.current = cat;
     fileInputRef.current?.click();
   };
