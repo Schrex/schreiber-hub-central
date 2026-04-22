@@ -111,6 +111,13 @@ const Dispatch = () => {
     load_quantity: "",
     start_time: "",
     notes: "",
+    bill_to: "",
+    po_number: "",
+    rate_type: "" as RateType | "",
+    rate_amount: "",
+    billed_quantity: "",
+    invoice_status: "not_billed" as InvoiceStatus,
+    billing_notes: "",
   };
   const [form, setForm] = useState(emptyForm);
 
