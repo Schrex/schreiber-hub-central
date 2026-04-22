@@ -89,10 +89,31 @@ const STATUS_VARIANT: Record<DispatchStatus, "default" | "secondary" | "outline"
 };
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
+const toISO = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+const parseISO = (s: string) => {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+const addDays = (d: Date, n: number) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+// Week starts on Monday
+const startOfWeek = (d: Date) => { const r = new Date(d); const dow = (r.getDay() + 6) % 7; r.setDate(r.getDate() - dow); return r; };
+const endOfWeek = (d: Date) => addDays(startOfWeek(d), 6);
+const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
+const endOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0);
+const startOfMonthGrid = (d: Date) => startOfWeek(startOfMonth(d));
+const endOfMonthGrid = (d: Date) => endOfWeek(endOfMonth(d));
+
+type ViewMode = "day" | "week" | "month";
 
 const Dispatch = () => {
   const { role } = useAuth();
   const canEdit = role === "office" || role === "admin";
+  const [view, setView] = useState<ViewMode>("day");
   const [date, setDate] = useState<string>(todayStr());
   const [orders, setOrders] = useState<DispatchOrder[]>([]);
   const [jobs, setJobs] = useState<JobOpt[]>([]);
