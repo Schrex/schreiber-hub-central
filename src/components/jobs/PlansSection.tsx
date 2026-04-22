@@ -256,13 +256,23 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8"
-                        disabled={uploadingCat === key}
-                        onClick={() => triggerUpload(key)}
+                      <label
+                        className={cn(
+                          buttonVariants({ size: "sm", variant: "outline" }),
+                          "relative h-8 cursor-pointer",
+                          uploadingCat === key && "pointer-events-none opacity-50",
+                        )}
+                        aria-disabled={uploadingCat === key}
                       >
+                        <input
+                          type="file"
+                          accept="application/pdf,image/*"
+                          className="sr-only"
+                          tabIndex={-1}
+                          aria-hidden="true"
+                          disabled={uploadingCat === key}
+                          onChange={(e) => void handleFile(key, e)}
+                        />
                         {uploadingCat === key ? (
                           uploadPct > 0 ? `${uploadPct}%` : "…"
                         ) : current ? (
@@ -274,7 +284,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
                             <Plus className="h-3.5 w-3.5" /> Add
                           </>
                         )}
-                      </Button>
+                      </label>
                     </div>
                   )}
                 </div>
