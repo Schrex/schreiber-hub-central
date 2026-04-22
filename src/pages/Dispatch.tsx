@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 type DispatchStatus = "scheduled" | "in_progress" | "complete" | "cancelled";
+type RateType = "hourly" | "per_load" | "per_ton" | "flat" | "other";
+type InvoiceStatus = "not_billed" | "billed" | "paid";
 
 interface DispatchOrder {
   id: string;
@@ -35,7 +37,38 @@ interface DispatchOrder {
   start_time: string | null;
   status: DispatchStatus;
   notes: string | null;
+  bill_to: string | null;
+  po_number: string | null;
+  rate_type: RateType | null;
+  rate_amount: number | null;
+  billed_quantity: number | null;
+  billing_total: number | null;
+  invoice_status: InvoiceStatus;
+  billing_notes: string | null;
 }
+
+const RATE_LABEL: Record<RateType, string> = {
+  hourly: "Hourly",
+  per_load: "Per Load",
+  per_ton: "Per Ton",
+  flat: "Flat",
+  other: "Other",
+};
+
+const INVOICE_LABEL: Record<InvoiceStatus, string> = {
+  not_billed: "Not Billed",
+  billed: "Billed",
+  paid: "Paid",
+};
+
+const INVOICE_VARIANT: Record<InvoiceStatus, "default" | "secondary" | "outline"> = {
+  not_billed: "outline",
+  billed: "secondary",
+  paid: "default",
+};
+
+const fmtMoney = (n: number | null | undefined) =>
+  n == null ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(n));
 
 interface JobOpt { id: string; name: string; job_number: string | null; gc: string | null; customer: string | null }
 interface DriverOpt { user_id: string; display_name: string | null; email: string | null }
@@ -78,6 +111,13 @@ const Dispatch = () => {
     load_quantity: "",
     start_time: "",
     notes: "",
+    bill_to: "",
+    po_number: "",
+    rate_type: "" as RateType | "",
+    rate_amount: "",
+    billed_quantity: "",
+    invoice_status: "not_billed" as InvoiceStatus,
+    billing_notes: "",
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -124,6 +164,13 @@ const Dispatch = () => {
       load_quantity: o.load_quantity?.toString() ?? "",
       start_time: o.start_time ?? "",
       notes: o.notes ?? "",
+      bill_to: o.bill_to ?? "",
+      po_number: o.po_number ?? "",
+      rate_type: (o.rate_type ?? "") as RateType | "",
+      rate_amount: o.rate_amount?.toString() ?? "",
+      billed_quantity: o.billed_quantity?.toString() ?? "",
+      invoice_status: o.invoice_status ?? "not_billed",
+      billing_notes: o.billing_notes ?? "",
     });
     setOpen(true);
   };
@@ -147,6 +194,13 @@ const Dispatch = () => {
       load_quantity: form.load_quantity ? Number(form.load_quantity) : null,
       start_time: form.start_time || null,
       notes: form.notes || null,
+      bill_to: form.bill_to || null,
+      po_number: form.po_number || null,
+      rate_type: (form.rate_type || null) as RateType | null,
+      rate_amount: form.rate_amount ? Number(form.rate_amount) : null,
+      billed_quantity: form.billed_quantity ? Number(form.billed_quantity) : null,
+      invoice_status: form.invoice_status,
+      billing_notes: form.billing_notes || null,
     };
     const { error } = editingId
       ? await supabase.from("dispatch_orders").update(payload).eq("id", editingId)
@@ -272,6 +326,57 @@ const Dispatch = () => {
                       <Label>Notes</Label>
                       <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                     </div>
+
+                    <div className="sm:col-span-2 mt-2 border-t border-border pt-3">
+                      <h3 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">Billing</h3>
+                    </div>
+                    <div>
+                      <Label>Bill To</Label>
+                      <Input value={form.bill_to} onChange={(e) => setForm({ ...form, bill_to: e.target.value })} placeholder="Customer to invoice" />
+                    </div>
+                    <div>
+                      <Label>PO / Reference #</Label>
+                      <Input value={form.po_number} onChange={(e) => setForm({ ...form, po_number: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Rate Type</Label>
+                      <Select value={form.rate_type} onValueChange={(v) => setForm({ ...form, rate_type: v as RateType })}>
+                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          {(Object.keys(RATE_LABEL) as RateType[]).map((r) => (
+                            <SelectItem key={r} value={r}>{RATE_LABEL[r]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Rate ($)</Label>
+                      <Input type="number" step="0.01" value={form.rate_amount} onChange={(e) => setForm({ ...form, rate_amount: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Billed Qty</Label>
+                      <Input type="number" step="0.01" value={form.billed_quantity} onChange={(e) => setForm({ ...form, billed_quantity: e.target.value })} placeholder="hrs / loads / tons" />
+                    </div>
+                    <div>
+                      <Label>Invoice Status</Label>
+                      <Select value={form.invoice_status} onValueChange={(v) => setForm({ ...form, invoice_status: v as InvoiceStatus })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {(Object.keys(INVOICE_LABEL) as InvoiceStatus[]).map((s) => (
+                            <SelectItem key={s} value={s}>{INVOICE_LABEL[s]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label>Billing Notes</Label>
+                      <Textarea rows={2} value={form.billing_notes} onChange={(e) => setForm({ ...form, billing_notes: e.target.value })} />
+                    </div>
+                    {form.rate_amount && form.billed_quantity && (
+                      <div className="sm:col-span-2 rounded-md bg-muted/50 px-3 py-2 text-sm">
+                        Estimated Total: <span className="font-medium">{fmtMoney(Number(form.rate_amount) * Number(form.billed_quantity))}</span>
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -316,6 +421,29 @@ const Dispatch = () => {
                           {o.dump_location && <div><span className="text-muted-foreground">Dump:</span> {o.dump_location}</div>}
                         </div>
                         {o.notes && <p className="mt-2 text-sm text-muted-foreground">{o.notes}</p>}
+                        {(o.bill_to || o.po_number || o.rate_amount || o.billing_total || o.invoice_status !== "not_billed" || o.billing_notes) && (
+                          <div className="mt-3 rounded-md border border-border/60 bg-muted/30 p-2 text-xs">
+                            <div className="mb-1 flex items-center gap-2">
+                              <span className="font-display uppercase tracking-wider text-muted-foreground">Billing</span>
+                              <Badge variant={INVOICE_VARIANT[o.invoice_status]}>{INVOICE_LABEL[o.invoice_status]}</Badge>
+                            </div>
+                            <div className="grid gap-1 sm:grid-cols-2">
+                              {o.bill_to && <div><span className="text-muted-foreground">Bill To:</span> {o.bill_to}</div>}
+                              {o.po_number && <div><span className="text-muted-foreground">PO #:</span> {o.po_number}</div>}
+                              {(o.rate_amount != null || o.rate_type) && (
+                                <div>
+                                  <span className="text-muted-foreground">Rate:</span> {fmtMoney(o.rate_amount)}
+                                  {o.rate_type ? ` ${RATE_LABEL[o.rate_type]}` : ""}
+                                </div>
+                              )}
+                              {o.billed_quantity != null && <div><span className="text-muted-foreground">Qty:</span> {o.billed_quantity}</div>}
+                              {o.billing_total != null && Number(o.billing_total) > 0 && (
+                                <div className="sm:col-span-2"><span className="text-muted-foreground">Total:</span> <span className="font-medium">{fmtMoney(o.billing_total)}</span></div>
+                              )}
+                              {o.billing_notes && <div className="sm:col-span-2 text-muted-foreground">{o.billing_notes}</div>}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       {canEdit && (
                         <div className="flex flex-col items-end gap-2">
