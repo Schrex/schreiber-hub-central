@@ -143,13 +143,22 @@ const Dispatch = () => {
   };
   const [form, setForm] = useState(emptyForm);
 
+  const range = useMemo(() => {
+    const d = parseISO(date);
+    if (view === "day") return { start: toISO(d), end: toISO(d) };
+    if (view === "week") return { start: toISO(startOfWeek(d)), end: toISO(endOfWeek(d)) };
+    return { start: toISO(startOfMonthGrid(d)), end: toISO(endOfMonthGrid(d)) };
+  }, [date, view]);
+
   const load = async () => {
     setLoading(true);
     const [{ data: ord }, { data: jb }, { data: drv }] = await Promise.all([
       supabase
         .from("dispatch_orders")
         .select("*")
-        .eq("dispatch_date", date)
+        .gte("dispatch_date", range.start)
+        .lte("dispatch_date", range.end)
+        .order("dispatch_date")
         .order("sort_order")
         .order("start_time", { nullsFirst: false }),
       supabase.from("jobs").select("id, name, job_number, gc, customer").order("name"),
@@ -166,7 +175,7 @@ const Dispatch = () => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [date]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [range.start, range.end]);
 
   const openCreate = () => {
     setEditingId(null);
