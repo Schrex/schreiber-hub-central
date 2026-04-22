@@ -194,6 +194,13 @@ const Dispatch = () => {
       load_quantity: form.load_quantity ? Number(form.load_quantity) : null,
       start_time: form.start_time || null,
       notes: form.notes || null,
+      bill_to: form.bill_to || null,
+      po_number: form.po_number || null,
+      rate_type: (form.rate_type || null) as RateType | null,
+      rate_amount: form.rate_amount ? Number(form.rate_amount) : null,
+      billed_quantity: form.billed_quantity ? Number(form.billed_quantity) : null,
+      invoice_status: form.invoice_status,
+      billing_notes: form.billing_notes || null,
     };
     const { error } = editingId
       ? await supabase.from("dispatch_orders").update(payload).eq("id", editingId)
