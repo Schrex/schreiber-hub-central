@@ -421,6 +421,29 @@ const Dispatch = () => {
                           {o.dump_location && <div><span className="text-muted-foreground">Dump:</span> {o.dump_location}</div>}
                         </div>
                         {o.notes && <p className="mt-2 text-sm text-muted-foreground">{o.notes}</p>}
+                        {(o.bill_to || o.po_number || o.rate_amount || o.billing_total || o.invoice_status !== "not_billed" || o.billing_notes) && (
+                          <div className="mt-3 rounded-md border border-border/60 bg-muted/30 p-2 text-xs">
+                            <div className="mb-1 flex items-center gap-2">
+                              <span className="font-display uppercase tracking-wider text-muted-foreground">Billing</span>
+                              <Badge variant={INVOICE_VARIANT[o.invoice_status]}>{INVOICE_LABEL[o.invoice_status]}</Badge>
+                            </div>
+                            <div className="grid gap-1 sm:grid-cols-2">
+                              {o.bill_to && <div><span className="text-muted-foreground">Bill To:</span> {o.bill_to}</div>}
+                              {o.po_number && <div><span className="text-muted-foreground">PO #:</span> {o.po_number}</div>}
+                              {(o.rate_amount != null || o.rate_type) && (
+                                <div>
+                                  <span className="text-muted-foreground">Rate:</span> {fmtMoney(o.rate_amount)}
+                                  {o.rate_type ? ` ${RATE_LABEL[o.rate_type]}` : ""}
+                                </div>
+                              )}
+                              {o.billed_quantity != null && <div><span className="text-muted-foreground">Qty:</span> {o.billed_quantity}</div>}
+                              {o.billing_total != null && Number(o.billing_total) > 0 && (
+                                <div className="sm:col-span-2"><span className="text-muted-foreground">Total:</span> <span className="font-medium">{fmtMoney(o.billing_total)}</span></div>
+                              )}
+                              {o.billing_notes && <div className="sm:col-span-2 text-muted-foreground">{o.billing_notes}</div>}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       {canEdit && (
                         <div className="flex flex-col items-end gap-2">
