@@ -4,6 +4,45 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import * as tus from "tus-js-client";
+
+const SUPABASE_URL = "https://bitogpfplcquovpdjprk.supabase.co";
+const RESUMABLE_THRESHOLD = 6 * 1024 * 1024; // 6MB
+
+const resumableUpload = async (
+  bucket: string,
+  path: string,
+  file: File,
+  onProgress: (pct: number) => void,
+) => {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Not authenticated");
+
+  await new Promise<void>((resolve, reject) => {
+    const upload = new tus.Upload(file, {
+      endpoint: `${SUPABASE_URL}/storage/v1/upload/resumable`,
+      retryDelays: [0, 1000, 3000, 5000, 10000],
+      headers: {
+        authorization: `Bearer ${token}`,
+        "x-upsert": "false",
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      metadata: {
+        bucketName: bucket,
+        objectName: path,
+        contentType: file.type || "application/octet-stream",
+        cacheControl: "3600",
+      },
+      chunkSize: 6 * 1024 * 1024,
+      onError: (err) => reject(err),
+      onProgress: (sent, total) => onProgress(Math.round((sent / total) * 100)),
+      onSuccess: () => resolve(),
+    });
+    upload.start();
+  });
+};
 
 type Category =
   | "civil"
@@ -44,6 +83,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadingCat, setUploadingCat] = useState<Category | null>(null);
+  const [uploadPct, setUploadPct] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingCatRef = useRef<Category | null>(null);
 
@@ -74,19 +114,25 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
     if (!file || !cat) return;
 
     setUploadingCat(cat);
+    setUploadPct(0);
     try {
       const ext = file.name.split(".").pop() || "bin";
       const path = `${jobId}/${cat}/${Date.now()}.${ext}`;
       console.log("[PlansSection] uploading", { path, size: file.size, type: file.type });
-      const { error: upErr } = await supabase.storage
-        .from("job-plans")
-        .upload(path, file, {
-          contentType: file.type || "application/octet-stream",
-          upsert: false,
-        });
-      if (upErr) {
-        console.error("[PlansSection] storage upload error", upErr);
-        throw upErr;
+
+      if (file.size > RESUMABLE_THRESHOLD) {
+        await resumableUpload("job-plans", path, file, (pct) => setUploadPct(pct));
+      } else {
+        const { error: upErr } = await supabase.storage
+          .from("job-plans")
+          .upload(path, file, {
+            contentType: file.type || "application/octet-stream",
+            upsert: false,
+          });
+        if (upErr) {
+          console.error("[PlansSection] storage upload error", upErr);
+          throw upErr;
+        }
       }
 
       // Mark previous current as superseded
@@ -115,6 +161,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploadingCat(null);
+      setUploadPct(0);
       pendingCatRef.current = null;
     }
   };
@@ -232,7 +279,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
                         onClick={() => triggerUpload(key)}
                       >
                         {uploadingCat === key ? (
-                          "…"
+                          uploadPct > 0 ? `${uploadPct}%` : "…"
                         ) : current ? (
                           <>
                             <Upload className="h-3.5 w-3.5" /> Update
