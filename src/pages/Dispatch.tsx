@@ -316,7 +316,7 @@ const Dispatch = () => {
           <div className="flex items-end gap-3">
             <div>
               <Label htmlFor="date" className="text-xs uppercase tracking-wider text-muted-foreground">
-                <Calendar className="mr-1 inline h-3 w-3" /> Date
+                <Calendar className="mr-1 inline h-3 w-3" /> Jump to
               </Label>
               <Input
                 id="date"
