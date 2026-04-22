@@ -259,7 +259,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
                       <label
                         className={cn(
                           buttonVariants({ size: "sm", variant: "outline" }),
-                          "relative h-8 cursor-pointer",
+                          "relative h-8 cursor-pointer overflow-hidden",
                           uploadingCat === key && "pointer-events-none opacity-50",
                         )}
                         aria-disabled={uploadingCat === key}
@@ -267,9 +267,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
                         <input
                           type="file"
                           accept="application/pdf,image/*"
-                          className="sr-only"
-                          tabIndex={-1}
-                          aria-hidden="true"
+                          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                           disabled={uploadingCat === key}
                           onChange={(e) => void handleFile(key, e)}
                         />
