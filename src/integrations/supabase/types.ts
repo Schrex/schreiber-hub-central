@@ -203,6 +203,10 @@ export type Database = {
       }
       dispatch_orders: {
         Row: {
+          bill_to: string | null
+          billed_quantity: number | null
+          billing_notes: string | null
+          billing_total: number | null
           created_at: string
           created_by: string | null
           customer: string | null
@@ -212,12 +216,16 @@ export type Database = {
           dump_location: string | null
           gc: string | null
           id: string
+          invoice_status: Database["public"]["Enums"]["dispatch_invoice_status"]
           job_id: string | null
           job_name: string | null
           load_quantity: number | null
           material: string | null
           notes: string | null
           pickup_location: string | null
+          po_number: string | null
+          rate_amount: number | null
+          rate_type: Database["public"]["Enums"]["dispatch_rate_type"] | null
           sort_order: number
           start_time: string | null
           status: Database["public"]["Enums"]["dispatch_status"]
@@ -225,6 +233,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bill_to?: string | null
+          billed_quantity?: number | null
+          billing_notes?: string | null
+          billing_total?: number | null
           created_at?: string
           created_by?: string | null
           customer?: string | null
@@ -234,12 +246,16 @@ export type Database = {
           dump_location?: string | null
           gc?: string | null
           id?: string
+          invoice_status?: Database["public"]["Enums"]["dispatch_invoice_status"]
           job_id?: string | null
           job_name?: string | null
           load_quantity?: number | null
           material?: string | null
           notes?: string | null
           pickup_location?: string | null
+          po_number?: string | null
+          rate_amount?: number | null
+          rate_type?: Database["public"]["Enums"]["dispatch_rate_type"] | null
           sort_order?: number
           start_time?: string | null
           status?: Database["public"]["Enums"]["dispatch_status"]
@@ -247,6 +263,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bill_to?: string | null
+          billed_quantity?: number | null
+          billing_notes?: string | null
+          billing_total?: number | null
           created_at?: string
           created_by?: string | null
           customer?: string | null
@@ -256,12 +276,16 @@ export type Database = {
           dump_location?: string | null
           gc?: string | null
           id?: string
+          invoice_status?: Database["public"]["Enums"]["dispatch_invoice_status"]
           job_id?: string | null
           job_name?: string | null
           load_quantity?: number | null
           material?: string | null
           notes?: string | null
           pickup_location?: string | null
+          po_number?: string | null
+          rate_amount?: number | null
+          rate_type?: Database["public"]["Enums"]["dispatch_rate_type"] | null
           sort_order?: number
           start_time?: string | null
           status?: Database["public"]["Enums"]["dispatch_status"]
@@ -1200,6 +1224,8 @@ export type Database = {
         | "cleared"
         | "expired"
         | "cancelled"
+      dispatch_invoice_status: "not_billed" | "billed" | "paid"
+      dispatch_rate_type: "hourly" | "per_load" | "per_ton" | "flat" | "other"
       dispatch_status: "scheduled" | "in_progress" | "complete" | "cancelled"
       job_status: "active" | "on_hold" | "complete"
       performance_review_status: "draft" | "submitted" | "acknowledged"
@@ -1374,6 +1400,8 @@ export const Constants = {
         "expired",
         "cancelled",
       ],
+      dispatch_invoice_status: ["not_billed", "billed", "paid"],
+      dispatch_rate_type: ["hourly", "per_load", "per_ton", "flat", "other"],
       dispatch_status: ["scheduled", "in_progress", "complete", "cancelled"],
       job_status: ["active", "on_hold", "complete"],
       performance_review_status: ["draft", "submitted", "acknowledged"],
