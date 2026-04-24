@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DigTicketsSection } from "@/components/jobs/DigTicketsSection";
 import { PermitsSection } from "@/components/jobs/PermitsSection";
 import { PlansSection } from "@/components/jobs/PlansSection";
+import { PhotosSection } from "@/components/jobs/PhotosSection";
 
 interface Job {
   id: string;
@@ -128,6 +129,7 @@ const JobDetail = () => {
         )}
 
         <PlansSection jobId={job.id} />
+        <PhotosSection jobId={job.id} />
         <PermitsSection jobId={job.id} />
         <DigTicketsSection jobId={job.id} />
 
