@@ -633,6 +633,48 @@ export type Database = {
           },
         ]
       }
+      job_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          file_path: string
+          file_size: number | null
+          id: string
+          job_id: string
+          mime_type: string | null
+          taken_on: string
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          job_id: string
+          mime_type?: string | null
+          taken_on?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          job_id?: string
+          mime_type?: string | null
+          taken_on?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Relationships: []
+      }
       job_plans: {
         Row: {
           category: Database["public"]["Enums"]["plan_category"]
