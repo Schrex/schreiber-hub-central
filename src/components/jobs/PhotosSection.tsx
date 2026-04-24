@@ -28,7 +28,128 @@ const fmtDay = (iso: string) => {
   });
 };
 
-export const PhotosSection = ({ jobId }: { jobId: string }) => {
+interface StampInfo {
+  jobLabel: string;
+  address?: string | null;
+  uploader?: string | null;
+}
+
+const stampImage = async (file: File, info: StampInfo): Promise<File> => {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result as string);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = dataUrl;
+  });
+
+  // Cap longest edge to 2400px to keep uploads sane
+  const MAX = 2400;
+  const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return file;
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeStr = now.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  const base = Math.max(16, Math.round(Math.min(w, h) * 0.028));
+  const small = Math.round(base * 0.62);
+  const pad = Math.round(base * 0.7);
+  const lineGap = Math.round(base * 0.35);
+
+  const lines: { text: string; size: number; weight: string; color: string }[] = [
+    { text: `${dateStr} · ${timeStr}`, size: base, weight: "800", color: "#FFD400" },
+    { text: info.jobLabel, size: small, weight: "700", color: "#ffffff" },
+  ];
+  if (info.address) lines.push({ text: info.address, size: small, weight: "500", color: "#ffffff" });
+  if (info.uploader) lines.push({ text: info.uploader, size: small, weight: "500", color: "#e5e7eb" });
+
+  // Measure widest line
+  ctx.textBaseline = "top";
+  let maxLineW = 0;
+  let totalH = 0;
+  for (const ln of lines) {
+    ctx.font = `${ln.weight} ${ln.size}px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif`;
+    const m = ctx.measureText(ln.text);
+    if (m.width > maxLineW) maxLineW = m.width;
+    totalH += ln.size + lineGap;
+  }
+  totalH -= lineGap;
+
+  const boxW = Math.min(w - pad * 2, maxLineW + pad * 1.4);
+  const boxH = totalH + pad;
+  const boxX = pad;
+  const boxY = h - boxH - pad;
+
+  // Translucent backdrop
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  const r = Math.round(base * 0.4);
+  ctx.beginPath();
+  ctx.moveTo(boxX + r, boxY);
+  ctx.lineTo(boxX + boxW - r, boxY);
+  ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
+  ctx.lineTo(boxX + boxW, boxY + boxH - r);
+  ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - r, boxY + boxH);
+  ctx.lineTo(boxX + r, boxY + boxH);
+  ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
+  ctx.lineTo(boxX, boxY + r);
+  ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
+  ctx.closePath();
+  ctx.fill();
+
+  // Yellow accent bar (timestamp camera vibe)
+  ctx.fillStyle = "#FFD400";
+  ctx.fillRect(boxX, boxY, Math.round(base * 0.18), boxH);
+
+  // Text with subtle shadow
+  ctx.shadowColor = "rgba(0,0,0,0.7)";
+  ctx.shadowBlur = Math.round(base * 0.25);
+  let cy = boxY + pad / 2;
+  const tx = boxX + Math.round(base * 0.18) + pad * 0.6;
+  for (const ln of lines) {
+    ctx.font = `${ln.weight} ${ln.size}px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif`;
+    ctx.fillStyle = ln.color;
+    ctx.fillText(ln.text, tx, cy);
+    cy += ln.size + lineGap;
+  }
+  ctx.shadowBlur = 0;
+
+  const blob: Blob | null = await new Promise((resolve) =>
+    canvas.toBlob((b) => resolve(b), "image/jpeg", 0.9),
+  );
+  if (!blob) return file;
+  const newName = file.name.replace(/\.[^.]+$/, "") + "-stamped.jpg";
+  return new File([blob], newName, { type: "image/jpeg" });
+};
+
+interface PhotosSectionProps {
+  jobId: string;
+  jobLabel: string;
+  address?: string | null;
+}
+
+export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) => {
   const { role, displayName } = useAuth();
   const canManage = role === "foreman" || role === "office" || role === "admin";
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -80,7 +201,13 @@ export const PhotosSection = ({ jobId }: { jobId: string }) => {
     const today = new Date().toISOString().slice(0, 10);
     let done = 0;
     try {
-      for (const file of files) {
+      for (const original of files) {
+        const file = original.type.startsWith("image/")
+          ? await stampImage(original, { jobLabel, address, uploader: displayName }).catch((err) => {
+              console.warn("Stamp failed, uploading original", err);
+              return original;
+            })
+          : original;
         const ext = file.name.split(".").pop() || "jpg";
         const path = `${jobId}/${today}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
         const { error: upErr } = await supabase.storage
