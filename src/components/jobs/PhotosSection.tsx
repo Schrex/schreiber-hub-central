@@ -143,7 +143,13 @@ const stampImage = async (file: File, info: StampInfo): Promise<File> => {
   return new File([blob], newName, { type: "image/jpeg" });
 };
 
-export const PhotosSection = ({ jobId }: { jobId: string }) => {
+interface PhotosSectionProps {
+  jobId: string;
+  jobLabel: string;
+  address?: string | null;
+}
+
+export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) => {
   const { role, displayName } = useAuth();
   const canManage = role === "foreman" || role === "office" || role === "admin";
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -195,7 +201,13 @@ export const PhotosSection = ({ jobId }: { jobId: string }) => {
     const today = new Date().toISOString().slice(0, 10);
     let done = 0;
     try {
-      for (const file of files) {
+      for (const original of files) {
+        const file = original.type.startsWith("image/")
+          ? await stampImage(original, { jobLabel, address, uploader: displayName }).catch((err) => {
+              console.warn("Stamp failed, uploading original", err);
+              return original;
+            })
+          : original;
         const ext = file.name.split(".").pop() || "jpg";
         const path = `${jobId}/${today}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
         const { error: upErr } = await supabase.storage

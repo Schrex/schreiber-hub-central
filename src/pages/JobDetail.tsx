@@ -129,7 +129,11 @@ const JobDetail = () => {
         )}
 
         <PlansSection jobId={job.id} />
-        <PhotosSection jobId={job.id} />
+        <PhotosSection
+          jobId={job.id}
+          jobLabel={job.job_number ? `#${job.job_number} · ${job.name}` : job.name}
+          address={job.address}
+        />
         <PermitsSection jobId={job.id} />
         <DigTicketsSection jobId={job.id} />
 
