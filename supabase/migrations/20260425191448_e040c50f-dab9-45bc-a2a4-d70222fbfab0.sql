@@ -1,0 +1,1 @@
+ALTER TABLE public.employee_contacts ADD COLUMN IF NOT EXISTS converted_user_id uuid;
