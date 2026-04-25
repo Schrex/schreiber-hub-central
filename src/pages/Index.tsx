@@ -16,6 +16,7 @@ import {
   LogOut,
   IdCard,
   DollarSign,
+  Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { HeaderBar } from "@/components/home/HeaderBar";
