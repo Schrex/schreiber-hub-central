@@ -375,6 +375,7 @@ const Vendors = () => {
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      if (vcardInputRef.current) vcardInputRef.current.value = "";
     }
   };
 
