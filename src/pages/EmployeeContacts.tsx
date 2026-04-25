@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
-import { downloadVCard } from "@/lib/vcard";
+import { downloadVCard, downloadVCards } from "@/lib/vcard";
 
 type EmployeeContact = {
   id: string;
