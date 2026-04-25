@@ -41,7 +41,7 @@ import { toast } from "@/hooks/use-toast";
 import { WeekGrid } from "@/components/schedule/WeekGrid";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
-type Profile = { user_id: string; display_name: string | null };
+type Profile = { user_id: string; display_name: string | null; contact_id: string | null };
 type Assignment = {
   id: string;
   job_id: string;
@@ -52,6 +52,7 @@ type Assignment = {
   notes: string | null;
   jobs?: Job | null;
   profile_name?: string | null;
+  contact_id?: string | null;
 };
 type TimeOff = {
   user_id: string;
