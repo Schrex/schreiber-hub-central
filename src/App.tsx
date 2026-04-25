@@ -20,6 +20,7 @@ import TruckingCalculator from "./pages/TruckingCalculator.tsx";
 import PerformanceReviews from "./pages/PerformanceReviews.tsx";
 import Handbook from "./pages/Handbook.tsx";
 import MyPosition from "./pages/MyPosition.tsx";
+import Vendors from "./pages/Vendors.tsx";
 import AdminPositions from "./pages/AdminPositions.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
