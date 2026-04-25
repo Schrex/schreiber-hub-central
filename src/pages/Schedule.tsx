@@ -653,7 +653,16 @@ const Schedule = () => {
                             >
                               <div className="flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                                <span className="font-semibold">{a.profile_name}</span>
+                                {a.contact_id ? (
+                                  <button
+                                    onClick={() => navigate(`/employee-contacts?focus=${a.contact_id}`)}
+                                    className="font-semibold hover:text-primary hover:underline"
+                                  >
+                                    {a.profile_name}
+                                  </button>
+                                ) : (
+                                  <span className="font-semibold">{a.profile_name}</span>
+                                )}
                                 {a.start_time && (
                                   <span className="text-xs text-muted-foreground">
                                     · {a.start_time.slice(0, 5)}
