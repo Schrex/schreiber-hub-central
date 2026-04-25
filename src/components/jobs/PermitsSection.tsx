@@ -42,6 +42,7 @@ interface Permit {
   issue_date: string | null;
   expiration_date: string | null;
   notes: string | null;
+  file_path: string | null;
 }
 
 interface UserOption {
