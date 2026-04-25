@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, Globe, MapPin } from "lucide-react";
+import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, Globe, MapPin, Contact } from "lucide-react";
 import * as XLSX from "xlsx";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,6 +76,91 @@ const HEADER_MAP: Record<string, keyof typeof emptyForm> = {
   comments: "notes",
 };
 
+// Decode RFC 6350 quoted-printable / escape sequences in vCard values
+const decodeVCardValue = (val: string, encoding?: string) => {
+  let v = val;
+  if (encoding && encoding.toUpperCase() === "QUOTED-PRINTABLE") {
+    v = v.replace(/=([0-9A-F]{2})/gi, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  }
+  return v.replace(/\\n/gi, "\n").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\").trim();
+};
+
+type VCardContact = typeof emptyForm;
+
+const parseVCards = (text: string): VCardContact[] => {
+  // Unfold lines per RFC 6350 (lines starting with space/tab continue previous)
+  const unfolded = text.replace(/\r\n/g, "\n").replace(/\n[ \t]/g, "");
+  const cards: VCardContact[] = [];
+  const blocks = unfolded.split(/BEGIN:VCARD/i).slice(1);
+
+  for (const block of blocks) {
+    const body = block.split(/END:VCARD/i)[0];
+    if (!body) continue;
+    const contact: VCardContact = { ...emptyForm };
+    const phones: string[] = [];
+    const emails: string[] = [];
+    const urls: string[] = [];
+    const addresses: string[] = [];
+
+    for (const rawLine of body.split("\n")) {
+      const line = rawLine.trim();
+      if (!line) continue;
+      const colonIdx = line.indexOf(":");
+      if (colonIdx === -1) continue;
+      const left = line.slice(0, colonIdx);
+      const value = line.slice(colonIdx + 1);
+      const parts = left.split(";");
+      const prop = parts[0].toUpperCase();
+      const params = parts.slice(1);
+      const encoding = params.find((p) => /^ENCODING=/i.test(p))?.split("=")[1];
+      const decoded = decodeVCardValue(value, encoding);
+
+      if (prop === "FN" && !contact.name) {
+        contact.name = decoded;
+      } else if (prop === "N" && !contact.name) {
+        // N: Family;Given;Middle;Prefix;Suffix
+        const [family = "", given = ""] = decoded.split(";");
+        const full = [given, family].filter(Boolean).join(" ").trim();
+        if (full) contact.name = full;
+      } else if (prop === "ORG") {
+        const org = decoded.split(";")[0].trim();
+        if (org) {
+          // If we already have a personal name, keep it as contact_name and use org as name
+          if (contact.name && !contact.contact_name) contact.contact_name = contact.name;
+          contact.name = org;
+        }
+      } else if (prop === "TITLE" && !contact.contact_name) {
+        contact.contact_name = decoded;
+      } else if (prop === "TEL") {
+        phones.push(decoded);
+      } else if (prop === "EMAIL") {
+        emails.push(decoded);
+      } else if (prop === "URL") {
+        urls.push(decoded);
+      } else if (prop === "ADR") {
+        // ADR: PO;Ext;Street;City;Region;PostalCode;Country
+        const [, , street = "", city = "", region = "", postal = "", country = ""] = decoded.split(";");
+        const formatted = [street, [city, region].filter(Boolean).join(", "), postal, country]
+          .filter((p) => p && p.trim())
+          .join(", ");
+        if (formatted) addresses.push(formatted);
+      } else if (prop === "NOTE") {
+        contact.notes = contact.notes ? `${contact.notes}\n${decoded}` : decoded;
+      } else if (prop === "CATEGORIES" && !contact.category) {
+        contact.category = decoded.split(",")[0].trim();
+      }
+    }
+
+    contact.phone = phones[0] ?? "";
+    contact.email = emails[0] ?? "";
+    contact.website = urls[0] ?? "";
+    contact.address = addresses[0] ?? "";
+
+    if (contact.name.trim()) cards.push(contact);
+  }
+  return cards;
+};
+
 const Vendors = () => {
   const navigate = useNavigate();
   const { role, user } = useAuth();
@@ -91,6 +176,7 @@ const Vendors = () => {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const vcardInputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
 
   const load = async () => {
@@ -210,13 +296,26 @@ const Vendors = () => {
   const handleImport = async (file: File) => {
     setImporting(true);
     try {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-      if (rows.length === 0) {
-        toast({ title: "Empty spreadsheet", variant: "destructive" });
-        return;
+      const isVCard = /\.vcf$/i.test(file.name) || file.type === "text/vcard" || file.type === "text/x-vcard";
+      let rows: Array<Record<string, unknown>>;
+
+      if (isVCard) {
+        const text = await file.text();
+        const contacts = parseVCards(text);
+        if (contacts.length === 0) {
+          toast({ title: "No contacts found in vCard", variant: "destructive" });
+          return;
+        }
+        rows = contacts as unknown as Array<Record<string, unknown>>;
+      } else {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+        if (rows.length === 0) {
+          toast({ title: "Empty spreadsheet", variant: "destructive" });
+          return;
+        }
       }
 
       const records: Array<Record<string, string | null>> = [];
@@ -276,6 +375,7 @@ const Vendors = () => {
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      if (vcardInputRef.current) vcardInputRef.current.value = "";
     }
   };
 
@@ -325,17 +425,27 @@ const Vendors = () => {
         )}
 
         {canEdit && (
-          <div className="flex gap-2">
-            <Button onClick={openAdd} className="flex-1">
-              <Plus className="mr-1 h-4 w-4" /> Add Vendor
-            </Button>
+          <>
+            <div className="flex gap-2">
+              <Button onClick={openAdd} className="flex-1">
+                <Plus className="mr-1 h-4 w-4" /> Add Vendor
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+                className="flex-1"
+              >
+                <Upload className="mr-1 h-4 w-4" /> {importing ? "Importing…" : "Import"}
+              </Button>
+            </div>
             <Button
               variant="outline"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => vcardInputRef.current?.click()}
               disabled={importing}
-              className="flex-1"
+              className="w-full"
             >
-              <Upload className="mr-1 h-4 w-4" /> {importing ? "Importing…" : "Import"}
+              <Contact className="mr-1 h-4 w-4" /> Import Contact (vCard)
             </Button>
             <input
               ref={fileInputRef}
@@ -347,13 +457,20 @@ const Vendors = () => {
                 if (f) handleImport(f);
               }}
             />
-          </div>
-        )}
-
-        {canEdit && (
-          <p className="text-[11px] text-muted-foreground">
-            Import accepts CSV or Excel. Headers: name (required), category, contact_name, phone, email, website, address, notes.
-          </p>
+            <input
+              ref={vcardInputRef}
+              type="file"
+              accept=".vcf,text/vcard,text/x-vcard"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImport(f);
+              }}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Import a CSV/Excel sheet, or share a contact (.vcf) from your phone's Contacts app.
+            </p>
+          </>
         )}
 
         <div className="space-y-2">
