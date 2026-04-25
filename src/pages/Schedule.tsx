@@ -800,6 +800,11 @@ const Schedule = () => {
                 <span className="rounded bg-muted px-2 py-0.5 text-muted-foreground">
                   {counts.unassigned} unassigned
                 </span>
+                {counts.no_login > 0 && (
+                  <span className="rounded bg-destructive/10 px-2 py-0.5 text-destructive">
+                    {counts.no_login} no login
+                  </span>
+                )}
               </div>
             </div>
             <Card className="divide-y">
@@ -810,7 +815,7 @@ const Schedule = () => {
               ) : (
                 roster.map(({ profile, off, assignments: asg, status }) => (
                   <div
-                    key={profile.user_id}
+                    key={profile.contact_id ?? profile.user_id ?? profile.display_name ?? Math.random()}
                     className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
                   >
                     <div className="min-w-0 flex-1">
@@ -846,12 +851,19 @@ const Schedule = () => {
                           Not assigned
                         </div>
                       )}
+                      {status === "no_login" && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          Contact only — no app login yet
+                        </div>
+                      )}
                     </div>
                     <Badge
                       variant={status === "assigned" ? "default" : "outline"}
                       className={
                         status === "off"
                           ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                          : status === "no_login"
+                          ? "border-destructive/40 bg-destructive/10 text-destructive"
                           : status === "unassigned"
                           ? "text-muted-foreground"
                           : ""
@@ -861,6 +873,8 @@ const Schedule = () => {
                         ? `${asg.length} job${asg.length > 1 ? "s" : ""}`
                         : status === "off"
                         ? "Off"
+                        : status === "no_login"
+                        ? "No login"
                         : "Open"}
                     </Badge>
                   </div>
