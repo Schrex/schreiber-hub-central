@@ -299,7 +299,6 @@ const EmployeeContacts = () => {
     setImporting(true);
     try {
       const isVCard = /\.vcf$/i.test(file.name) || file.type === "text/vcard" || file.type === "text/x-vcard";
-      let rows: Array<Record<string, unknown>>;
 
       if (isVCard) {
         const text = await file.text();
@@ -308,16 +307,25 @@ const EmployeeContacts = () => {
           toast({ title: "No contacts found in vCard", variant: "destructive" });
           return;
         }
-        rows = cards as unknown as Array<Record<string, unknown>>;
-      } else {
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, { type: "array" });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-        if (rows.length === 0) {
-          toast({ title: "Empty spreadsheet", variant: "destructive" });
-          return;
-        }
+        setReviewQueue(cards);
+        setReviewIndex(0);
+        setEditing(null);
+        setForm(cards[0]);
+        setDialogOpen(true);
+        toast({
+          title: cards.length === 1 ? "Review contact" : `Review ${cards.length} contacts`,
+          description: "Edit the info, then Save. You can skip any you don't want.",
+        });
+        return;
+      }
+
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+      if (rows.length === 0) {
+        toast({ title: "Empty spreadsheet", variant: "destructive" });
+        return;
       }
 
       const records: Array<Record<string, string | null>> = [];
@@ -379,6 +387,83 @@ const EmployeeContacts = () => {
       if (vcardInputRef.current) vcardInputRef.current.value = "";
     }
   };
+
+  const advanceReview = () => {
+    if (reviewQueue.length === 0) return false;
+    const next = reviewIndex + 1;
+    if (next < reviewQueue.length) {
+      setReviewIndex(next);
+      setForm(reviewQueue[next]);
+      return true;
+    }
+    setReviewQueue([]);
+    setReviewIndex(0);
+    return false;
+  };
+
+  const skipReview = () => {
+    const more = advanceReview();
+    if (!more) {
+      setDialogOpen(false);
+      toast({ title: "Review complete" });
+    }
+  };
+
+  const downloadContact = (c: EmployeeContact) => {
+    downloadVCard({
+      fullName: c.name,
+      organization: c.department ?? undefined,
+      title: c.job_title ?? undefined,
+      phone: c.phone ?? undefined,
+      email: c.email ?? undefined,
+      address: c.address ?? undefined,
+      notes: c.notes ?? undefined,
+    }, c.name);
+  };
+
+  const openConvert = (c: EmployeeContact) => {
+    setConvertTarget(c);
+    setConvertEmail(c.email ?? "");
+    setConvertPassword("");
+    setConvertRole("employee");
+    setConvertOpen(true);
+  };
+
+  const submitConvert = async () => {
+    if (!convertTarget) return;
+    if (!convertEmail.trim()) {
+      toast({ title: "Email required", description: "Enter the login email for this user.", variant: "destructive" });
+      return;
+    }
+    if (convertPassword.length < 8) {
+      toast({ title: "Password too short", description: "Use at least 8 characters.", variant: "destructive" });
+      return;
+    }
+    setConverting(true);
+    const { data, error } = await supabase.functions.invoke("convert-employee-contact", {
+      body: {
+        contactId: convertTarget.id,
+        email: convertEmail.trim(),
+        password: convertPassword,
+        displayName: convertTarget.name,
+        role: convertRole,
+      },
+    });
+    setConverting(false);
+    if (error || (data as any)?.error) {
+      toast({
+        title: "Couldn't create login",
+        description: (data as any)?.error ?? error?.message ?? "Unknown error",
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({ title: "Login created", description: `${convertTarget.name} can sign in with ${convertEmail}.` });
+    setConvertOpen(false);
+    setConvertTarget(null);
+    load();
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
