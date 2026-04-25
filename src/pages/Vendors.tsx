@@ -179,6 +179,9 @@ const Vendors = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const vcardInputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  // vCard review queue: contacts parsed but not yet saved
+  const [reviewQueue, setReviewQueue] = useState<typeof emptyForm[]>([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
 
   const load = async () => {
     setLoading(true);
