@@ -12,6 +12,7 @@ import {
   UserPlus,
   ShoppingBag,
   HandCoins,
+  Sparkles,
   Calculator,
   LogOut,
   IdCard,
