@@ -414,9 +414,9 @@ const EmployeeContacts = () => {
     if (!isContactPickerSupported()) {
       toast({
         title: "Contacts app can't open here",
-        description: getContactPickerUnavailableReason() ?? "Choose a .vcf contact file instead.",
+        description: getContactPickerUnavailableReason() ?? "Use Android Chrome and open the app directly, outside the preview frame.",
+        variant: "destructive",
       });
-      vcardInputRef.current?.click();
       return;
     }
     setImporting(true);
