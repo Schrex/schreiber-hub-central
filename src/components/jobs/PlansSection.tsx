@@ -189,8 +189,19 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
       ) : (
         <ul className="divide-y divide-border">
           {CATEGORIES.map(({ key, label }) => {
-            const current = plans.find((p) => p.category === key && p.is_current);
-            const history = plans.filter((p) => p.category === key && !p.is_current);
+            const catPlans = plans
+              .filter((p) => p.category === key)
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            const current = catPlans.find((p) => p.is_current) ?? catPlans[0];
+            const total = catPlans.length;
+            const history = catPlans.filter((p) => p.id !== current?.id);
+            const fmtDate = (d: string) =>
+              new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+            const revLabel = (p: Plan) => {
+              if (p.version) return `Rev ${p.version}`;
+              const idx = catPlans.findIndex((x) => x.id === p.id);
+              return `Rev ${total - idx}`;
+            };
             return (
               <li key={key} className="py-3 first:pt-0 last:pb-0">
                 <div className="flex items-center justify-between gap-3">
@@ -200,13 +211,13 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
                       <button
                         type="button"
                         onClick={() => openPlan(current.file_path)}
-                        className="mt-0.5 flex w-full items-center gap-1.5 truncate text-left text-xs text-primary hover:underline"
+                        className="mt-0.5 flex items-center gap-1.5 text-left text-xs text-primary hover:underline"
                       >
                         <FileText className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{current.title}</span>
-                        {current.version && (
-                          <span className="text-muted-foreground">· {current.version}</span>
-                        )}
+                        <span>Open</span>
+                        <span className="text-muted-foreground">
+                          · {revLabel(current)} · {fmtDate(current.created_at)}
+                        </span>
                       </button>
                     ) : (
                       <p className="mt-0.5 text-xs text-muted-foreground">No current plan</p>
@@ -225,7 +236,9 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
                                 className="flex flex-1 items-center gap-1 truncate text-muted-foreground hover:text-foreground"
                               >
                                 <Download className="h-3 w-3 shrink-0" />
-                                <span className="truncate">{h.title}</span>
+                                <span className="truncate">
+                                  {revLabel(h)} · {fmtDate(h.created_at)}
+                                </span>
                               </button>
                               {canManage && (
                                 <button
