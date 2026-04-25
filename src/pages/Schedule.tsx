@@ -80,6 +80,7 @@ const Schedule = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [timeOff, setTimeOff] = useState<TimeOff[]>([]);
+  const [positionsByUser, setPositionsByUser] = useState<Map<string, CurrentPosition>>(new Map());
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"day" | "week">("day");
