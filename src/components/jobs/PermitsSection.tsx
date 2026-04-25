@@ -229,10 +229,14 @@ export const PermitsSection = ({ jobId }: Props) => {
 
   const remove = async (id: string) => {
     if (!confirm("Delete this permit?")) return;
+    const target = permits.find((p) => p.id === id);
     const { error } = await supabase.from("job_permits").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
       return;
+    }
+    if (target?.file_path) {
+      await supabase.storage.from("permits").remove([target.file_path]);
     }
     setPermits((ps) => ps.filter((p) => p.id !== id));
   };
