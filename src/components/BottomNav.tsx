@@ -22,23 +22,23 @@ export const BottomNav = () => {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <ul className="mx-auto flex max-w-2xl items-stretch justify-between px-2">
+        <ul className="mx-auto flex max-w-2xl items-stretch justify-between px-1">
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const active =
               item.to === "/" ? pathname === "/" : pathname === item.to || pathname.startsWith(item.to + "/");
             return (
-              <li key={item.key} className="flex-1">
+              <li key={item.key} className="min-w-0 flex-1">
                 <button
                   onClick={() => navigate(item.to)}
                   className={cn(
-                    "flex w-full flex-col items-center justify-center gap-1 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors",
+                    "flex w-full flex-col items-center justify-center gap-1 px-0.5 py-2 text-[9px] font-semibold uppercase tracking-tight transition-colors",
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                   )}
                   aria-current={active ? "page" : undefined}
                 >
-                  <Icon className={cn("h-5 w-5", active && "stroke-[2.5]")} />
-                  <span>{item.label}</span>
+                  <Icon className={cn("h-5 w-5 shrink-0", active && "stroke-[2.5]")} />
+                  <span className="block w-full truncate text-center leading-none">{item.label}</span>
                 </button>
               </li>
             );
