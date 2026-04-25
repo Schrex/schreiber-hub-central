@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth, type Role } from "@/hooks/useAuth";
+import { BottomNav } from "@/components/BottomNav";
 
 interface Props {
   children: React.ReactNode;
@@ -20,5 +21,10 @@ export const ProtectedRoute = ({ children, requireRole }: Props) => {
   if (!session) return <Navigate to="/auth" replace />;
   if (requireRole && role !== requireRole) return <Navigate to="/" replace />;
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <BottomNav />
+    </>
+  );
 };
