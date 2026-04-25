@@ -192,7 +192,13 @@ const EmployeeContacts = () => {
     if (error) {
       toast({ title: "Couldn't load contacts", description: error.message, variant: "destructive" });
     } else {
-      setContacts((data ?? []) as EmployeeContact[]);
+      const list = (data ?? []) as EmployeeContact[];
+      setContacts(list);
+      const userIds = list
+        .map((c) => c.converted_user_id)
+        .filter((x): x is string => !!x);
+      const posMap = await fetchCurrentPositions(userIds);
+      setPositions(posMap);
     }
     setLoading(false);
   };
