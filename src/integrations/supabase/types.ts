@@ -627,10 +627,13 @@ export type Database = {
           created_at: string
           created_by: string | null
           expiration_date: string | null
+          file_path: string | null
+          file_size: number | null
           id: string
           issue_date: string | null
           issuing_agency: string | null
           job_id: string
+          mime_type: string | null
           notes: string | null
           permit_number: string | null
           permit_type: string
@@ -643,10 +646,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           expiration_date?: string | null
+          file_path?: string | null
+          file_size?: number | null
           id?: string
           issue_date?: string | null
           issuing_agency?: string | null
           job_id: string
+          mime_type?: string | null
           notes?: string | null
           permit_number?: string | null
           permit_type: string
@@ -659,10 +665,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           expiration_date?: string | null
+          file_path?: string | null
+          file_size?: number | null
           id?: string
           issue_date?: string | null
           issuing_agency?: string | null
           job_id?: string
+          mime_type?: string | null
           notes?: string | null
           permit_number?: string | null
           permit_type?: string
