@@ -11,6 +11,9 @@ interface Body {
   password: string
   displayName?: string
   role?: 'employee' | 'foreman' | 'office' | 'admin'
+  positionId?: string | null
+  payRate?: number | null
+  effectiveDate?: string | null
 }
 
 Deno.serve(async (req) => {
@@ -96,14 +99,30 @@ Deno.serve(async (req) => {
       await admin.from('user_roles').insert({ user_id: newUserId, role })
     }
 
-    // Mark contact as converted (kept for audit trail, hidden via converted_user_id)
+    // Mark contact as converted but keep it visible — it's the master record
     await admin
       .from('employee_contacts')
-      .update({ converted_user_id: newUserId, is_active: false })
+      .update({ converted_user_id: newUserId, is_active: true })
       .eq('id', contactId)
 
+    // Ensure profile points back to this exact contact
+    await admin.from('profiles').update({ contact_id: contactId }).eq('user_id', newUserId)
+
+    let positionWarning: string | null = null
+    if (body.positionId && typeof body.payRate === 'number' && body.payRate >= 0) {
+      const effective = body.effectiveDate || new Date().toISOString().slice(0, 10)
+      const { error: posErr } = await admin.from('employee_positions').insert({
+        user_id: newUserId,
+        position_id: body.positionId,
+        pay_rate: body.payRate,
+        effective_date: effective,
+        created_by: callerId,
+      })
+      if (posErr) positionWarning = `Login created but position assignment failed: ${posErr.message}`
+    }
+
     return new Response(
-      JSON.stringify({ success: true, userId: newUserId, email }),
+      JSON.stringify({ success: true, userId: newUserId, email, warning: positionWarning }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err) {
