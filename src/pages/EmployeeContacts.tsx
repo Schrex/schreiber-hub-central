@@ -606,18 +606,38 @@ const EmployeeContacts = () => {
                       {c.notes && <p className="text-muted-foreground">{c.notes}</p>}
                     </div>
                   </div>
-                  {canEdit && (
-                    <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => downloadContact(c)}
+                      aria-label="Save to phone contacts"
+                      title="Save to contacts"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    {canEdit && (
                       <Button size="icon" variant="ghost" onClick={() => openEdit(c)} aria-label="Edit">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      {canDelete && (
-                        <Button size="icon" variant="ghost" onClick={() => remove(c)} aria-label="Delete">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                    )}
+                    {canConvert && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => openConvert(c)}
+                        aria-label="Convert to login"
+                        title="Convert to login"
+                      >
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button size="icon" variant="ghost" onClick={() => remove(c)} aria-label="Delete">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))
@@ -628,8 +648,18 @@ const EmployeeContacts = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit contact" : "Add contact"}</DialogTitle>
-            <DialogDescription>Quick info — only name is required.</DialogDescription>
+            <DialogTitle>
+              {reviewQueue.length > 0
+                ? `Review imported contact ${reviewIndex + 1} of ${reviewQueue.length}`
+                : editing
+                  ? "Edit contact"
+                  : "Add contact"}
+            </DialogTitle>
+            <DialogDescription>
+              {reviewQueue.length > 0
+                ? "Edit the info, then Save to add — or Skip if you don't want this one."
+                : "Quick info — only name is required."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <div>
@@ -676,8 +706,75 @@ const EmployeeContacts = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            {reviewQueue.length > 0 ? (
+              <>
+                <Button variant="ghost" onClick={skipReview}>Skip</Button>
+                <Button onClick={save} disabled={saving}>
+                  {saving ? "Saving…" : reviewIndex + 1 < reviewQueue.length ? "Save & next" : "Save & finish"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={convertOpen} onOpenChange={setConvertOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Convert to login</DialogTitle>
+            <DialogDescription>
+              Create a real account for {convertTarget?.name}. They'll sign in with the email and default password
+              you set here. Once converted, the contact is removed from the directory.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div>
+              <Label htmlFor="conv-email">Login email *</Label>
+              <Input
+                id="conv-email"
+                type="email"
+                value={convertEmail}
+                onChange={(e) => setConvertEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="conv-pwd">Default password *</Label>
+              <Input
+                id="conv-pwd"
+                type="text"
+                placeholder="At least 8 characters"
+                value={convertPassword}
+                onChange={(e) => setConvertPassword(e.target.value)}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Share this with the user — they should change it after first sign-in.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="conv-role">Role</Label>
+              <select
+                id="conv-role"
+                value={convertRole}
+                onChange={(e) => setConvertRole(e.target.value as typeof convertRole)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="employee">Employee</option>
+                <option value="foreman">Foreman</option>
+                <option value="office">Office</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConvertOpen(false)} disabled={converting}>Cancel</Button>
+            <Button onClick={submitConvert} disabled={converting}>
+              {converting ? "Creating…" : "Create login"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
