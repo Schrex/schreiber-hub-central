@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
 import { downloadVCard, downloadVCards } from "@/lib/vcard";
-import { isContactPickerSupported, pickContactsFromDevice } from "@/lib/contactPicker";
+import { getContactPickerUnavailableReason, isContactPickerSupported, pickContactsFromDevice } from "@/lib/contactPicker";
 
 type EmployeeContact = {
   id: string;
@@ -412,14 +412,20 @@ const EmployeeContacts = () => {
 
   const importFromContacts = async () => {
     if (!isContactPickerSupported()) {
-      // Fallback: open file browser for a .vcf file (iOS, desktop browsers)
+      toast({
+        title: "Contacts app can't open here",
+        description: getContactPickerUnavailableReason() ?? "Choose a .vcf contact file instead.",
+      });
       vcardInputRef.current?.click();
       return;
     }
     setImporting(true);
     try {
       const { contacts: picked, cancelled } = await pickContactsFromDevice(true);
-      if (cancelled || picked.length === 0) return;
+      if (cancelled || picked.length === 0) {
+        toast({ title: "No contact selected", description: "Nothing was imported." });
+        return;
+      }
       const queue = picked.map((p) => ({
         ...emptyForm,
         name: p.name,
@@ -439,7 +445,7 @@ const EmployeeContacts = () => {
     } catch (err) {
       toast({
         title: "Couldn't open Contacts",
-        description: err instanceof Error ? err.message : "Try the file option instead.",
+        description: err instanceof Error ? `${err.message} Try importing a .vcf contact file instead.` : "Try importing a .vcf contact file instead.",
         variant: "destructive",
       });
     } finally {
