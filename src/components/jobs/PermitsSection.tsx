@@ -115,7 +115,7 @@ export const PermitsSection = ({ jobId }: Props) => {
       supabase
         .from("job_permits")
         .select(
-          "id, permit_type, permit_number, status, responsible_user_id, responsible_name, issuing_agency, issue_date, expiration_date, notes",
+          "id, permit_type, permit_number, status, responsible_user_id, responsible_name, issuing_agency, issue_date, expiration_date, notes, file_path",
         )
         .eq("job_id", jobId)
         .order("created_at", { ascending: false }),
