@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWeather } from "@/hooks/useWeather";
 import { WeatherCard } from "@/components/weather/WeatherCard";
+import { geocodeAddress } from "@/lib/weather";
 import { Button } from "@/components/ui/button";
 import { DigTicketsSection } from "@/components/jobs/DigTicketsSection";
 import { PermitsSection } from "@/components/jobs/PermitsSection";
@@ -34,6 +35,7 @@ const JobDetail = () => {
   const canSeePrivate = role === "foreman" || role === "office" || role === "admin";
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
+  const [geocodeAttempted, setGeocodeAttempted] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -47,30 +49,28 @@ const JobDetail = () => {
 
   useEffect(() => {
     if (!job) return;
-    if (job.latitude && job.longitude) { setGeocoded(null); return; }
+    if (Number.isFinite(job.latitude) && Number.isFinite(job.longitude)) { setGeocoded(null); return; }
     if (!job.address) return;
     let cancelled = false;
     (async () => {
+      setGeocodeAttempted(false);
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(job.address!)}`,
-          { headers: { Accept: "application/json" } },
-        );
-        const arr = await res.json();
-        if (cancelled || !Array.isArray(arr) || arr.length === 0) return;
-        const lat = parseFloat(arr[0].lat);
-        const lon = parseFloat(arr[0].lon);
+        const location = await geocodeAddress(job.address!);
+        if (cancelled || !location) return;
+        const { lat, lon } = location;
         setGeocoded({ lat, lon });
+        setJob((current) => current?.id === job.id ? { ...current, latitude: lat, longitude: lon } : current);
         // Persist for next time
         await supabase.from("jobs").update({ latitude: lat, longitude: lon }).eq("id", job.id);
       } catch { /* ignore */ }
+      finally { if (!cancelled) setGeocodeAttempted(true); }
     })();
     return () => { cancelled = true; };
   }, [job?.id, job?.address, job?.latitude, job?.longitude]);
 
   const lat = job?.latitude ?? geocoded?.lat ?? null;
   const lon = job?.longitude ?? geocoded?.lon ?? null;
-  const coords = lat && lon
+  const coords = Number.isFinite(lat) && Number.isFinite(lon)
     ? { lat, lon, label: job?.address ?? job?.name ?? "" }
     : null;
   const weather = useWeather(coords);
