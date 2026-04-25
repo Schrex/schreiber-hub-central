@@ -42,6 +42,7 @@ const TILES: Tile[] = [
   { key: "jobs", label: "Jobs", hint: "Plans, GPS, contacts", icon: Briefcase, roles: ["employee", "foreman", "office", "admin"], to: "/jobs" },
   { key: "trucking", label: "Trucking", hint: "Today's truck orders", icon: Truck, roles: ["employee", "foreman", "office", "admin"], to: "/dispatch" },
   { key: "vendors", label: "Vendors", hint: "Suppliers + contacts", icon: Truck, roles: ["employee", "foreman", "office", "admin"], to: "/vendors" },
+  { key: "employee-contacts", label: "Employee Contacts", hint: "Crew phone book", icon: Users, roles: ["employee", "foreman", "office", "admin"], to: "/employee-contacts" },
   { key: "maintenance", label: "Equipment", hint: "Log issues (HCSS)", icon: Wrench, roles: ["employee", "foreman", "office", "admin"], href: "https://mr.hcssapps.com" },
   { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], href: "https://app.clearstory.build" },
   { key: "receipts", label: "Submit Receipt", hint: "Snap & send", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.bill.com/" },
