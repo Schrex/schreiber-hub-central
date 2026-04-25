@@ -99,12 +99,26 @@ export const fetchForecast = async (lat: number, lon: number): Promise<Forecast>
 // Geocode a free-form address using Open-Meteo's free geocoder
 export const geocodeAddress = async (address: string): Promise<Coords | null> => {
   // Open-Meteo's geocoder is name-based; for street addresses we use Nominatim (also free).
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) return null;
-  const arr = await res.json();
-  if (!arr?.length) return null;
-  return { lat: parseFloat(arr[0].lat), lon: parseFloat(arr[0].lon), label: arr[0].display_name };
+  // Some valid jobsite street addresses are not indexed, so fall back to city/state/ZIP-level weather.
+  const trimmed = address.trim();
+  const zip = trimmed.match(/\b\d{5}(?:-\d{4})?\b/)?.[0];
+  const cityState = trimmed.match(/([^,]+),\s*([A-Z]{2})(?:\s+\d{5}(?:-\d{4})?)?\s*$/i);
+  const fallback = cityState ? `${cityState[1].trim()} ${cityState[2].trim()}${zip ? ` ${zip}` : ""}` : zip;
+  const queries = Array.from(new Set([trimmed, fallback, zip].filter(Boolean) as string[]));
+
+  for (const query of queries) {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok) continue;
+    const arr = await res.json();
+    if (!arr?.length) continue;
+    const lat = parseFloat(arr[0].lat);
+    const lon = parseFloat(arr[0].lon);
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      return { lat, lon, label: trimmed };
+    }
+  }
+  return null;
 };
 
 // WMO weather code → short label + emoji
