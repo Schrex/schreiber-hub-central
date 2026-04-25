@@ -22,6 +22,7 @@ import Handbook from "./pages/Handbook.tsx";
 import MyPosition from "./pages/MyPosition.tsx";
 import Vendors from "./pages/Vendors.tsx";
 import EmployeeContacts from "./pages/EmployeeContacts.tsx";
+import Perks from "./pages/Perks.tsx";
 import AdminPositions from "./pages/AdminPositions.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/my-position" element={<ProtectedRoute><MyPosition /></ProtectedRoute>} />
             <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
             <Route path="/employee-contacts" element={<ProtectedRoute><EmployeeContacts /></ProtectedRoute>} />
+            <Route path="/perks" element={<ProtectedRoute><Perks /></ProtectedRoute>} />
             <Route
               path="/admin/positions"
               element={<ProtectedRoute requireRole="admin"><AdminPositions /></ProtectedRoute>}

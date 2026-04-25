@@ -1,10 +1,8 @@
 import {
   Briefcase,
   Calendar,
-  Palmtree,
   Home,
-  ShoppingBag,
-  HandCoins,
+  Sparkles,
   Wrench,
   IdCard,
   Receipt,
@@ -51,9 +49,7 @@ const ITEMS: Item[] = [
   { key: "jobs", label: "Jobs", icon: Briefcase, to: "/jobs" },
   { key: "schedule", label: "Schedule", icon: Calendar, to: "/schedule" },
   { key: "trucking", label: "Trucking", icon: DumpTruck, to: "/dispatch" },
-  { key: "timeoff", label: "Time Off", icon: Palmtree, to: "/time-off" },
-  { key: "apparel", label: "Apparel", icon: ShoppingBag, to: "/apparel" },
-  { key: "referrals", label: "Referrals", icon: HandCoins, to: "/referrals" },
+  { key: "perks", label: "Perks", icon: Sparkles, to: "/perks", match: ["/time-off", "/apparel", "/referrals"] },
   { key: "tools", label: "Tools", icon: Wrench, to: "/tools" },
   { key: "position", label: "Position", icon: IdCard, to: "/my-position" },
   { key: "receipts", label: "Receipts", icon: Receipt, to: "/tools" },
@@ -80,7 +76,11 @@ export const BottomNav = () => {
             const active =
               item.to === "/"
                 ? pathname === "/"
-                : pathname === item.to || pathname.startsWith(item.to + "/");
+                : pathname === item.to ||
+                  pathname.startsWith(item.to + "/") ||
+                  (item.match?.some(
+                    (m) => pathname === m || pathname.startsWith(m + "/"),
+                  ) ?? false);
             return (
               <li key={item.key} className="shrink-0">
                 <button
