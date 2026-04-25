@@ -20,6 +20,7 @@ import TruckingCalculator from "./pages/TruckingCalculator.tsx";
 import PerformanceReviews from "./pages/PerformanceReviews.tsx";
 import Handbook from "./pages/Handbook.tsx";
 import MyPosition from "./pages/MyPosition.tsx";
+import Vendors from "./pages/Vendors.tsx";
 import AdminPositions from "./pages/AdminPositions.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/tools/performance-reviews" element={<ProtectedRoute><PerformanceReviews /></ProtectedRoute>} />
             <Route path="/tools/handbook" element={<ProtectedRoute><Handbook /></ProtectedRoute>} />
             <Route path="/my-position" element={<ProtectedRoute><MyPosition /></ProtectedRoute>} />
+            <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
             <Route
               path="/admin/positions"
               element={<ProtectedRoute requireRole="admin"><AdminPositions /></ProtectedRoute>}
