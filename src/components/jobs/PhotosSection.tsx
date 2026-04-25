@@ -348,7 +348,7 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border py-8 text-center">
           <Camera className="h-6 w-6 text-muted-foreground" />
           <p className="text-xs text-muted-foreground">
-            {canManage ? "No photos yet. Tap Add to upload." : "No photos yet."}
+            {canManage ? "No photos yet. Tap Upload to add photos." : "No photos yet."}
           </p>
         </div>
       ) : (
