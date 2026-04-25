@@ -100,7 +100,7 @@ const Schedule = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: a }, { data: j }, { data: p }, { data: t }] = await Promise.all([
+    const [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }] = await Promise.all([
       supabase
         .from("schedule_assignments")
         .select("*, jobs(id,name,address,job_number)")
@@ -111,7 +111,13 @@ const Schedule = () => {
         .select("id,name,address,job_number")
         .eq("status", "active")
         .order("name"),
-      supabase.from("profiles").select("user_id,display_name,contact_id").eq("is_active", true).order("display_name"),
+      supabase
+        .from("employee_contacts")
+        .select("id,name,converted_user_id,is_active")
+        .eq("is_active", true)
+        .order("name"),
+      // Pull profiles too so we still capture any active login that has no contact yet
+      supabase.from("profiles").select("user_id,display_name,contact_id").eq("is_active", true),
       supabase
         .from("time_off_requests")
         .select("user_id,type,half_day")
@@ -120,15 +126,40 @@ const Schedule = () => {
         .gte("end_date", selectedDate),
     ]);
 
-    const profMap = new Map((p ?? []).map((x) => [x.user_id, x] as const));
+    // Build a unified employee list: every active contact + any active profile not already linked
+    const linkedUserIds = new Set(
+      (c ?? []).map((row) => row.converted_user_id).filter((x): x is string => !!x),
+    );
+    const fromContacts: Profile[] = (c ?? []).map((row) => ({
+      contact_id: row.id,
+      user_id: row.converted_user_id ?? null,
+      display_name: row.name,
+      has_login: !!row.converted_user_id,
+    }));
+    const orphanProfiles: Profile[] = (pr ?? [])
+      .filter((p) => !p.contact_id && !linkedUserIds.has(p.user_id))
+      .map((p) => ({
+        contact_id: null,
+        user_id: p.user_id,
+        display_name: p.display_name,
+        has_login: true,
+      }));
+    const unified = [...fromContacts, ...orphanProfiles].sort((x, y) =>
+      (x.display_name ?? "").localeCompare(y.display_name ?? ""),
+    );
+
+    // Lookup by user_id for enriching assignment rows
+    const byUserId = new Map(
+      unified.filter((u) => u.user_id).map((u) => [u.user_id as string, u] as const),
+    );
     const enriched: Assignment[] = (a ?? []).map((row: any) => ({
       ...row,
-      profile_name: profMap.get(row.user_id)?.display_name ?? "Unknown",
-      contact_id: profMap.get(row.user_id)?.contact_id ?? null,
+      profile_name: byUserId.get(row.user_id)?.display_name ?? "Unknown",
+      contact_id: byUserId.get(row.user_id)?.contact_id ?? null,
     }));
     setAssignments(enriched);
     setJobs(j ?? []);
-    setProfiles(p ?? []);
+    setProfiles(unified);
     setTimeOff((t ?? []) as TimeOff[]);
     setLoading(false);
   };
