@@ -461,6 +461,7 @@ const Vendors = () => {
     }
   };
 
+  const downloadVendorContact = (v: Vendor) => {
     downloadVCard({
       fullName: v.contact_name || v.name,
       organization: v.contact_name ? v.name : undefined,
