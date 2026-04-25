@@ -61,6 +61,7 @@ export const DigTicketsSection = ({ jobId }: Props) => {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     ticket_number: "",
+    ticket_url: "",
     status: "requested" as Status,
     request_type: "normal" as ReqType,
     work_description: "",
