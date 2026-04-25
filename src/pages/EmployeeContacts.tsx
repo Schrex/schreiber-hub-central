@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, MapPin, Contact } from "lucide-react";
+import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, MapPin, Contact, Download, KeyRound } from "lucide-react";
 import * as XLSX from "xlsx";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
+import { downloadVCard } from "@/lib/vcard";
 
 type EmployeeContact = {
   id: string;
@@ -25,6 +26,7 @@ type EmployeeContact = {
   address: string | null;
   notes: string | null;
   is_active: boolean;
+  converted_user_id: string | null;
 };
 
 const contactSchema = z.object({
@@ -152,6 +154,7 @@ const EmployeeContacts = () => {
   const { role, user } = useAuth();
   const canEdit = role === "foreman" || role === "office" || role === "admin";
   const canDelete = role === "office" || role === "admin";
+  const canConvert = role === "admin";
 
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -164,12 +167,23 @@ const EmployeeContacts = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const vcardInputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  // vCard review queue
+  const [reviewQueue, setReviewQueue] = useState<typeof emptyForm[]>([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
+  // Convert-to-login dialog
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [convertTarget, setConvertTarget] = useState<EmployeeContact | null>(null);
+  const [convertEmail, setConvertEmail] = useState("");
+  const [convertPassword, setConvertPassword] = useState("");
+  const [convertRole, setConvertRole] = useState<"employee" | "foreman" | "office" | "admin">("employee");
+  const [converting, setConverting] = useState(false);
 
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("employee_contacts")
       .select("*")
+      .is("converted_user_id", null)
       .order("name", { ascending: true });
     if (error) {
       toast({ title: "Couldn't load contacts", description: error.message, variant: "destructive" });
@@ -256,8 +270,16 @@ const EmployeeContacts = () => {
       if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
       else {
         toast({ title: "Contact added" });
-        setDialogOpen(false);
         load();
+        if (reviewQueue.length > 0) {
+          const more = advanceReview();
+          if (!more) {
+            setDialogOpen(false);
+            toast({ title: "All contacts imported" });
+          }
+        } else {
+          setDialogOpen(false);
+        }
       }
     }
     setSaving(false);
@@ -277,7 +299,6 @@ const EmployeeContacts = () => {
     setImporting(true);
     try {
       const isVCard = /\.vcf$/i.test(file.name) || file.type === "text/vcard" || file.type === "text/x-vcard";
-      let rows: Array<Record<string, unknown>>;
 
       if (isVCard) {
         const text = await file.text();
@@ -286,16 +307,25 @@ const EmployeeContacts = () => {
           toast({ title: "No contacts found in vCard", variant: "destructive" });
           return;
         }
-        rows = cards as unknown as Array<Record<string, unknown>>;
-      } else {
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, { type: "array" });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-        if (rows.length === 0) {
-          toast({ title: "Empty spreadsheet", variant: "destructive" });
-          return;
-        }
+        setReviewQueue(cards);
+        setReviewIndex(0);
+        setEditing(null);
+        setForm(cards[0]);
+        setDialogOpen(true);
+        toast({
+          title: cards.length === 1 ? "Review contact" : `Review ${cards.length} contacts`,
+          description: "Edit the info, then Save. You can skip any you don't want.",
+        });
+        return;
+      }
+
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+      if (rows.length === 0) {
+        toast({ title: "Empty spreadsheet", variant: "destructive" });
+        return;
       }
 
       const records: Array<Record<string, string | null>> = [];
@@ -357,6 +387,83 @@ const EmployeeContacts = () => {
       if (vcardInputRef.current) vcardInputRef.current.value = "";
     }
   };
+
+  const advanceReview = () => {
+    if (reviewQueue.length === 0) return false;
+    const next = reviewIndex + 1;
+    if (next < reviewQueue.length) {
+      setReviewIndex(next);
+      setForm(reviewQueue[next]);
+      return true;
+    }
+    setReviewQueue([]);
+    setReviewIndex(0);
+    return false;
+  };
+
+  const skipReview = () => {
+    const more = advanceReview();
+    if (!more) {
+      setDialogOpen(false);
+      toast({ title: "Review complete" });
+    }
+  };
+
+  const downloadContact = (c: EmployeeContact) => {
+    downloadVCard({
+      fullName: c.name,
+      organization: c.department ?? undefined,
+      title: c.job_title ?? undefined,
+      phone: c.phone ?? undefined,
+      email: c.email ?? undefined,
+      address: c.address ?? undefined,
+      notes: c.notes ?? undefined,
+    }, c.name);
+  };
+
+  const openConvert = (c: EmployeeContact) => {
+    setConvertTarget(c);
+    setConvertEmail(c.email ?? "");
+    setConvertPassword("");
+    setConvertRole("employee");
+    setConvertOpen(true);
+  };
+
+  const submitConvert = async () => {
+    if (!convertTarget) return;
+    if (!convertEmail.trim()) {
+      toast({ title: "Email required", description: "Enter the login email for this user.", variant: "destructive" });
+      return;
+    }
+    if (convertPassword.length < 8) {
+      toast({ title: "Password too short", description: "Use at least 8 characters.", variant: "destructive" });
+      return;
+    }
+    setConverting(true);
+    const { data, error } = await supabase.functions.invoke("convert-employee-contact", {
+      body: {
+        contactId: convertTarget.id,
+        email: convertEmail.trim(),
+        password: convertPassword,
+        displayName: convertTarget.name,
+        role: convertRole,
+      },
+    });
+    setConverting(false);
+    if (error || (data as any)?.error) {
+      toast({
+        title: "Couldn't create login",
+        description: (data as any)?.error ?? error?.message ?? "Unknown error",
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({ title: "Login created", description: `${convertTarget.name} can sign in with ${convertEmail}.` });
+    setConvertOpen(false);
+    setConvertTarget(null);
+    load();
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -499,18 +606,38 @@ const EmployeeContacts = () => {
                       {c.notes && <p className="text-muted-foreground">{c.notes}</p>}
                     </div>
                   </div>
-                  {canEdit && (
-                    <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => downloadContact(c)}
+                      aria-label="Save to phone contacts"
+                      title="Save to contacts"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    {canEdit && (
                       <Button size="icon" variant="ghost" onClick={() => openEdit(c)} aria-label="Edit">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      {canDelete && (
-                        <Button size="icon" variant="ghost" onClick={() => remove(c)} aria-label="Delete">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                    )}
+                    {canConvert && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => openConvert(c)}
+                        aria-label="Convert to login"
+                        title="Convert to login"
+                      >
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button size="icon" variant="ghost" onClick={() => remove(c)} aria-label="Delete">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))
@@ -521,8 +648,18 @@ const EmployeeContacts = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit contact" : "Add contact"}</DialogTitle>
-            <DialogDescription>Quick info — only name is required.</DialogDescription>
+            <DialogTitle>
+              {reviewQueue.length > 0
+                ? `Review imported contact ${reviewIndex + 1} of ${reviewQueue.length}`
+                : editing
+                  ? "Edit contact"
+                  : "Add contact"}
+            </DialogTitle>
+            <DialogDescription>
+              {reviewQueue.length > 0
+                ? "Edit the info, then Save to add — or Skip if you don't want this one."
+                : "Quick info — only name is required."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <div>
@@ -569,8 +706,75 @@ const EmployeeContacts = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            {reviewQueue.length > 0 ? (
+              <>
+                <Button variant="ghost" onClick={skipReview}>Skip</Button>
+                <Button onClick={save} disabled={saving}>
+                  {saving ? "Saving…" : reviewIndex + 1 < reviewQueue.length ? "Save & next" : "Save & finish"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={convertOpen} onOpenChange={setConvertOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Convert to login</DialogTitle>
+            <DialogDescription>
+              Create a real account for {convertTarget?.name}. They'll sign in with the email and default password
+              you set here. Once converted, the contact is removed from the directory.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div>
+              <Label htmlFor="conv-email">Login email *</Label>
+              <Input
+                id="conv-email"
+                type="email"
+                value={convertEmail}
+                onChange={(e) => setConvertEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="conv-pwd">Default password *</Label>
+              <Input
+                id="conv-pwd"
+                type="text"
+                placeholder="At least 8 characters"
+                value={convertPassword}
+                onChange={(e) => setConvertPassword(e.target.value)}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Share this with the user — they should change it after first sign-in.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="conv-role">Role</Label>
+              <select
+                id="conv-role"
+                value={convertRole}
+                onChange={(e) => setConvertRole(e.target.value as typeof convertRole)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="employee">Employee</option>
+                <option value="foreman">Foreman</option>
+                <option value="office">Office</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConvertOpen(false)} disabled={converting}>Cancel</Button>
+            <Button onClick={submitConvert} disabled={converting}>
+              {converting ? "Creating…" : "Create login"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

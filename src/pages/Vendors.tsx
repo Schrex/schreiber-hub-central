@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, Globe, MapPin, Contact } from "lucide-react";
+import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, Globe, MapPin, Contact, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
+import { downloadVCard } from "@/lib/vcard";
 
 type Vendor = {
   id: string;
@@ -178,6 +179,9 @@ const Vendors = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const vcardInputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  // vCard review queue: contacts parsed but not yet saved
+  const [reviewQueue, setReviewQueue] = useState<typeof emptyForm[]>([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
 
   const load = async () => {
     setLoading(true);
@@ -275,8 +279,17 @@ const Vendors = () => {
         toast({ title: "Save failed", description: error.message, variant: "destructive" });
       } else {
         toast({ title: "Vendor added" });
-        setDialogOpen(false);
         load();
+        // If we're reviewing imported vCards, advance to next instead of closing
+        if (reviewQueue.length > 0) {
+          const more = advanceReview();
+          if (!more) {
+            setDialogOpen(false);
+            toast({ title: "All contacts imported" });
+          }
+        } else {
+          setDialogOpen(false);
+        }
       }
     }
     setSaving(false);
@@ -297,7 +310,6 @@ const Vendors = () => {
     setImporting(true);
     try {
       const isVCard = /\.vcf$/i.test(file.name) || file.type === "text/vcard" || file.type === "text/x-vcard";
-      let rows: Array<Record<string, unknown>>;
 
       if (isVCard) {
         const text = await file.text();
@@ -306,16 +318,26 @@ const Vendors = () => {
           toast({ title: "No contacts found in vCard", variant: "destructive" });
           return;
         }
-        rows = contacts as unknown as Array<Record<string, unknown>>;
-      } else {
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, { type: "array" });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-        if (rows.length === 0) {
-          toast({ title: "Empty spreadsheet", variant: "destructive" });
-          return;
-        }
+        // Push to review queue and open dialog with first contact pre-filled
+        setReviewQueue(contacts);
+        setReviewIndex(0);
+        setEditing(null);
+        setForm(contacts[0]);
+        setDialogOpen(true);
+        toast({
+          title: contacts.length === 1 ? "Review contact" : `Review ${contacts.length} contacts`,
+          description: "Edit the info, then Save. You can skip any you don't want.",
+        });
+        return;
+      }
+
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+      if (rows.length === 0) {
+        toast({ title: "Empty spreadsheet", variant: "destructive" });
+        return;
       }
 
       const records: Array<Record<string, string | null>> = [];
@@ -378,6 +400,42 @@ const Vendors = () => {
       if (vcardInputRef.current) vcardInputRef.current.value = "";
     }
   };
+
+  // Advance to next vCard in the review queue, or close dialog when done.
+  const advanceReview = () => {
+    if (reviewQueue.length === 0) return false;
+    const next = reviewIndex + 1;
+    if (next < reviewQueue.length) {
+      setReviewIndex(next);
+      setForm(reviewQueue[next]);
+      return true;
+    }
+    setReviewQueue([]);
+    setReviewIndex(0);
+    return false;
+  };
+
+  const skipReview = () => {
+    const more = advanceReview();
+    if (!more) {
+      setDialogOpen(false);
+      toast({ title: "Review complete" });
+    }
+  };
+
+  const downloadVendorContact = (v: Vendor) => {
+    downloadVCard({
+      fullName: v.contact_name || v.name,
+      organization: v.contact_name ? v.name : undefined,
+      title: v.category ?? undefined,
+      phone: v.phone ?? undefined,
+      email: v.email ?? undefined,
+      website: v.website ?? undefined,
+      address: v.address ?? undefined,
+      notes: v.notes ?? undefined,
+    }, v.name);
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -530,18 +588,27 @@ const Vendors = () => {
                       {v.notes && <p className="text-muted-foreground">{v.notes}</p>}
                     </div>
                   </div>
-                  {canEdit && (
-                    <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => downloadVendorContact(v)}
+                      aria-label="Save to phone contacts"
+                      title="Save to contacts"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    {canEdit && (
                       <Button size="icon" variant="ghost" onClick={() => openEdit(v)} aria-label="Edit">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      {canDelete && (
-                        <Button size="icon" variant="ghost" onClick={() => remove(v)} aria-label="Delete">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                    )}
+                    {canDelete && (
+                      <Button size="icon" variant="ghost" onClick={() => remove(v)} aria-label="Delete">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))
@@ -552,8 +619,18 @@ const Vendors = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit vendor" : "Add vendor"}</DialogTitle>
-            <DialogDescription>Quick info — only name is required.</DialogDescription>
+            <DialogTitle>
+              {reviewQueue.length > 0
+                ? `Review imported contact ${reviewIndex + 1} of ${reviewQueue.length}`
+                : editing
+                  ? "Edit vendor"
+                  : "Add vendor"}
+            </DialogTitle>
+            <DialogDescription>
+              {reviewQueue.length > 0
+                ? "Edit the info, then Save to add — or Skip if you don't want this one."
+                : "Quick info — only name is required."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <div>
@@ -597,8 +674,19 @@ const Vendors = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            {reviewQueue.length > 0 ? (
+              <>
+                <Button variant="ghost" onClick={skipReview}>Skip</Button>
+                <Button onClick={save} disabled={saving}>
+                  {saving ? "Saving…" : reviewIndex + 1 < reviewQueue.length ? "Save & next" : "Save & finish"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

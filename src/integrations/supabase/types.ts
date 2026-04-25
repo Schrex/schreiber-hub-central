@@ -481,6 +481,7 @@ export type Database = {
       employee_contacts: {
         Row: {
           address: string | null
+          converted_user_id: string | null
           created_at: string
           created_by: string | null
           department: string | null
@@ -495,6 +496,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          converted_user_id?: string | null
           created_at?: string
           created_by?: string | null
           department?: string | null
@@ -509,6 +511,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          converted_user_id?: string | null
           created_at?: string
           created_by?: string | null
           department?: string | null
