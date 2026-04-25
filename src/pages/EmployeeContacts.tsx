@@ -161,6 +161,7 @@ const EmployeeContacts = () => {
   const canConvert = role === "admin";
 
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
+  const [positions, setPositions] = useState<Map<string, CurrentPosition>>(new Map());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState<string>("all");
