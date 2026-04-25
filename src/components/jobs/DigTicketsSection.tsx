@@ -76,7 +76,7 @@ export const DigTicketsSection = ({ jobId }: Props) => {
     const { data } = await supabase
       .from("dig_tickets")
       .select(
-        "id, ticket_number, status, request_type, work_description, dig_start_date, dig_end_date, expiration_date, response_notes",
+        "id, ticket_number, status, request_type, work_description, dig_start_date, dig_end_date, expiration_date, response_notes, ticket_url",
       )
       .eq("job_id", jobId)
       .order("created_at", { ascending: false });
