@@ -683,10 +683,21 @@ const EmployeeContacts = () => {
                           {c.department}
                         </Badge>
                       )}
+                      {c.converted_user_id && positions.get(c.converted_user_id) && (
+                        <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary" title="Current assigned position">
+                          {positions.get(c.converted_user_id)!.title}
+                        </Badge>
+                      )}
                     </div>
-                    {c.job_title && (
-                      <p className="mt-0.5 text-xs text-muted-foreground">{c.job_title}</p>
-                    )}
+                    {(() => {
+                      const livePos = c.converted_user_id
+                        ? positions.get(c.converted_user_id)
+                        : undefined;
+                      const display = livePos?.title ?? c.job_title;
+                      return display ? (
+                        <p className="mt-0.5 text-xs text-muted-foreground">{display}</p>
+                      ) : null;
+                    })()}
                     <div className="mt-2 space-y-1 text-xs">
                       {c.phone && (
                         <a href={`tel:${c.phone}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
