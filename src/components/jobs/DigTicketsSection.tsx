@@ -299,7 +299,29 @@ export const DigTicketsSection = ({ jobId }: Props) => {
                       </span>
                     )}
                     {t.ticket_number && (
-                      <span className="font-mono text-[11px] text-muted-foreground">#{t.ticket_number}</span>
+                      t.ticket_url ? (
+                        <a
+                          href={t.ticket_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 font-mono text-[11px] text-primary hover:underline"
+                        >
+                          #{t.ticket_number}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <span className="font-mono text-[11px] text-muted-foreground">#{t.ticket_number}</span>
+                      )
+                    )}
+                    {!t.ticket_number && t.ticket_url && (
+                      <a
+                        href={t.ticket_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                      >
+                        Open ticket <ExternalLink className="h-3 w-3" />
+                      </a>
                     )}
                   </div>
                   {t.work_description && (
