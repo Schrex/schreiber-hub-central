@@ -1,11 +1,57 @@
 import { useEffect, useMemo, useState } from "react";
-import { Camera, Trash2, X, Plus } from "lucide-react";
+import { Camera, Trash2, X, Plus, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
+
+const SUPABASE_URL = "https://bitogpfplcquovpdjprk.supabase.co";
+const RESUMABLE_THRESHOLD = 6 * 1024 * 1024;
+
+const toLocalDate = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const resumableUpload = async (
+  bucket: string,
+  path: string,
+  file: File,
+  onProgress: (pct: number) => void,
+) => {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Not authenticated");
+
+  await new Promise<void>((resolve, reject) => {
+    const upload = new TusUpload(file, {
+      endpoint: `${SUPABASE_URL}/storage/v1/upload/resumable`,
+      retryDelays: [0, 1000, 3000, 5000, 10000],
+      headers: {
+        authorization: `Bearer ${token}`,
+        "x-upsert": "false",
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      metadata: {
+        bucketName: bucket,
+        objectName: path,
+        contentType: file.type || "image/jpeg",
+        cacheControl: "3600",
+      },
+      chunkSize: 6 * 1024 * 1024,
+      onError: (err) => reject(err),
+      onProgress: (sent, total) => onProgress(Math.round((sent / total) * 100)),
+      onSuccess: () => resolve(),
+    });
+    upload.start();
+  });
+};
 
 interface Photo {
   id: string;
@@ -198,7 +244,7 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
 
     setUploading(true);
     setUploadPct(0);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalDate();
     let done = 0;
     try {
       for (const original of files) {
@@ -210,13 +256,17 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
           : original;
         const ext = file.name.split(".").pop() || "jpg";
         const path = `${jobId}/${today}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("job-photos")
-          .upload(path, file, {
-            contentType: file.type || "image/jpeg",
-            upsert: false,
-          });
-        if (upErr) throw upErr;
+        if (file.size > RESUMABLE_THRESHOLD) {
+          await resumableUpload("job-photos", path, file, (pct) => setUploadPct(pct));
+        } else {
+          const { error: upErr } = await supabase.storage
+            .from("job-photos")
+            .upload(path, file, {
+              contentType: file.type || "image/jpeg",
+              upsert: false,
+            });
+          if (upErr) throw upErr;
+        }
         const { error: insErr } = await supabase.from("job_photos").insert({
           job_id: jobId,
           file_path: path,
@@ -277,7 +327,6 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
               type="file"
               accept="image/*"
               multiple
-              capture="environment"
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               disabled={uploading}
               onChange={(e) => void handleFiles(e)}
@@ -286,7 +335,7 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
               uploadPct > 0 ? `${uploadPct}%` : "…"
             ) : (
               <>
-                <Plus className="h-3.5 w-3.5" /> Add
+                <Upload className="h-3.5 w-3.5" /> Upload
               </>
             )}
           </label>
@@ -299,7 +348,7 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border py-8 text-center">
           <Camera className="h-6 w-6 text-muted-foreground" />
           <p className="text-xs text-muted-foreground">
-            {canManage ? "No photos yet. Tap Add to upload." : "No photos yet."}
+            {canManage ? "No photos yet. Tap Upload to add photos." : "No photos yet."}
           </p>
         </div>
       ) : (
