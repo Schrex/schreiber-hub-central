@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
 import { downloadVCard, downloadVCards } from "@/lib/vcard";
+import { isContactPickerSupported, pickContactsFromDevice } from "@/lib/contactPicker";
 
 type EmployeeContact = {
   id: string;
@@ -409,6 +410,43 @@ const EmployeeContacts = () => {
     }
   };
 
+  const importFromContacts = async () => {
+    if (!isContactPickerSupported()) {
+      // Fallback: open file browser for a .vcf file (iOS, desktop browsers)
+      vcardInputRef.current?.click();
+      return;
+    }
+    setImporting(true);
+    try {
+      const { contacts: picked, cancelled } = await pickContactsFromDevice(true);
+      if (cancelled || picked.length === 0) return;
+      const queue = picked.map((p) => ({
+        ...emptyForm,
+        name: p.name,
+        phone: p.phone,
+        email: p.email,
+        address: p.address,
+      }));
+      setReviewQueue(queue);
+      setReviewIndex(0);
+      setEditing(null);
+      setForm(queue[0]);
+      setDialogOpen(true);
+      toast({
+        title: queue.length === 1 ? "Review contact" : `Review ${queue.length} contacts`,
+        description: "Edit the info, then Save. You can skip any you don't want.",
+      });
+    } catch (err) {
+      toast({
+        title: "Couldn't open Contacts",
+        description: err instanceof Error ? err.message : "Try the file option instead.",
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const downloadContact = (c: EmployeeContact) => {
     downloadVCard({
       fullName: c.name,
@@ -548,11 +586,11 @@ const EmployeeContacts = () => {
             </div>
             <Button
               variant="outline"
-              onClick={() => vcardInputRef.current?.click()}
+              onClick={importFromContacts}
               disabled={importing}
               className="w-full"
             >
-              <Contact className="mr-1 h-4 w-4" /> Import Contact (vCard)
+              <Contact className="mr-1 h-4 w-4" /> Import from Contacts
             </Button>
             <input
               ref={fileInputRef}
@@ -575,7 +613,7 @@ const EmployeeContacts = () => {
               }}
             />
             <p className="text-[11px] text-muted-foreground">
-              Import a CSV/Excel sheet, or share a contact (.vcf) from your phone's Contacts app.
+              Tap "Import from Contacts" to pick directly from your phone (Android Chrome). On iPhone or desktop it falls back to picking a .vcf file.
             </p>
           </>
         )}
