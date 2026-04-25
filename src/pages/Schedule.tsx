@@ -561,7 +561,9 @@ const Schedule = () => {
         {viewMode === "week" && canEdit && (
           <WeekGrid
             weekDays={weekDays}
-            profiles={profiles}
+            profiles={profiles
+              .filter((p) => p.has_login && p.user_id)
+              .map((p) => ({ user_id: p.user_id as string, display_name: p.display_name }))}
             assignments={weekAssignments}
             timeOff={weekTimeOff}
             onCellClick={(ds) => {
