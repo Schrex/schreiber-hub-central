@@ -429,36 +429,53 @@ const Schedule = () => {
                       <button
                         type="button"
                         className="text-xs text-primary hover:underline"
-                        onClick={() =>
+                        onClick={() => {
+                          const assignableIds = profiles
+                            .filter((p) => p.has_login && p.user_id)
+                            .map((p) => p.user_id as string);
                           setFormUserIds(
-                            formUserIds.length === profiles.length
-                              ? []
-                              : profiles.map((p) => p.user_id),
-                          )
-                        }
+                            formUserIds.length === assignableIds.length ? [] : assignableIds,
+                          );
+                        }}
                       >
-                        {formUserIds.length === profiles.length ? "Clear all" : "Select all"}
+                        {formUserIds.length ===
+                        profiles.filter((p) => p.has_login).length
+                          ? "Clear all"
+                          : "Select all"}
                       </button>
                     </div>
                     <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border p-2">
                       {profiles.map((p) => {
-                        const checked = formUserIds.includes(p.user_id);
+                        const disabled = !p.has_login || !p.user_id;
+                        const checked = !disabled && formUserIds.includes(p.user_id as string);
                         return (
                           <label
-                            key={p.user_id}
-                            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted"
+                            key={p.contact_id ?? p.user_id ?? p.display_name}
+                            className={`flex items-center gap-2 rounded px-2 py-1 text-sm ${
+                              disabled
+                                ? "cursor-not-allowed opacity-60"
+                                : "cursor-pointer hover:bg-muted"
+                            }`}
+                            title={disabled ? "Contact has no app login yet" : undefined}
                           >
                             <Checkbox
+                              disabled={disabled}
                               checked={checked}
-                              onCheckedChange={(v) =>
+                              onCheckedChange={(v) => {
+                                if (disabled || !p.user_id) return;
                                 setFormUserIds((prev) =>
                                   v
-                                    ? [...prev, p.user_id]
+                                    ? [...prev, p.user_id as string]
                                     : prev.filter((x) => x !== p.user_id),
-                                )
-                              }
+                                );
+                              }}
                             />
-                            {p.display_name ?? "Unnamed"}
+                            <span className="flex-1">{p.display_name ?? "Unnamed"}</span>
+                            {disabled && (
+                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                no login
+                              </span>
+                            )}
                           </label>
                         );
                       })}
