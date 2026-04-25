@@ -295,13 +295,26 @@ const Vendors = () => {
   const handleImport = async (file: File) => {
     setImporting(true);
     try {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-      if (rows.length === 0) {
-        toast({ title: "Empty spreadsheet", variant: "destructive" });
-        return;
+      const isVCard = /\.vcf$/i.test(file.name) || file.type === "text/vcard" || file.type === "text/x-vcard";
+      let rows: Array<Record<string, unknown>>;
+
+      if (isVCard) {
+        const text = await file.text();
+        const contacts = parseVCards(text);
+        if (contacts.length === 0) {
+          toast({ title: "No contacts found in vCard", variant: "destructive" });
+          return;
+        }
+        rows = contacts as unknown as Array<Record<string, unknown>>;
+      } else {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+        if (rows.length === 0) {
+          toast({ title: "Empty spreadsheet", variant: "destructive" });
+          return;
+        }
       }
 
       const records: Array<Record<string, string | null>> = [];
