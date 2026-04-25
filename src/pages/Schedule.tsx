@@ -694,7 +694,16 @@ const Schedule = () => {
                             className="flex items-center justify-between px-4 py-2 text-sm"
                           >
                             <div>
-                              <div className="font-medium">{a.profile_name}</div>
+                              {a.contact_id ? (
+                                <button
+                                  onClick={() => navigate(`/employee-contacts?focus=${a.contact_id}`)}
+                                  className="font-medium hover:text-primary hover:underline"
+                                >
+                                  {a.profile_name}
+                                </button>
+                              ) : (
+                                <div className="font-medium">{a.profile_name}</div>
+                              )}
                               <div className="text-xs text-muted-foreground">
                                 {a.start_time && <>{a.start_time.slice(0, 5)} · </>}
                                 {a.role_on_job ?? "—"}
