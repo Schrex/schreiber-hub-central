@@ -29,8 +29,35 @@ interface NavigatorWithContacts extends Navigator {
 
 export const isContactPickerSupported = (): boolean => {
   if (typeof navigator === "undefined") return false;
+  if (typeof window !== "undefined") {
+    try {
+      if (window.self !== window.top) return false;
+    } catch {
+      return false;
+    }
+    if (!window.isSecureContext) return false;
+  }
   const nav = navigator as NavigatorWithContacts;
   return Boolean(nav.contacts && typeof nav.contacts.select === "function");
+};
+
+export const getContactPickerUnavailableReason = (): string | null => {
+  if (typeof navigator === "undefined") return "Contacts are not available in this browser.";
+  if (typeof window !== "undefined") {
+    try {
+      if (window.self !== window.top) {
+        return "The phone Contacts picker only opens when the app is opened directly, not inside the Lovable preview frame. Open the app in a published/full browser tab on Android Chrome, or import a .vcf contact file here.";
+      }
+    } catch {
+      return "The phone Contacts picker cannot open from this embedded preview. Open the app directly, or import a .vcf contact file here.";
+    }
+    if (!window.isSecureContext) return "The phone Contacts picker requires a secure HTTPS page.";
+  }
+  const nav = navigator as NavigatorWithContacts;
+  if (!nav.contacts || typeof nav.contacts.select !== "function") {
+    return "This browser does not allow websites to open the phone Contacts app directly. Android Chrome supports it; iPhone and desktop require importing a shared .vcf contact file.";
+  }
+  return null;
 };
 
 const firstString = (val: unknown): string => {
@@ -77,10 +104,15 @@ export const pickContactsFromDevice = async (
   let raw: Array<Record<string, unknown>>;
   try {
     raw = await nav.contacts.select(desired, { multiple });
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { contacts: [], cancelled: true };
+    }
+    throw err;
+  }
+  if (!raw || raw.length === 0) {
     return { contacts: [], cancelled: true };
   }
-  if (!raw || raw.length === 0) return { contacts: [], cancelled: true };
 
   const contacts: PickedContact[] = raw.map((c) => {
     const name = firstString(c.name);
