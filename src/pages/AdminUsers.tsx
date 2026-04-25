@@ -107,7 +107,10 @@ const AdminUsers = () => {
                 <p className="font-medium truncate">
                   {r.display_name ?? "—"} {me?.id === r.user_id && <span className="text-xs text-muted-foreground">(you)</span>}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">{r.email}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {r.email}
+                  {r.contact_id && <span className="ml-2 text-[10px] uppercase tracking-wide text-primary">• Contact linked</span>}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 <Select value={r.role ?? undefined} onValueChange={(v) => changeRole(r.user_id, v as Role)}>
