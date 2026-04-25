@@ -71,13 +71,43 @@ const AdminPositions = () => {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: pos }, { data: profs }, { data: assigns }] = await Promise.all([
+    const [{ data: pos }, { data: profs }, { data: contacts }, { data: assigns }] = await Promise.all([
       supabase.from("positions").select("*").order("sort_order").order("title"),
-      supabase.from("profiles").select("user_id, display_name, email").eq("is_active", true).order("display_name"),
+      supabase.from("profiles").select("user_id, display_name, email, contact_id").eq("is_active", true),
+      supabase.from("employee_contacts").select("id, name, email, converted_user_id").eq("is_active", true).order("name"),
       supabase.from("employee_positions").select("id, user_id, position_id, pay_rate, effective_date, end_date, notes, position:positions(title)").order("effective_date", { ascending: false }),
     ]);
+
+    // Unify: every active contact + any active profile that has no contact link yet
+    const linkedUserIds = new Set(
+      ((contacts ?? []) as any[]).map((c) => c.converted_user_id).filter((x): x is string => !!x),
+    );
+    const profsByUser = new Map(((profs ?? []) as any[]).map((p) => [p.user_id, p] as const));
+    const fromContacts: Profile[] = ((contacts ?? []) as any[]).map((c) => {
+      const p = c.converted_user_id ? profsByUser.get(c.converted_user_id) : null;
+      return {
+        contact_id: c.id,
+        user_id: c.converted_user_id ?? null,
+        display_name: c.name ?? p?.display_name ?? null,
+        email: c.email ?? p?.email ?? null,
+        has_login: !!c.converted_user_id,
+      };
+    });
+    const orphanProfiles: Profile[] = ((profs ?? []) as any[])
+      .filter((p) => !p.contact_id && !linkedUserIds.has(p.user_id))
+      .map((p) => ({
+        contact_id: null,
+        user_id: p.user_id,
+        display_name: p.display_name,
+        email: p.email,
+        has_login: true,
+      }));
+    const unified = [...fromContacts, ...orphanProfiles].sort((x, y) =>
+      (x.display_name ?? "").localeCompare(y.display_name ?? ""),
+    );
+
     setPositions((pos as Position[]) ?? []);
-    setProfiles((profs as Profile[]) ?? []);
+    setProfiles(unified);
     setAssignments((assigns as unknown as Assignment[]) ?? []);
     setLoading(false);
   };
