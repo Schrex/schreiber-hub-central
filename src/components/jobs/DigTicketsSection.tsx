@@ -35,6 +35,7 @@ interface Ticket {
   dig_end_date: string | null;
   expiration_date: string | null;
   response_notes: string | null;
+  ticket_url: string | null;
 }
 
 const STATUS_STYLE: Record<Status, string> = {
