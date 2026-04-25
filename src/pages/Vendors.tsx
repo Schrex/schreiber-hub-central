@@ -176,6 +176,7 @@ const Vendors = () => {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const vcardInputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
 
   const load = async () => {
