@@ -478,6 +478,51 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_contacts: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          job_title: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          job_title?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          job_title?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employee_positions: {
         Row: {
           created_at: string
