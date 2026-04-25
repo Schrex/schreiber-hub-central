@@ -153,6 +153,7 @@ const JobDetail = () => {
           </section>
         )}
 
+        {canSeePrivate && <JobInfoSection jobNumber={job.job_number} />}
         <PlansSection jobId={job.id} />
         <PhotosSection
           jobId={job.id}
