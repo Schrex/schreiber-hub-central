@@ -183,6 +183,7 @@ const Vendors = () => {
   // vCard review queue: contacts parsed but not yet saved
   const [reviewQueue, setReviewQueue] = useState<typeof emptyForm[]>([]);
   const [reviewIndex, setReviewIndex] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
