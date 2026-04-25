@@ -423,17 +423,27 @@ const Vendors = () => {
         )}
 
         {canEdit && (
-          <div className="flex gap-2">
-            <Button onClick={openAdd} className="flex-1">
-              <Plus className="mr-1 h-4 w-4" /> Add Vendor
-            </Button>
+          <>
+            <div className="flex gap-2">
+              <Button onClick={openAdd} className="flex-1">
+                <Plus className="mr-1 h-4 w-4" /> Add Vendor
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+                className="flex-1"
+              >
+                <Upload className="mr-1 h-4 w-4" /> {importing ? "Importing…" : "Import"}
+              </Button>
+            </div>
             <Button
               variant="outline"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => vcardInputRef.current?.click()}
               disabled={importing}
-              className="flex-1"
+              className="w-full"
             >
-              <Upload className="mr-1 h-4 w-4" /> {importing ? "Importing…" : "Import"}
+              <Contact className="mr-1 h-4 w-4" /> Import Contact (vCard)
             </Button>
             <input
               ref={fileInputRef}
@@ -445,13 +455,20 @@ const Vendors = () => {
                 if (f) handleImport(f);
               }}
             />
-          </div>
-        )}
-
-        {canEdit && (
-          <p className="text-[11px] text-muted-foreground">
-            Import accepts CSV or Excel. Headers: name (required), category, contact_name, phone, email, website, address, notes.
-          </p>
+            <input
+              ref={vcardInputRef}
+              type="file"
+              accept=".vcf,text/vcard,text/x-vcard"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImport(f);
+              }}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Import a CSV/Excel sheet, or share a contact (.vcf) from your phone's Contacts app.
+            </p>
+          </>
         )}
 
         <div className="space-y-2">
