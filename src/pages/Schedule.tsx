@@ -41,7 +41,12 @@ import { toast } from "@/hooks/use-toast";
 import { WeekGrid } from "@/components/schedule/WeekGrid";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
-type Profile = { user_id: string; display_name: string | null; contact_id: string | null };
+type Profile = {
+  user_id: string | null;
+  display_name: string | null;
+  contact_id: string | null;
+  has_login: boolean;
+};
 type Assignment = {
   id: string;
   job_id: string;
@@ -95,7 +100,7 @@ const Schedule = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: a }, { data: j }, { data: p }, { data: t }] = await Promise.all([
+    const [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }] = await Promise.all([
       supabase
         .from("schedule_assignments")
         .select("*, jobs(id,name,address,job_number)")
@@ -106,7 +111,13 @@ const Schedule = () => {
         .select("id,name,address,job_number")
         .eq("status", "active")
         .order("name"),
-      supabase.from("profiles").select("user_id,display_name,contact_id").eq("is_active", true).order("display_name"),
+      supabase
+        .from("employee_contacts")
+        .select("id,name,converted_user_id,is_active")
+        .eq("is_active", true)
+        .order("name"),
+      // Pull profiles too so we still capture any active login that has no contact yet
+      supabase.from("profiles").select("user_id,display_name,contact_id").eq("is_active", true),
       supabase
         .from("time_off_requests")
         .select("user_id,type,half_day")
@@ -115,15 +126,40 @@ const Schedule = () => {
         .gte("end_date", selectedDate),
     ]);
 
-    const profMap = new Map((p ?? []).map((x) => [x.user_id, x] as const));
+    // Build a unified employee list: every active contact + any active profile not already linked
+    const linkedUserIds = new Set(
+      (c ?? []).map((row) => row.converted_user_id).filter((x): x is string => !!x),
+    );
+    const fromContacts: Profile[] = (c ?? []).map((row) => ({
+      contact_id: row.id,
+      user_id: row.converted_user_id ?? null,
+      display_name: row.name,
+      has_login: !!row.converted_user_id,
+    }));
+    const orphanProfiles: Profile[] = (pr ?? [])
+      .filter((p) => !p.contact_id && !linkedUserIds.has(p.user_id))
+      .map((p) => ({
+        contact_id: null,
+        user_id: p.user_id,
+        display_name: p.display_name,
+        has_login: true,
+      }));
+    const unified = [...fromContacts, ...orphanProfiles].sort((x, y) =>
+      (x.display_name ?? "").localeCompare(y.display_name ?? ""),
+    );
+
+    // Lookup by user_id for enriching assignment rows
+    const byUserId = new Map(
+      unified.filter((u) => u.user_id).map((u) => [u.user_id as string, u] as const),
+    );
     const enriched: Assignment[] = (a ?? []).map((row: any) => ({
       ...row,
-      profile_name: profMap.get(row.user_id)?.display_name ?? "Unknown",
-      contact_id: profMap.get(row.user_id)?.contact_id ?? null,
+      profile_name: byUserId.get(row.user_id)?.display_name ?? "Unknown",
+      contact_id: byUserId.get(row.user_id)?.contact_id ?? null,
     }));
     setAssignments(enriched);
     setJobs(j ?? []);
-    setProfiles(p ?? []);
+    setProfiles(unified);
     setTimeOff((t ?? []) as TimeOff[]);
     setLoading(false);
   };
@@ -173,7 +209,7 @@ const Schedule = () => {
     }));
   }, [assignments]);
 
-  // Per-employee roster: assigned (with jobs), off (approved time-off), or unassigned
+  // Per-employee roster: assigned (with jobs), off (approved time-off), unassigned, or no-login
   const roster = useMemo(() => {
     const offMap = new Map<string, TimeOff>();
     timeOff.forEach((t) => offMap.set(t.user_id, t));
@@ -184,10 +220,11 @@ const Schedule = () => {
       asgMap.set(a.user_id, arr);
     });
     return profiles.map((p) => {
-      const off = offMap.get(p.user_id);
-      const asg = asgMap.get(p.user_id) ?? [];
-      let status: "assigned" | "off" | "unassigned";
-      if (off && asg.length === 0) status = "off";
+      const off = p.user_id ? offMap.get(p.user_id) : undefined;
+      const asg = p.user_id ? asgMap.get(p.user_id) ?? [] : [];
+      let status: "assigned" | "off" | "unassigned" | "no_login";
+      if (!p.has_login) status = "no_login";
+      else if (off && asg.length === 0) status = "off";
       else if (asg.length > 0) status = "assigned";
       else status = "unassigned";
       return { profile: p, off, assignments: asg, status };
@@ -200,7 +237,7 @@ const Schedule = () => {
         acc[r.status]++;
         return acc;
       },
-      { assigned: 0, off: 0, unassigned: 0 } as Record<string, number>,
+      { assigned: 0, off: 0, unassigned: 0, no_login: 0 } as Record<string, number>,
     );
   }, [roster]);
 
@@ -392,36 +429,53 @@ const Schedule = () => {
                       <button
                         type="button"
                         className="text-xs text-primary hover:underline"
-                        onClick={() =>
+                        onClick={() => {
+                          const assignableIds = profiles
+                            .filter((p) => p.has_login && p.user_id)
+                            .map((p) => p.user_id as string);
                           setFormUserIds(
-                            formUserIds.length === profiles.length
-                              ? []
-                              : profiles.map((p) => p.user_id),
-                          )
-                        }
+                            formUserIds.length === assignableIds.length ? [] : assignableIds,
+                          );
+                        }}
                       >
-                        {formUserIds.length === profiles.length ? "Clear all" : "Select all"}
+                        {formUserIds.length ===
+                        profiles.filter((p) => p.has_login).length
+                          ? "Clear all"
+                          : "Select all"}
                       </button>
                     </div>
                     <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border p-2">
                       {profiles.map((p) => {
-                        const checked = formUserIds.includes(p.user_id);
+                        const disabled = !p.has_login || !p.user_id;
+                        const checked = !disabled && formUserIds.includes(p.user_id as string);
                         return (
                           <label
-                            key={p.user_id}
-                            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted"
+                            key={p.contact_id ?? p.user_id ?? p.display_name}
+                            className={`flex items-center gap-2 rounded px-2 py-1 text-sm ${
+                              disabled
+                                ? "cursor-not-allowed opacity-60"
+                                : "cursor-pointer hover:bg-muted"
+                            }`}
+                            title={disabled ? "Contact has no app login yet" : undefined}
                           >
                             <Checkbox
+                              disabled={disabled}
                               checked={checked}
-                              onCheckedChange={(v) =>
+                              onCheckedChange={(v) => {
+                                if (disabled || !p.user_id) return;
                                 setFormUserIds((prev) =>
                                   v
-                                    ? [...prev, p.user_id]
+                                    ? [...prev, p.user_id as string]
                                     : prev.filter((x) => x !== p.user_id),
-                                )
-                              }
+                                );
+                              }}
                             />
-                            {p.display_name ?? "Unnamed"}
+                            <span className="flex-1">{p.display_name ?? "Unnamed"}</span>
+                            {disabled && (
+                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                no login
+                              </span>
+                            )}
                           </label>
                         );
                       })}
@@ -507,7 +561,9 @@ const Schedule = () => {
         {viewMode === "week" && canEdit && (
           <WeekGrid
             weekDays={weekDays}
-            profiles={profiles}
+            profiles={profiles
+              .filter((p) => p.has_login && p.user_id)
+              .map((p) => ({ user_id: p.user_id as string, display_name: p.display_name }))}
             assignments={weekAssignments}
             timeOff={weekTimeOff}
             onCellClick={(ds) => {
@@ -746,6 +802,11 @@ const Schedule = () => {
                 <span className="rounded bg-muted px-2 py-0.5 text-muted-foreground">
                   {counts.unassigned} unassigned
                 </span>
+                {counts.no_login > 0 && (
+                  <span className="rounded bg-destructive/10 px-2 py-0.5 text-destructive">
+                    {counts.no_login} no login
+                  </span>
+                )}
               </div>
             </div>
             <Card className="divide-y">
@@ -756,7 +817,7 @@ const Schedule = () => {
               ) : (
                 roster.map(({ profile, off, assignments: asg, status }) => (
                   <div
-                    key={profile.user_id}
+                    key={profile.contact_id ?? profile.user_id ?? profile.display_name ?? Math.random()}
                     className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
                   >
                     <div className="min-w-0 flex-1">
@@ -792,12 +853,19 @@ const Schedule = () => {
                           Not assigned
                         </div>
                       )}
+                      {status === "no_login" && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          Contact only — no app login yet
+                        </div>
+                      )}
                     </div>
                     <Badge
                       variant={status === "assigned" ? "default" : "outline"}
                       className={
                         status === "off"
                           ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                          : status === "no_login"
+                          ? "border-destructive/40 bg-destructive/10 text-destructive"
                           : status === "unassigned"
                           ? "text-muted-foreground"
                           : ""
@@ -807,6 +875,8 @@ const Schedule = () => {
                         ? `${asg.length} job${asg.length > 1 ? "s" : ""}`
                         : status === "off"
                         ? "Off"
+                        : status === "no_login"
+                        ? "No login"
                         : "Open"}
                     </Badge>
                   </div>
