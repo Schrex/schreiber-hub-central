@@ -1,13 +1,65 @@
-import { Briefcase, Calendar, Truck, Palmtree, Home } from "lucide-react";
+import {
+  Briefcase,
+  Calendar,
+  Palmtree,
+  Home,
+  ShoppingBag,
+  HandCoins,
+  Wrench,
+  FileText,
+  IdCard,
+  Receipt,
+  ClipboardList,
+} from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
-const ITEMS = [
+// Custom dump truck icon (Lucide doesn't ship one)
+const DumpTruck = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden
+  >
+    {/* tilted dump bed */}
+    <path d="M3 13 L14 7 L16 12 L5 12 Z" />
+    {/* cab */}
+    <path d="M14 13 h5 l2 3 v2 h-7 z" />
+    {/* chassis line */}
+    <path d="M3 16 h18" />
+    {/* wheels */}
+    <circle cx="8" cy="18" r="1.6" />
+    <circle cx="17" cy="18" r="1.6" />
+  </svg>
+);
+
+type Item = {
+  key: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  to: string;
+  match?: string[]; // additional path prefixes that should mark active
+};
+
+const ITEMS: Item[] = [
   { key: "home", label: "Home", icon: Home, to: "/" },
   { key: "jobs", label: "Jobs", icon: Briefcase, to: "/jobs" },
   { key: "schedule", label: "Schedule", icon: Calendar, to: "/schedule" },
-  { key: "trucking", label: "Trucking", icon: Truck, to: "/dispatch" },
+  { key: "trucking", label: "Trucking", icon: DumpTruck, to: "/dispatch" },
   { key: "timeoff", label: "Time Off", icon: Palmtree, to: "/time-off" },
+  { key: "apparel", label: "Apparel", icon: ShoppingBag, to: "/apparel" },
+  { key: "referrals", label: "Referrals", icon: HandCoins, to: "/referrals" },
+  { key: "tools", label: "Tools", icon: Wrench, to: "/tools" },
+  { key: "plans", label: "Plans", icon: FileText, to: "/jobs" },
+  { key: "position", label: "Position", icon: IdCard, to: "/my-position" },
+  { key: "receipts", label: "Receipts", icon: Receipt, to: "/tools" },
+  { key: "reviews", label: "Reviews", icon: ClipboardList, to: "/tools/performance-reviews" },
 ];
 
 export const BottomNav = () => {
@@ -22,17 +74,21 @@ export const BottomNav = () => {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <ul className="mx-auto flex max-w-2xl items-stretch justify-between px-1">
+        <ul
+          className="flex items-stretch overflow-x-auto px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const active =
-              item.to === "/" ? pathname === "/" : pathname === item.to || pathname.startsWith(item.to + "/");
+              item.to === "/"
+                ? pathname === "/"
+                : pathname === item.to || pathname.startsWith(item.to + "/");
             return (
-              <li key={item.key} className="min-w-0 flex-1">
+              <li key={item.key} className="shrink-0">
                 <button
                   onClick={() => navigate(item.to)}
                   className={cn(
-                    "flex w-full flex-col items-center justify-center gap-1 px-0.5 py-2 text-[9px] font-semibold uppercase tracking-tight transition-colors",
+                    "flex w-16 flex-col items-center justify-center gap-1 px-1 py-2 text-[9px] font-semibold uppercase tracking-tight transition-colors",
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                   )}
                   aria-current={active ? "page" : undefined}
