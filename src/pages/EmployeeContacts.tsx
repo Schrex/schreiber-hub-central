@@ -580,6 +580,19 @@ const EmployeeContacts = () => {
           </>
         )}
 
+        <Button
+          variant="secondary"
+          onClick={downloadAll}
+          disabled={loading || contacts.length === 0}
+          className="w-full"
+        >
+          <Download className="mr-1 h-4 w-4" />
+          Download All as Contacts ({filtered.length || contacts.length})
+        </Button>
+        <p className="text-[11px] text-muted-foreground">
+          Saves a single .vcf file with everyone — open it on your phone to add the whole team to Contacts at once. Great for sharing with new hires.
+        </p>
+
         <div className="space-y-2">
           {loading ? (
             <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
