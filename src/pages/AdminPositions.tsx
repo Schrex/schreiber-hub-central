@@ -35,9 +35,11 @@ interface Position {
 }
 
 interface Profile {
-  user_id: string;
+  user_id: string | null;
   display_name: string | null;
   email: string | null;
+  contact_id: string | null;
+  has_login: boolean;
 }
 
 interface Assignment {
@@ -69,13 +71,43 @@ const AdminPositions = () => {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: pos }, { data: profs }, { data: assigns }] = await Promise.all([
+    const [{ data: pos }, { data: profs }, { data: contacts }, { data: assigns }] = await Promise.all([
       supabase.from("positions").select("*").order("sort_order").order("title"),
-      supabase.from("profiles").select("user_id, display_name, email").eq("is_active", true).order("display_name"),
+      supabase.from("profiles").select("user_id, display_name, email, contact_id").eq("is_active", true),
+      supabase.from("employee_contacts").select("id, name, email, converted_user_id").eq("is_active", true).order("name"),
       supabase.from("employee_positions").select("id, user_id, position_id, pay_rate, effective_date, end_date, notes, position:positions(title)").order("effective_date", { ascending: false }),
     ]);
+
+    // Unify: every active contact + any active profile that has no contact link yet
+    const linkedUserIds = new Set(
+      ((contacts ?? []) as any[]).map((c) => c.converted_user_id).filter((x): x is string => !!x),
+    );
+    const profsByUser = new Map(((profs ?? []) as any[]).map((p) => [p.user_id, p] as const));
+    const fromContacts: Profile[] = ((contacts ?? []) as any[]).map((c) => {
+      const p = c.converted_user_id ? profsByUser.get(c.converted_user_id) : null;
+      return {
+        contact_id: c.id,
+        user_id: c.converted_user_id ?? null,
+        display_name: c.name ?? p?.display_name ?? null,
+        email: c.email ?? p?.email ?? null,
+        has_login: !!c.converted_user_id,
+      };
+    });
+    const orphanProfiles: Profile[] = ((profs ?? []) as any[])
+      .filter((p) => !p.contact_id && !linkedUserIds.has(p.user_id))
+      .map((p) => ({
+        contact_id: null,
+        user_id: p.user_id,
+        display_name: p.display_name,
+        email: p.email,
+        has_login: true,
+      }));
+    const unified = [...fromContacts, ...orphanProfiles].sort((x, y) =>
+      (x.display_name ?? "").localeCompare(y.display_name ?? ""),
+    );
+
     setPositions((pos as Position[]) ?? []);
-    setProfiles((profs as Profile[]) ?? []);
+    setProfiles(unified);
     setAssignments((assigns as unknown as Assignment[]) ?? []);
     setLoading(false);
   };
@@ -246,16 +278,29 @@ const AdminPositions = () => {
           </div>
           <div className="space-y-2">
             {profiles.map((u) => {
-              const cur = currentByUser.get(u.user_id);
-              const userHistory = assignments.filter((a) => a.user_id === u.user_id);
+              const cur = u.user_id ? currentByUser.get(u.user_id) : undefined;
+              const userHistory = u.user_id
+                ? assignments.filter((a) => a.user_id === u.user_id)
+                : [];
               return (
-                <Card key={u.user_id} className="p-4">
+                <Card key={u.contact_id ?? u.user_id ?? u.email ?? u.display_name} className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="font-medium truncate">{u.display_name ?? u.email ?? "—"}</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-medium truncate">{u.display_name ?? u.email ?? "—"}</div>
+                        {!u.has_login && (
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                            No login
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground truncate">{u.email}</div>
                       <div className="mt-1 text-sm">
-                        {cur ? (
+                        {!u.has_login ? (
+                          <span className="text-muted-foreground italic">
+                            Convert to login from Employee Contacts to assign pay
+                          </span>
+                        ) : cur ? (
                           <span>
                             <span className="font-semibold">{cur.position?.title}</span>
                             <span className="text-muted-foreground"> · {fmtMoney(cur.pay_rate)}/hr</span>
@@ -342,11 +387,13 @@ const AdminPositions = () => {
               <Select value={assignForm.user_id} onValueChange={(v) => setAssignForm({ ...assignForm, user_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
                 <SelectContent>
-                  {profiles.map((p) => (
-                    <SelectItem key={p.user_id} value={p.user_id}>
-                      {p.display_name ?? p.email}
-                    </SelectItem>
-                  ))}
+                  {profiles
+                    .filter((p) => p.has_login && p.user_id)
+                    .map((p) => (
+                      <SelectItem key={p.user_id as string} value={p.user_id as string}>
+                        {p.display_name ?? p.email}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
