@@ -244,7 +244,7 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
 
     setUploading(true);
     setUploadPct(0);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalDate();
     let done = 0;
     try {
       for (const original of files) {
@@ -256,13 +256,17 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
           : original;
         const ext = file.name.split(".").pop() || "jpg";
         const path = `${jobId}/${today}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("job-photos")
-          .upload(path, file, {
-            contentType: file.type || "image/jpeg",
-            upsert: false,
-          });
-        if (upErr) throw upErr;
+        if (file.size > RESUMABLE_THRESHOLD) {
+          await resumableUpload("job-photos", path, file, (pct) => setUploadPct(pct));
+        } else {
+          const { error: upErr } = await supabase.storage
+            .from("job-photos")
+            .upload(path, file, {
+              contentType: file.type || "image/jpeg",
+              upsert: false,
+            });
+          if (upErr) throw upErr;
+        }
         const { error: insErr } = await supabase.from("job_photos").insert({
           job_id: jobId,
           file_path: path,
@@ -323,7 +327,6 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
               type="file"
               accept="image/*"
               multiple
-              capture="environment"
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               disabled={uploading}
               onChange={(e) => void handleFiles(e)}
@@ -332,7 +335,7 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
               uploadPct > 0 ? `${uploadPct}%` : "…"
             ) : (
               <>
-                <Plus className="h-3.5 w-3.5" /> Add
+                <Upload className="h-3.5 w-3.5" /> Upload
               </>
             )}
           </label>
