@@ -11,6 +11,7 @@ import { DigTicketsSection } from "@/components/jobs/DigTicketsSection";
 import { PermitsSection } from "@/components/jobs/PermitsSection";
 import { PlansSection } from "@/components/jobs/PlansSection";
 import { PhotosSection } from "@/components/jobs/PhotosSection";
+import { JobInfoSection } from "@/components/jobs/JobInfoSection";
 
 interface Job {
   id: string;
@@ -152,6 +153,7 @@ const JobDetail = () => {
           </section>
         )}
 
+        {canSeePrivate && <JobInfoSection jobNumber={job.job_number} />}
         <PlansSection jobId={job.id} />
         <PhotosSection
           jobId={job.id}
