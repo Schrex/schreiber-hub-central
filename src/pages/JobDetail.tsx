@@ -43,8 +43,35 @@ const JobDetail = () => {
     });
   }, [id]);
 
-  const coords = job?.latitude && job?.longitude
-    ? { lat: job.latitude, lon: job.longitude, label: job.address ?? job.name }
+  const [geocoded, setGeocoded] = useState<{ lat: number; lon: number } | null>(null);
+
+  useEffect(() => {
+    if (!job) return;
+    if (job.latitude && job.longitude) { setGeocoded(null); return; }
+    if (!job.address) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(job.address!)}`,
+          { headers: { Accept: "application/json" } },
+        );
+        const arr = await res.json();
+        if (cancelled || !Array.isArray(arr) || arr.length === 0) return;
+        const lat = parseFloat(arr[0].lat);
+        const lon = parseFloat(arr[0].lon);
+        setGeocoded({ lat, lon });
+        // Persist for next time
+        await supabase.from("jobs").update({ latitude: lat, longitude: lon }).eq("id", job.id);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [job?.id, job?.address, job?.latitude, job?.longitude]);
+
+  const lat = job?.latitude ?? geocoded?.lat ?? null;
+  const lon = job?.longitude ?? geocoded?.lon ?? null;
+  const coords = lat && lon
+    ? { lat, lon, label: job?.address ?? job?.name ?? "" }
     : null;
   const weather = useWeather(coords);
 
