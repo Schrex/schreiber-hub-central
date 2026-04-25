@@ -183,6 +183,7 @@ const EmployeeContacts = () => {
     const { data, error } = await supabase
       .from("employee_contacts")
       .select("*")
+      .is("converted_user_id", null)
       .order("name", { ascending: true });
     if (error) {
       toast({ title: "Couldn't load contacts", description: error.message, variant: "destructive" });
