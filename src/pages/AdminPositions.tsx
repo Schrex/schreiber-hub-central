@@ -387,11 +387,13 @@ const AdminPositions = () => {
               <Select value={assignForm.user_id} onValueChange={(v) => setAssignForm({ ...assignForm, user_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
                 <SelectContent>
-                  {profiles.map((p) => (
-                    <SelectItem key={p.user_id} value={p.user_id}>
-                      {p.display_name ?? p.email}
-                    </SelectItem>
-                  ))}
+                  {profiles
+                    .filter((p) => p.has_login && p.user_id)
+                    .map((p) => (
+                      <SelectItem key={p.user_id as string} value={p.user_id as string}>
+                        {p.display_name ?? p.email}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
