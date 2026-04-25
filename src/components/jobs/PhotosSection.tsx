@@ -1,11 +1,57 @@
 import { useEffect, useMemo, useState } from "react";
-import { Camera, Trash2, X, Plus } from "lucide-react";
+import { Camera, Trash2, X, Plus, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
+
+const SUPABASE_URL = "https://bitogpfplcquovpdjprk.supabase.co";
+const RESUMABLE_THRESHOLD = 6 * 1024 * 1024;
+
+const toLocalDate = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const resumableUpload = async (
+  bucket: string,
+  path: string,
+  file: File,
+  onProgress: (pct: number) => void,
+) => {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Not authenticated");
+
+  await new Promise<void>((resolve, reject) => {
+    const upload = new TusUpload(file, {
+      endpoint: `${SUPABASE_URL}/storage/v1/upload/resumable`,
+      retryDelays: [0, 1000, 3000, 5000, 10000],
+      headers: {
+        authorization: `Bearer ${token}`,
+        "x-upsert": "false",
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      metadata: {
+        bucketName: bucket,
+        objectName: path,
+        contentType: file.type || "image/jpeg",
+        cacheControl: "3600",
+      },
+      chunkSize: 6 * 1024 * 1024,
+      onError: (err) => reject(err),
+      onProgress: (sent, total) => onProgress(Math.round((sent / total) * 100)),
+      onSuccess: () => resolve(),
+    });
+    upload.start();
+  });
+};
 
 interface Photo {
   id: string;
