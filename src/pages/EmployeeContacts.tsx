@@ -895,6 +895,13 @@ const EmployeeContacts = () => {
         </DialogContent>
       </Dialog>
 
+      <AddEmployeeWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        canCreateLogin={canConvert}
+        onCreated={load}
+      />
+
       <BottomNav />
     </div>
   );
