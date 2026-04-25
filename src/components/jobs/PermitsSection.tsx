@@ -157,6 +157,22 @@ export const PermitsSection = ({ jobId }: Props) => {
     try {
       const type = form.permit_type === "Other" ? form.permit_type_custom.trim() : form.permit_type;
       if (!type) throw new Error("Permit type required");
+
+      let file_path: string | null = null;
+      let file_size: number | null = null;
+      let mime_type: string | null = null;
+      if (file) {
+        const ext = file.name.split(".").pop() ?? "bin";
+        const path = `${jobId}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("permits")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (upErr) throw upErr;
+        file_path = path;
+        file_size = file.size;
+        mime_type = file.type || null;
+      }
+
       const { error } = await supabase.from("job_permits").insert({
         job_id: jobId,
         permit_type: type,
@@ -174,6 +190,9 @@ export const PermitsSection = ({ jobId }: Props) => {
         issue_date: form.issue_date || null,
         expiration_date: form.expiration_date || null,
         notes: form.notes || null,
+        file_path,
+        file_size,
+        mime_type,
         created_by: user?.id ?? null,
       });
       if (error) throw error;
@@ -186,6 +205,17 @@ export const PermitsSection = ({ jobId }: Props) => {
     } finally {
       setBusy(false);
     }
+  };
+
+  const openFile = async (path: string) => {
+    const { data, error } = await supabase.storage
+      .from("permits")
+      .createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl) {
+      toast.error(error?.message ?? "Could not open file");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener");
   };
 
   const updateStatus = async (id: string, status: Status) => {
