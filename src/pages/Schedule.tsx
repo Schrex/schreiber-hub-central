@@ -237,7 +237,7 @@ const Schedule = () => {
         acc[r.status]++;
         return acc;
       },
-      { assigned: 0, off: 0, unassigned: 0 } as Record<string, number>,
+      { assigned: 0, off: 0, unassigned: 0, no_login: 0 } as Record<string, number>,
     );
   }, [roster]);
 
