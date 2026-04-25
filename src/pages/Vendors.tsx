@@ -610,8 +610,18 @@ const Vendors = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit vendor" : "Add vendor"}</DialogTitle>
-            <DialogDescription>Quick info — only name is required.</DialogDescription>
+            <DialogTitle>
+              {reviewQueue.length > 0
+                ? `Review imported contact ${reviewIndex + 1} of ${reviewQueue.length}`
+                : editing
+                  ? "Edit vendor"
+                  : "Add vendor"}
+            </DialogTitle>
+            <DialogDescription>
+              {reviewQueue.length > 0
+                ? "Edit the info, then Save to add — or Skip if you don't want this one."
+                : "Quick info — only name is required."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <div>
@@ -655,8 +665,19 @@ const Vendors = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            {reviewQueue.length > 0 ? (
+              <>
+                <Button variant="ghost" onClick={skipReview}>Skip</Button>
+                <Button onClick={save} disabled={saving}>
+                  {saving ? "Saving…" : reviewIndex + 1 < reviewQueue.length ? "Save & next" : "Save & finish"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
