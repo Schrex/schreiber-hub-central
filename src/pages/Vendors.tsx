@@ -160,6 +160,8 @@ const parseVCards = (text: string): VCardContact[] => {
   }
   return cards;
 };
+
+const Vendors = () => {
   const navigate = useNavigate();
   const { role, user } = useAuth();
   const canEdit = role === "foreman" || role === "office" || role === "admin";
