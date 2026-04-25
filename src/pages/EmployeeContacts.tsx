@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
-import { downloadVCard } from "@/lib/vcard";
+import { downloadVCard, downloadVCards } from "@/lib/vcard";
 
 type EmployeeContact = {
   id: string;
@@ -421,6 +421,27 @@ const EmployeeContacts = () => {
     }, c.name);
   };
 
+  const downloadAll = () => {
+    const source = filtered.length ? filtered : contacts;
+    if (!source.length) {
+      toast({ title: "Nothing to download", description: "No contacts to export.", variant: "destructive" });
+      return;
+    }
+    const cards = source.map((c) => ({
+      fullName: c.name,
+      organization: c.department ?? undefined,
+      title: c.job_title ?? undefined,
+      phone: c.phone ?? undefined,
+      email: c.email ?? undefined,
+      address: c.address ?? undefined,
+      notes: c.notes ?? undefined,
+    }));
+    const filtersActive = filtered.length !== contacts.length;
+    const filename = filtersActive ? "employee-contacts-filtered" : "employee-contacts";
+    downloadVCards(cards, filename);
+    toast({ title: `Exported ${cards.length} contact${cards.length === 1 ? "" : "s"}`, description: "Open the file on your phone to add them all to Contacts." });
+  };
+
   const openConvert = (c: EmployeeContact) => {
     setConvertTarget(c);
     setConvertEmail(c.email ?? "");
@@ -558,6 +579,19 @@ const EmployeeContacts = () => {
             </p>
           </>
         )}
+
+        <Button
+          variant="secondary"
+          onClick={downloadAll}
+          disabled={loading || contacts.length === 0}
+          className="w-full"
+        >
+          <Download className="mr-1 h-4 w-4" />
+          Download All as Contacts ({filtered.length || contacts.length})
+        </Button>
+        <p className="text-[11px] text-muted-foreground">
+          Saves a single .vcf file with everyone — open it on your phone to add the whole team to Contacts at once. Great for sharing with new hires.
+        </p>
 
         <div className="space-y-2">
           {loading ? (
