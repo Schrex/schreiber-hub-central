@@ -150,6 +150,7 @@ export type Database = {
           response_notes: string | null
           status: Database["public"]["Enums"]["dig_ticket_status"]
           ticket_number: string | null
+          ticket_url: string | null
           updated_at: string
           work_description: string | null
         }
@@ -169,6 +170,7 @@ export type Database = {
           response_notes?: string | null
           status?: Database["public"]["Enums"]["dig_ticket_status"]
           ticket_number?: string | null
+          ticket_url?: string | null
           updated_at?: string
           work_description?: string | null
         }
@@ -188,6 +190,7 @@ export type Database = {
           response_notes?: string | null
           status?: Database["public"]["Enums"]["dig_ticket_status"]
           ticket_number?: string | null
+          ticket_url?: string | null
           updated_at?: string
           work_description?: string | null
         }

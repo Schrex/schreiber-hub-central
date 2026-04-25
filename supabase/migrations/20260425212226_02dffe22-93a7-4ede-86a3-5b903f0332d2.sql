@@ -1,0 +1,1 @@
+ALTER TABLE public.dig_tickets ADD COLUMN IF NOT EXISTS ticket_url text;
