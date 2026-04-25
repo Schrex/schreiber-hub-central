@@ -270,8 +270,16 @@ const EmployeeContacts = () => {
       if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
       else {
         toast({ title: "Contact added" });
-        setDialogOpen(false);
         load();
+        if (reviewQueue.length > 0) {
+          const more = advanceReview();
+          if (!more) {
+            setDialogOpen(false);
+            toast({ title: "All contacts imported" });
+          }
+        } else {
+          setDialogOpen(false);
+        }
       }
     }
     setSaving(false);
