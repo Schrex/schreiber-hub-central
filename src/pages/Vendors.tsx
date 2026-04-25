@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
 import { downloadVCard } from "@/lib/vcard";
+import { isContactPickerSupported, pickContactsFromDevice } from "@/lib/contactPicker";
 
 type Vendor = {
   id: string;
