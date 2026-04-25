@@ -183,6 +183,7 @@ const EmployeeContacts = () => {
   const [convertPassword, setConvertPassword] = useState("");
   const [convertRole, setConvertRole] = useState<"employee" | "foreman" | "office" | "admin">("employee");
   const [converting, setConverting] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -239,9 +240,7 @@ const EmployeeContacts = () => {
   }, [contacts, search, deptFilter]);
 
   const openAdd = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setDialogOpen(true);
+    setWizardOpen(true);
   };
 
   const openEdit = (c: EmployeeContact) => {
@@ -598,7 +597,7 @@ const EmployeeContacts = () => {
           <>
             <div className="flex gap-2">
               <Button onClick={openAdd} className="flex-1">
-                <Plus className="mr-1 h-4 w-4" /> Add Contact
+                <Plus className="mr-1 h-4 w-4" /> Add Employee
               </Button>
               <Button
                 variant="outline"
