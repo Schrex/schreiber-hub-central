@@ -35,7 +35,6 @@ const JobDetail = () => {
   const canSeePrivate = role === "foreman" || role === "office" || role === "admin";
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
-  const [geocodeAttempted, setGeocodeAttempted] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -53,7 +52,6 @@ const JobDetail = () => {
     if (!job.address) return;
     let cancelled = false;
     (async () => {
-      setGeocodeAttempted(false);
       try {
         const location = await geocodeAddress(job.address!);
         if (cancelled || !location) return;
@@ -63,7 +61,6 @@ const JobDetail = () => {
         // Persist for next time
         await supabase.from("jobs").update({ latitude: lat, longitude: lon }).eq("id", job.id);
       } catch { /* ignore */ }
-      finally { if (!cancelled) setGeocodeAttempted(true); }
     })();
     return () => { cancelled = true; };
   }, [job?.id, job?.address, job?.latitude, job?.longitude]);
