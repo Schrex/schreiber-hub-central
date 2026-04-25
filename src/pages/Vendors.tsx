@@ -588,18 +588,27 @@ const Vendors = () => {
                       {v.notes && <p className="text-muted-foreground">{v.notes}</p>}
                     </div>
                   </div>
-                  {canEdit && (
-                    <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => downloadVendorContact(v)}
+                      aria-label="Save to phone contacts"
+                      title="Save to contacts"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    {canEdit && (
                       <Button size="icon" variant="ghost" onClick={() => openEdit(v)} aria-label="Edit">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      {canDelete && (
-                        <Button size="icon" variant="ghost" onClick={() => remove(v)} aria-label="Delete">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                    )}
+                    {canDelete && (
+                      <Button size="icon" variant="ghost" onClick={() => remove(v)} aria-label="Delete">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))
