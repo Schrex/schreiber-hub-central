@@ -21,6 +21,7 @@ interface UserRow {
   is_active: boolean;
   is_driver: boolean;
   role: Role | null;
+  contact_id: string | null;
 }
 
 const ROLES: Role[] = ["employee", "foreman", "office", "admin"];
