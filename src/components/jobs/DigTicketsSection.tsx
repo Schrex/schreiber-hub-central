@@ -92,6 +92,7 @@ export const DigTicketsSection = ({ jobId }: Props) => {
   const reset = () =>
     setForm({
       ticket_number: "",
+      ticket_url: "",
       status: "requested",
       request_type: "normal",
       work_description: "",
@@ -108,6 +109,7 @@ export const DigTicketsSection = ({ jobId }: Props) => {
       const { error } = await supabase.from("dig_tickets").insert({
         job_id: jobId,
         ticket_number: form.ticket_number || null,
+        ticket_url: form.ticket_url.trim() || null,
         status: form.status,
         request_type: form.request_type,
         work_description: form.work_description || null,
