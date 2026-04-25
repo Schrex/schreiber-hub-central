@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, TruckIcon, Palmtree, Home } from "lucide-react";
+import { Briefcase, Calendar, Truck, Palmtree, Home } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -6,7 +6,7 @@ const ITEMS = [
   { key: "home", label: "Home", icon: Home, to: "/" },
   { key: "jobs", label: "Jobs", icon: Briefcase, to: "/jobs" },
   { key: "schedule", label: "Schedule", icon: Calendar, to: "/schedule" },
-  { key: "dispatch", label: "Dispatch", icon: TruckIcon, to: "/dispatch" },
+  { key: "trucking", label: "Trucking", icon: Truck, to: "/dispatch" },
   { key: "timeoff", label: "Time Off", icon: Palmtree, to: "/time-off" },
 ];
 
