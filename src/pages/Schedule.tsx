@@ -106,7 +106,7 @@ const Schedule = () => {
         .select("id,name,address,job_number")
         .eq("status", "active")
         .order("name"),
-      supabase.from("profiles").select("user_id,display_name").eq("is_active", true).order("display_name"),
+      supabase.from("profiles").select("user_id,display_name,contact_id").eq("is_active", true).order("display_name"),
       supabase
         .from("time_off_requests")
         .select("user_id,type,half_day")
@@ -115,10 +115,11 @@ const Schedule = () => {
         .gte("end_date", selectedDate),
     ]);
 
-    const profMap = new Map((p ?? []).map((x) => [x.user_id, x.display_name]));
+    const profMap = new Map((p ?? []).map((x) => [x.user_id, x] as const));
     const enriched: Assignment[] = (a ?? []).map((row: any) => ({
       ...row,
-      profile_name: profMap.get(row.user_id) ?? "Unknown",
+      profile_name: profMap.get(row.user_id)?.display_name ?? "Unknown",
+      contact_id: profMap.get(row.user_id)?.contact_id ?? null,
     }));
     setAssignments(enriched);
     setJobs(j ?? []);
