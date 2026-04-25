@@ -364,6 +364,21 @@ export const PermitsSection = ({ jobId }: Props) => {
                     onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                 </div>
 
+                <div>
+                  <Label htmlFor="permit_file">Permit document</Label>
+                  <Input
+                    id="permit_file"
+                    type="file"
+                    accept="application/pdf,image/*"
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  />
+                  {file && (
+                    <p className="mt-1 text-[11px] text-muted-foreground truncate">
+                      {file.name} · {(file.size / 1024).toFixed(0)} KB
+                    </p>
+                  )}
+                </div>
+
                 <Button type="submit" className="w-full" disabled={busy}>
                   {busy ? "Saving…" : "Save Permit"}
                 </Button>
