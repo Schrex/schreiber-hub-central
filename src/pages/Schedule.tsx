@@ -41,7 +41,7 @@ import { toast } from "@/hooks/use-toast";
 import { WeekGrid } from "@/components/schedule/WeekGrid";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
-type Profile = { user_id: string; display_name: string | null };
+type Profile = { user_id: string; display_name: string | null; contact_id: string | null };
 type Assignment = {
   id: string;
   job_id: string;
@@ -52,6 +52,7 @@ type Assignment = {
   notes: string | null;
   jobs?: Job | null;
   profile_name?: string | null;
+  contact_id?: string | null;
 };
 type TimeOff = {
   user_id: string;
@@ -105,7 +106,7 @@ const Schedule = () => {
         .select("id,name,address,job_number")
         .eq("status", "active")
         .order("name"),
-      supabase.from("profiles").select("user_id,display_name").eq("is_active", true).order("display_name"),
+      supabase.from("profiles").select("user_id,display_name,contact_id").eq("is_active", true).order("display_name"),
       supabase
         .from("time_off_requests")
         .select("user_id,type,half_day")
@@ -114,10 +115,11 @@ const Schedule = () => {
         .gte("end_date", selectedDate),
     ]);
 
-    const profMap = new Map((p ?? []).map((x) => [x.user_id, x.display_name]));
+    const profMap = new Map((p ?? []).map((x) => [x.user_id, x] as const));
     const enriched: Assignment[] = (a ?? []).map((row: any) => ({
       ...row,
-      profile_name: profMap.get(row.user_id) ?? "Unknown",
+      profile_name: profMap.get(row.user_id)?.display_name ?? "Unknown",
+      contact_id: profMap.get(row.user_id)?.contact_id ?? null,
     }));
     setAssignments(enriched);
     setJobs(j ?? []);
@@ -651,7 +653,16 @@ const Schedule = () => {
                             >
                               <div className="flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                                <span className="font-semibold">{a.profile_name}</span>
+                                {a.contact_id ? (
+                                  <button
+                                    onClick={() => navigate(`/employee-contacts?focus=${a.contact_id}`)}
+                                    className="font-semibold hover:text-primary hover:underline"
+                                  >
+                                    {a.profile_name}
+                                  </button>
+                                ) : (
+                                  <span className="font-semibold">{a.profile_name}</span>
+                                )}
                                 {a.start_time && (
                                   <span className="text-xs text-muted-foreground">
                                     · {a.start_time.slice(0, 5)}
@@ -683,7 +694,16 @@ const Schedule = () => {
                             className="flex items-center justify-between px-4 py-2 text-sm"
                           >
                             <div>
-                              <div className="font-medium">{a.profile_name}</div>
+                              {a.contact_id ? (
+                                <button
+                                  onClick={() => navigate(`/employee-contacts?focus=${a.contact_id}`)}
+                                  className="font-medium hover:text-primary hover:underline"
+                                >
+                                  {a.profile_name}
+                                </button>
+                              ) : (
+                                <div className="font-medium">{a.profile_name}</div>
+                              )}
                               <div className="text-xs text-muted-foreground">
                                 {a.start_time && <>{a.start_time.slice(0, 5)} · </>}
                                 {a.role_on_job ?? "—"}
@@ -740,7 +760,16 @@ const Schedule = () => {
                     className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium">{profile.display_name ?? "Unnamed"}</div>
+                      {profile.contact_id ? (
+                        <button
+                          onClick={() => navigate(`/employee-contacts?focus=${profile.contact_id}`)}
+                          className="font-medium hover:text-primary hover:underline"
+                        >
+                          {profile.display_name ?? "Unnamed"}
+                        </button>
+                      ) : (
+                        <div className="font-medium">{profile.display_name ?? "Unnamed"}</div>
+                      )}
                       {status === "assigned" && (
                         <div className="mt-0.5 text-xs text-muted-foreground">
                           {asg

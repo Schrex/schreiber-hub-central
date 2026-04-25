@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, MapPin, Contact, Download, KeyRound } from "lucide-react";
 import * as XLSX from "xlsx";
 import { z } from "zod";
@@ -152,6 +152,8 @@ const parseVCards = (text: string): VCardContact[] => {
 
 const EmployeeContacts = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const focusId = searchParams.get("focus");
   const { role, user } = useAuth();
   const canEdit = role === "foreman" || role === "office" || role === "admin";
   const canDelete = role === "office" || role === "admin";
@@ -196,6 +198,15 @@ const EmployeeContacts = () => {
   useEffect(() => {
     load();
   }, []);
+
+  // Scroll the focused contact into view after data loads
+  useEffect(() => {
+    if (!focusId || loading) return;
+    const el = document.getElementById(`contact-${focusId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [focusId, loading, contacts]);
 
   const departments = useMemo(() => {
     const set = new Set<string>();
@@ -645,7 +656,11 @@ const EmployeeContacts = () => {
             </p>
           ) : (
             filtered.map((c) => (
-              <Card key={c.id} className="p-3">
+              <Card
+                key={c.id}
+                id={`contact-${c.id}`}
+                className={`p-3 transition ${focusId === c.id ? "ring-2 ring-primary shadow-md" : ""}`}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
