@@ -278,16 +278,29 @@ const AdminPositions = () => {
           </div>
           <div className="space-y-2">
             {profiles.map((u) => {
-              const cur = currentByUser.get(u.user_id);
-              const userHistory = assignments.filter((a) => a.user_id === u.user_id);
+              const cur = u.user_id ? currentByUser.get(u.user_id) : undefined;
+              const userHistory = u.user_id
+                ? assignments.filter((a) => a.user_id === u.user_id)
+                : [];
               return (
-                <Card key={u.user_id} className="p-4">
+                <Card key={u.contact_id ?? u.user_id ?? u.email ?? u.display_name} className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="font-medium truncate">{u.display_name ?? u.email ?? "—"}</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-medium truncate">{u.display_name ?? u.email ?? "—"}</div>
+                        {!u.has_login && (
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                            No login
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground truncate">{u.email}</div>
                       <div className="mt-1 text-sm">
-                        {cur ? (
+                        {!u.has_login ? (
+                          <span className="text-muted-foreground italic">
+                            Convert to login from Employee Contacts to assign pay
+                          </span>
+                        ) : cur ? (
                           <span>
                             <span className="font-semibold">{cur.position?.title}</span>
                             <span className="text-muted-foreground"> · {fmtMoney(cur.pay_rate)}/hr</span>
