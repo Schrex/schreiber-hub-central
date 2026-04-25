@@ -48,6 +48,7 @@ const App = () => (
             <Route path="/tools/performance-reviews" element={<ProtectedRoute><PerformanceReviews /></ProtectedRoute>} />
             <Route path="/tools/handbook" element={<ProtectedRoute><Handbook /></ProtectedRoute>} />
             <Route path="/my-position" element={<ProtectedRoute><MyPosition /></ProtectedRoute>} />
+            <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
             <Route
               path="/admin/positions"
               element={<ProtectedRoute requireRole="admin"><AdminPositions /></ProtectedRoute>}
