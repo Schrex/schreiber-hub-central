@@ -202,6 +202,20 @@ export const DigTicketsSection = ({ jobId }: Props) => {
                   </div>
 
                   <div>
+                    <Label htmlFor="ticket_url">Ticket link (optional)</Label>
+                    <Input
+                      id="ticket_url"
+                      type="url"
+                      placeholder="https://newyork.exactix.com/…"
+                      value={form.ticket_url}
+                      onChange={(e) => setForm({ ...form, ticket_url: e.target.value })}
+                    />
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      Paste the direct URL from Exactix so it opens with one tap.
+                    </p>
+                  </div>
+
+                  <div>
                     <Label>Status</Label>
                     <Select
                       value={form.status}
