@@ -35,9 +35,11 @@ interface Position {
 }
 
 interface Profile {
-  user_id: string;
+  user_id: string | null;
   display_name: string | null;
   email: string | null;
+  contact_id: string | null;
+  has_login: boolean;
 }
 
 interface Assignment {
