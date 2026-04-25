@@ -26,6 +26,7 @@ type EmployeeContact = {
   address: string | null;
   notes: string | null;
   is_active: boolean;
+  converted_user_id: string | null;
 };
 
 const contactSchema = z.object({
