@@ -424,7 +424,43 @@ const Vendors = () => {
     }
   };
 
-  const downloadVendorContact = (v: Vendor) => {
+  const importFromContacts = async () => {
+    if (!isContactPickerSupported()) {
+      vcardInputRef.current?.click();
+      return;
+    }
+    setImporting(true);
+    try {
+      const { contacts: picked, cancelled } = await pickContactsFromDevice(true);
+      if (cancelled || picked.length === 0) return;
+      const queue = picked.map((p) => ({
+        ...emptyForm,
+        name: p.name, // vendor name defaults to person's name; user can edit in review
+        contact_name: p.name,
+        phone: p.phone,
+        email: p.email,
+        address: p.address,
+      }));
+      setReviewQueue(queue);
+      setReviewIndex(0);
+      setEditing(null);
+      setForm(queue[0]);
+      setDialogOpen(true);
+      toast({
+        title: queue.length === 1 ? "Review vendor" : `Review ${queue.length} vendors`,
+        description: "Edit the info, then Save. You can skip any you don't want.",
+      });
+    } catch (err) {
+      toast({
+        title: "Couldn't open Contacts",
+        description: err instanceof Error ? err.message : "Try the file option instead.",
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
+
     downloadVCard({
       fullName: v.contact_name || v.name,
       organization: v.contact_name ? v.name : undefined,
