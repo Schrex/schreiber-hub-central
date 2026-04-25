@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, FileCheck, Trash2 } from "lucide-react";
+import { Plus, FileCheck, Trash2, Paperclip, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
