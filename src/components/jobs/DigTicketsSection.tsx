@@ -35,6 +35,7 @@ interface Ticket {
   dig_end_date: string | null;
   expiration_date: string | null;
   response_notes: string | null;
+  ticket_url: string | null;
 }
 
 const STATUS_STYLE: Record<Status, string> = {
@@ -60,6 +61,7 @@ export const DigTicketsSection = ({ jobId }: Props) => {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     ticket_number: "",
+    ticket_url: "",
     status: "requested" as Status,
     request_type: "normal" as ReqType,
     work_description: "",
@@ -74,7 +76,7 @@ export const DigTicketsSection = ({ jobId }: Props) => {
     const { data } = await supabase
       .from("dig_tickets")
       .select(
-        "id, ticket_number, status, request_type, work_description, dig_start_date, dig_end_date, expiration_date, response_notes",
+        "id, ticket_number, status, request_type, work_description, dig_start_date, dig_end_date, expiration_date, response_notes, ticket_url",
       )
       .eq("job_id", jobId)
       .order("created_at", { ascending: false });
@@ -90,6 +92,7 @@ export const DigTicketsSection = ({ jobId }: Props) => {
   const reset = () =>
     setForm({
       ticket_number: "",
+      ticket_url: "",
       status: "requested",
       request_type: "normal",
       work_description: "",
@@ -106,6 +109,7 @@ export const DigTicketsSection = ({ jobId }: Props) => {
       const { error } = await supabase.from("dig_tickets").insert({
         job_id: jobId,
         ticket_number: form.ticket_number || null,
+        ticket_url: form.ticket_url.trim() || null,
         status: form.status,
         request_type: form.request_type,
         work_description: form.work_description || null,
@@ -198,6 +202,20 @@ export const DigTicketsSection = ({ jobId }: Props) => {
                   </div>
 
                   <div>
+                    <Label htmlFor="ticket_url">Ticket link (optional)</Label>
+                    <Input
+                      id="ticket_url"
+                      type="url"
+                      placeholder="https://newyork.exactix.com/…"
+                      value={form.ticket_url}
+                      onChange={(e) => setForm({ ...form, ticket_url: e.target.value })}
+                    />
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      Paste the direct URL from Exactix so it opens with one tap.
+                    </p>
+                  </div>
+
+                  <div>
                     <Label>Status</Label>
                     <Select
                       value={form.status}
@@ -281,7 +299,29 @@ export const DigTicketsSection = ({ jobId }: Props) => {
                       </span>
                     )}
                     {t.ticket_number && (
-                      <span className="font-mono text-[11px] text-muted-foreground">#{t.ticket_number}</span>
+                      t.ticket_url ? (
+                        <a
+                          href={t.ticket_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 font-mono text-[11px] text-primary hover:underline"
+                        >
+                          #{t.ticket_number}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <span className="font-mono text-[11px] text-muted-foreground">#{t.ticket_number}</span>
+                      )
+                    )}
+                    {!t.ticket_number && t.ticket_url && (
+                      <a
+                        href={t.ticket_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                      >
+                        Open ticket <ExternalLink className="h-3 w-3" />
+                      </a>
                     )}
                   </div>
                   {t.work_description && (
