@@ -39,6 +39,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { WeekGrid } from "@/components/schedule/WeekGrid";
+import { fetchCurrentPositions, type CurrentPosition } from "@/lib/currentPositions";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
 type Profile = {
@@ -79,6 +80,7 @@ const Schedule = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [timeOff, setTimeOff] = useState<TimeOff[]>([]);
+  const [positionsByUser, setPositionsByUser] = useState<Map<string, CurrentPosition>>(new Map());
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"day" | "week">("day");
@@ -161,6 +163,10 @@ const Schedule = () => {
     setJobs(j ?? []);
     setProfiles(unified);
     setTimeOff((t ?? []) as TimeOff[]);
+    // Pull current positions for everyone with a login
+    const userIds = unified.filter((u) => u.user_id).map((u) => u.user_id as string);
+    const posMap = await fetchCurrentPositions(userIds);
+    setPositionsByUser(posMap);
     setLoading(false);
   };
 
@@ -762,7 +768,7 @@ const Schedule = () => {
                               )}
                               <div className="text-xs text-muted-foreground">
                                 {a.start_time && <>{a.start_time.slice(0, 5)} · </>}
-                                {a.role_on_job ?? "—"}
+                                {a.role_on_job ?? positionsByUser.get(a.user_id)?.title ?? "—"}
                               </div>
                             </div>
                             {canEdit && !isPastDay && (
@@ -821,16 +827,23 @@ const Schedule = () => {
                     className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
                   >
                     <div className="min-w-0 flex-1">
-                      {profile.contact_id ? (
-                        <button
-                          onClick={() => navigate(`/employee-contacts?focus=${profile.contact_id}`)}
-                          className="font-medium hover:text-primary hover:underline"
-                        >
-                          {profile.display_name ?? "Unnamed"}
-                        </button>
-                      ) : (
-                        <div className="font-medium">{profile.display_name ?? "Unnamed"}</div>
-                      )}
+                      <div className="flex flex-wrap items-baseline gap-x-2">
+                        {profile.contact_id ? (
+                          <button
+                            onClick={() => navigate(`/employee-contacts?focus=${profile.contact_id}`)}
+                            className="font-medium hover:text-primary hover:underline"
+                          >
+                            {profile.display_name ?? "Unnamed"}
+                          </button>
+                        ) : (
+                          <div className="font-medium">{profile.display_name ?? "Unnamed"}</div>
+                        )}
+                        {profile.user_id && positionsByUser.get(profile.user_id) && (
+                          <span className="text-[11px] text-muted-foreground">
+                            {positionsByUser.get(profile.user_id)!.title}
+                          </span>
+                        )}
+                      </div>
                       {status === "assigned" && (
                         <div className="mt-0.5 text-xs text-muted-foreground">
                           {asg
