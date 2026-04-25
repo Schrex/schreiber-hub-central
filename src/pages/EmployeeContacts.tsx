@@ -184,7 +184,6 @@ const EmployeeContacts = () => {
     const { data, error } = await supabase
       .from("employee_contacts")
       .select("*")
-      .is("converted_user_id", null)
       .order("name", { ascending: true });
     if (error) {
       toast({ title: "Couldn't load contacts", description: error.message, variant: "destructive" });
@@ -651,6 +650,11 @@ const EmployeeContacts = () => {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="truncate font-semibold">{c.name}</h3>
+                      {c.converted_user_id && (
+                        <Badge variant="default" className="text-[10px]" title="Has app login">
+                          <KeyRound className="mr-1 h-2.5 w-2.5" /> Login
+                        </Badge>
+                      )}
                       {c.department && (
                         <Badge variant="secondary" className="text-[10px]">
                           {c.department}
@@ -699,7 +703,7 @@ const EmployeeContacts = () => {
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
-                    {canConvert && (
+                    {canConvert && !c.converted_user_id && (
                       <Button
                         size="icon"
                         variant="ghost"
@@ -807,7 +811,7 @@ const EmployeeContacts = () => {
             <DialogTitle>Convert to login</DialogTitle>
             <DialogDescription>
               Create a real account for {convertTarget?.name}. They'll sign in with the email and default password
-              you set here. Once converted, the contact is removed from the directory.
+              you set here. The contact stays in the directory and now shows a "Login" badge.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">

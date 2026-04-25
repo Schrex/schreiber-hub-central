@@ -21,6 +21,7 @@ interface UserRow {
   is_active: boolean;
   is_driver: boolean;
   role: Role | null;
+  contact_id: string | null;
 }
 
 const ROLES: Role[] = ["employee", "foreman", "office", "admin"];
@@ -34,7 +35,7 @@ const AdminUsers = () => {
   const load = async () => {
     setLoading(true);
     const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("user_id, display_name, email, is_active, is_driver").order("created_at"),
+      supabase.from("profiles").select("user_id, display_name, email, is_active, is_driver, contact_id").order("created_at"),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     const roleByUser = new Map<string, Role>();
@@ -50,6 +51,7 @@ const AdminUsers = () => {
         email: p.email,
         is_active: p.is_active,
         is_driver: (p as { is_driver?: boolean }).is_driver ?? false,
+        contact_id: (p as { contact_id?: string | null }).contact_id ?? null,
         role: roleByUser.get(p.user_id) ?? null,
       })),
     );
@@ -105,7 +107,10 @@ const AdminUsers = () => {
                 <p className="font-medium truncate">
                   {r.display_name ?? "—"} {me?.id === r.user_id && <span className="text-xs text-muted-foreground">(you)</span>}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">{r.email}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {r.email}
+                  {r.contact_id && <span className="ml-2 text-[10px] uppercase tracking-wide text-primary">• Contact linked</span>}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 <Select value={r.role ?? undefined} onValueChange={(v) => changeRole(r.user_id, v as Role)}>
