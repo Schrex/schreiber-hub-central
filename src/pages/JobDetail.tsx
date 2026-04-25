@@ -12,6 +12,7 @@ import { PermitsSection } from "@/components/jobs/PermitsSection";
 import { PlansSection } from "@/components/jobs/PlansSection";
 import { PhotosSection } from "@/components/jobs/PhotosSection";
 import { JobInfoSection } from "@/components/jobs/JobInfoSection";
+import { JobLookahead } from "@/components/jobs/JobLookahead";
 
 interface Job {
   id: string;
