@@ -76,7 +76,11 @@ export const BottomNav = () => {
             const active =
               item.to === "/"
                 ? pathname === "/"
-                : pathname === item.to || pathname.startsWith(item.to + "/");
+                : pathname === item.to ||
+                  pathname.startsWith(item.to + "/") ||
+                  (item.match?.some(
+                    (m) => pathname === m || pathname.startsWith(m + "/"),
+                  ) ?? false);
             return (
               <li key={item.key} className="shrink-0">
                 <button
