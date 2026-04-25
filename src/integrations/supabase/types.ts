@@ -1003,6 +1003,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          contact_id: string | null
           created_at: string
           display_name: string | null
           email: string | null
@@ -1013,6 +1014,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          contact_id?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -1023,6 +1025,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          contact_id?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -1032,7 +1035,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "employee_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referrals: {
         Row: {
