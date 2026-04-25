@@ -613,7 +613,7 @@ const EmployeeContacts = () => {
               }}
             />
             <p className="text-[11px] text-muted-foreground">
-              Import a CSV/Excel sheet, or share a contact (.vcf) from your phone's Contacts app.
+              Tap "Import from Contacts" to pick directly from your phone (Android Chrome). On iPhone or desktop it falls back to picking a .vcf file.
             </p>
           </>
         )}
