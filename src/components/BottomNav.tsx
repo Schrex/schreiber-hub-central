@@ -1,10 +1,8 @@
 import {
   Briefcase,
   Calendar,
-  Palmtree,
   Home,
-  ShoppingBag,
-  HandCoins,
+  Sparkles,
   Wrench,
   IdCard,
   Receipt,
