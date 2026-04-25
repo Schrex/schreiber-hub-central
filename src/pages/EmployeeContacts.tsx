@@ -154,6 +154,7 @@ const EmployeeContacts = () => {
   const { role, user } = useAuth();
   const canEdit = role === "foreman" || role === "office" || role === "admin";
   const canDelete = role === "office" || role === "admin";
+  const canConvert = role === "admin";
 
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,6 +167,16 @@ const EmployeeContacts = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const vcardInputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  // vCard review queue
+  const [reviewQueue, setReviewQueue] = useState<typeof emptyForm[]>([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
+  // Convert-to-login dialog
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [convertTarget, setConvertTarget] = useState<EmployeeContact | null>(null);
+  const [convertEmail, setConvertEmail] = useState("");
+  const [convertPassword, setConvertPassword] = useState("");
+  const [convertRole, setConvertRole] = useState<"employee" | "foreman" | "office" | "admin">("employee");
+  const [converting, setConverting] = useState(false);
 
   const load = async () => {
     setLoading(true);
