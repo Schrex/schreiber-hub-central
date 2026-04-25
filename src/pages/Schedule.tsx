@@ -163,6 +163,10 @@ const Schedule = () => {
     setJobs(j ?? []);
     setProfiles(unified);
     setTimeOff((t ?? []) as TimeOff[]);
+    // Pull current positions for everyone with a login
+    const userIds = unified.filter((u) => u.user_id).map((u) => u.user_id as string);
+    const posMap = await fetchCurrentPositions(userIds);
+    setPositionsByUser(posMap);
     setLoading(false);
   };
 
