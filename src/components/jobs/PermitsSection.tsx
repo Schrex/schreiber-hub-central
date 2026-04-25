@@ -435,6 +435,16 @@ export const PermitsSection = ({ jobId }: Props) => {
                     </p>
                   )}
                   {p.notes && <p className="mt-1 text-[11px] text-muted-foreground">{p.notes}</p>}
+                  {p.file_path && (
+                    <button
+                      type="button"
+                      onClick={() => openFile(p.file_path!)}
+                      className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                    >
+                      <Paperclip className="h-3 w-3" /> Open document
+                      <ExternalLink className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
                 {canEdit && (
                   <div className="flex flex-col items-end gap-1">
