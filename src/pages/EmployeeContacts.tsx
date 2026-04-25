@@ -656,7 +656,11 @@ const EmployeeContacts = () => {
             </p>
           ) : (
             filtered.map((c) => (
-              <Card key={c.id} className="p-3">
+              <Card
+                key={c.id}
+                id={`contact-${c.id}`}
+                className={`p-3 transition ${focusId === c.id ? "ring-2 ring-primary shadow-md" : ""}`}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
