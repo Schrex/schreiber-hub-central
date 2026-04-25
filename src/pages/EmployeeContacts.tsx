@@ -586,11 +586,11 @@ const EmployeeContacts = () => {
             </div>
             <Button
               variant="outline"
-              onClick={() => vcardInputRef.current?.click()}
+              onClick={importFromContacts}
               disabled={importing}
               className="w-full"
             >
-              <Contact className="mr-1 h-4 w-4" /> Import Contact (vCard)
+              <Contact className="mr-1 h-4 w-4" /> Import from Contacts
             </Button>
             <input
               ref={fileInputRef}
