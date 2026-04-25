@@ -35,7 +35,7 @@ const AdminUsers = () => {
   const load = async () => {
     setLoading(true);
     const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("user_id, display_name, email, is_active, is_driver").order("created_at"),
+      supabase.from("profiles").select("user_id, display_name, email, is_active, is_driver, contact_id").order("created_at"),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     const roleByUser = new Map<string, Role>();
@@ -51,6 +51,7 @@ const AdminUsers = () => {
         email: p.email,
         is_active: p.is_active,
         is_driver: (p as { is_driver?: boolean }).is_driver ?? false,
+        contact_id: (p as { contact_id?: string | null }).contact_id ?? null,
         role: roleByUser.get(p.user_id) ?? null,
       })),
     );
