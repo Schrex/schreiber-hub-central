@@ -584,22 +584,48 @@ const Vendors = () => {
               {vendors.length === 0 ? "No vendors yet." : "No matches."}
             </p>
           ) : (
-            filtered.map((v) => (
-              <Card key={v.id} className="p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="truncate font-semibold">{v.name}</h3>
-                      {v.category && (
-                        <Badge variant="secondary" className="text-[10px]">
-                          {v.category}
-                        </Badge>
-                      )}
-                    </div>
-                    {v.contact_name && (
-                      <p className="mt-0.5 text-xs text-muted-foreground">{v.contact_name}</p>
+            filtered.map((v) => {
+              const isOpen = expandedId === v.id;
+              return (
+                <Card key={v.id} className="px-3 py-1.5">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(isOpen ? null : v.id)}
+                      className="min-w-0 flex-1 text-left"
+                      aria-expanded={isOpen}
+                    >
+                      <h3 className="truncate text-sm font-medium">{v.name}</h3>
+                    </button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => downloadVendorContact(v)}
+                      aria-label="Save to phone contacts"
+                      title="Save to contacts"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
+                    {canEdit && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(v)} aria-label="Edit">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
                     )}
-                    <div className="mt-2 space-y-1 text-xs">
+                    {canDelete && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(v)} aria-label="Delete">
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                  {isOpen && (
+                    <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
+                      {v.category && (
+                        <Badge variant="secondary" className="text-[10px]">{v.category}</Badge>
+                      )}
+                      {v.contact_name && (
+                        <p className="text-muted-foreground">{v.contact_name}</p>
+                      )}
                       {v.phone && (
                         <a href={`tel:${v.phone}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
                           <Phone className="h-3 w-3" /> {v.phone}
@@ -632,31 +658,10 @@ const Vendors = () => {
                       )}
                       {v.notes && <p className="text-muted-foreground">{v.notes}</p>}
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => downloadVendorContact(v)}
-                      aria-label="Save to phone contacts"
-                      title="Save to contacts"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    {canEdit && (
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(v)} aria-label="Edit">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {canDelete && (
-                      <Button size="icon" variant="ghost" onClick={() => remove(v)} aria-label="Delete">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))
+                  )}
+                </Card>
+              );
+            })
           )}
         </div>
       </main>
