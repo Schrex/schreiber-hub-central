@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, FileCheck, Trash2 } from "lucide-react";
+import { Plus, FileCheck, Trash2, Paperclip, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ interface Permit {
   issue_date: string | null;
   expiration_date: string | null;
   notes: string | null;
+  file_path: string | null;
 }
 
 interface UserOption {
@@ -93,6 +94,7 @@ export const PermitsSection = ({ jobId }: Props) => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     permit_type: "Building",
     permit_type_custom: "",
@@ -113,7 +115,7 @@ export const PermitsSection = ({ jobId }: Props) => {
       supabase
         .from("job_permits")
         .select(
-          "id, permit_type, permit_number, status, responsible_user_id, responsible_name, issuing_agency, issue_date, expiration_date, notes",
+          "id, permit_type, permit_number, status, responsible_user_id, responsible_name, issuing_agency, issue_date, expiration_date, notes, file_path",
         )
         .eq("job_id", jobId)
         .order("created_at", { ascending: false }),
@@ -132,7 +134,8 @@ export const PermitsSection = ({ jobId }: Props) => {
   const userName = (uid: string | null) =>
     users.find((u) => u.user_id === uid)?.display_name ?? "Unknown";
 
-  const reset = () =>
+  const reset = () => {
+    setFile(null);
     setForm({
       permit_type: "Building",
       permit_type_custom: "",
@@ -146,6 +149,7 @@ export const PermitsSection = ({ jobId }: Props) => {
       expiration_date: "",
       notes: "",
     });
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,6 +157,22 @@ export const PermitsSection = ({ jobId }: Props) => {
     try {
       const type = form.permit_type === "Other" ? form.permit_type_custom.trim() : form.permit_type;
       if (!type) throw new Error("Permit type required");
+
+      let file_path: string | null = null;
+      let file_size: number | null = null;
+      let mime_type: string | null = null;
+      if (file) {
+        const ext = file.name.split(".").pop() ?? "bin";
+        const path = `${jobId}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("permits")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (upErr) throw upErr;
+        file_path = path;
+        file_size = file.size;
+        mime_type = file.type || null;
+      }
+
       const { error } = await supabase.from("job_permits").insert({
         job_id: jobId,
         permit_type: type,
@@ -170,6 +190,9 @@ export const PermitsSection = ({ jobId }: Props) => {
         issue_date: form.issue_date || null,
         expiration_date: form.expiration_date || null,
         notes: form.notes || null,
+        file_path,
+        file_size,
+        mime_type,
         created_by: user?.id ?? null,
       });
       if (error) throw error;
@@ -184,6 +207,17 @@ export const PermitsSection = ({ jobId }: Props) => {
     }
   };
 
+  const openFile = async (path: string) => {
+    const { data, error } = await supabase.storage
+      .from("permits")
+      .createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl) {
+      toast.error(error?.message ?? "Could not open file");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
+
   const updateStatus = async (id: string, status: Status) => {
     const { error } = await supabase.from("job_permits").update({ status }).eq("id", id);
     if (error) {
@@ -195,10 +229,14 @@ export const PermitsSection = ({ jobId }: Props) => {
 
   const remove = async (id: string) => {
     if (!confirm("Delete this permit?")) return;
+    const target = permits.find((p) => p.id === id);
     const { error } = await supabase.from("job_permits").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
       return;
+    }
+    if (target?.file_path) {
+      await supabase.storage.from("permits").remove([target.file_path]);
     }
     setPermits((ps) => ps.filter((p) => p.id !== id));
   };
@@ -326,6 +364,21 @@ export const PermitsSection = ({ jobId }: Props) => {
                     onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                 </div>
 
+                <div>
+                  <Label htmlFor="permit_file">Permit document</Label>
+                  <Input
+                    id="permit_file"
+                    type="file"
+                    accept="application/pdf,image/*"
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  />
+                  {file && (
+                    <p className="mt-1 text-[11px] text-muted-foreground truncate">
+                      {file.name} · {(file.size / 1024).toFixed(0)} KB
+                    </p>
+                  )}
+                </div>
+
                 <Button type="submit" className="w-full" disabled={busy}>
                   {busy ? "Saving…" : "Save Permit"}
                 </Button>
@@ -382,6 +435,16 @@ export const PermitsSection = ({ jobId }: Props) => {
                     </p>
                   )}
                   {p.notes && <p className="mt-1 text-[11px] text-muted-foreground">{p.notes}</p>}
+                  {p.file_path && (
+                    <button
+                      type="button"
+                      onClick={() => openFile(p.file_path!)}
+                      className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                    >
+                      <Paperclip className="h-3 w-3" /> Open document
+                      <ExternalLink className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
                 {canEdit && (
                   <div className="flex flex-col items-end gap-1">
