@@ -94,6 +94,7 @@ export const PermitsSection = ({ jobId }: Props) => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     permit_type: "Building",
     permit_type_custom: "",
