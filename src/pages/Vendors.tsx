@@ -301,7 +301,6 @@ const Vendors = () => {
     setImporting(true);
     try {
       const isVCard = /\.vcf$/i.test(file.name) || file.type === "text/vcard" || file.type === "text/x-vcard";
-      let rows: Array<Record<string, unknown>>;
 
       if (isVCard) {
         const text = await file.text();
@@ -310,16 +309,26 @@ const Vendors = () => {
           toast({ title: "No contacts found in vCard", variant: "destructive" });
           return;
         }
-        rows = contacts as unknown as Array<Record<string, unknown>>;
-      } else {
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, { type: "array" });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-        if (rows.length === 0) {
-          toast({ title: "Empty spreadsheet", variant: "destructive" });
-          return;
-        }
+        // Push to review queue and open dialog with first contact pre-filled
+        setReviewQueue(contacts);
+        setReviewIndex(0);
+        setEditing(null);
+        setForm(contacts[0]);
+        setDialogOpen(true);
+        toast({
+          title: contacts.length === 1 ? "Review contact" : `Review ${contacts.length} contacts`,
+          description: "Edit the info, then Save. You can skip any you don't want.",
+        });
+        return;
+      }
+
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+      if (rows.length === 0) {
+        toast({ title: "Empty spreadsheet", variant: "destructive" });
+        return;
       }
 
       const records: Array<Record<string, string | null>> = [];
@@ -382,6 +391,42 @@ const Vendors = () => {
       if (vcardInputRef.current) vcardInputRef.current.value = "";
     }
   };
+
+  // Advance to next vCard in the review queue, or close dialog when done.
+  const advanceReview = () => {
+    if (reviewQueue.length === 0) return false;
+    const next = reviewIndex + 1;
+    if (next < reviewQueue.length) {
+      setReviewIndex(next);
+      setForm(reviewQueue[next]);
+      return true;
+    }
+    setReviewQueue([]);
+    setReviewIndex(0);
+    return false;
+  };
+
+  const skipReview = () => {
+    const more = advanceReview();
+    if (!more) {
+      setDialogOpen(false);
+      toast({ title: "Review complete" });
+    }
+  };
+
+  const downloadVendorContact = (v: Vendor) => {
+    downloadVCard({
+      fullName: v.contact_name || v.name,
+      organization: v.contact_name ? v.name : undefined,
+      title: v.category ?? undefined,
+      phone: v.phone ?? undefined,
+      email: v.email ?? undefined,
+      website: v.website ?? undefined,
+      address: v.address ?? undefined,
+      notes: v.notes ?? undefined,
+    }, v.name);
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
