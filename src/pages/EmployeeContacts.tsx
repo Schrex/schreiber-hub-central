@@ -650,6 +650,11 @@ const EmployeeContacts = () => {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="truncate font-semibold">{c.name}</h3>
+                      {c.converted_user_id && (
+                        <Badge variant="default" className="text-[10px]" title="Has app login">
+                          <KeyRound className="mr-1 h-2.5 w-2.5" /> Login
+                        </Badge>
+                      )}
                       {c.department && (
                         <Badge variant="secondary" className="text-[10px]">
                           {c.department}
