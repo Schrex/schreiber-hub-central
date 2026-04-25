@@ -279,8 +279,17 @@ const Vendors = () => {
         toast({ title: "Save failed", description: error.message, variant: "destructive" });
       } else {
         toast({ title: "Vendor added" });
-        setDialogOpen(false);
         load();
+        // If we're reviewing imported vCards, advance to next instead of closing
+        if (reviewQueue.length > 0) {
+          const more = advanceReview();
+          if (!more) {
+            setDialogOpen(false);
+            toast({ title: "All contacts imported" });
+          }
+        } else {
+          setDialogOpen(false);
+        }
       }
     }
     setSaving(false);
