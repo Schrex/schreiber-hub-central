@@ -76,7 +76,90 @@ const HEADER_MAP: Record<string, keyof typeof emptyForm> = {
   comments: "notes",
 };
 
-const Vendors = () => {
+// Decode RFC 6350 quoted-printable / escape sequences in vCard values
+const decodeVCardValue = (val: string, encoding?: string) => {
+  let v = val;
+  if (encoding && encoding.toUpperCase() === "QUOTED-PRINTABLE") {
+    v = v.replace(/=([0-9A-F]{2})/gi, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  }
+  return v.replace(/\\n/gi, "\n").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\").trim();
+};
+
+type VCardContact = typeof emptyForm;
+
+const parseVCards = (text: string): VCardContact[] => {
+  // Unfold lines per RFC 6350 (lines starting with space/tab continue previous)
+  const unfolded = text.replace(/\r\n/g, "\n").replace(/\n[ \t]/g, "");
+  const cards: VCardContact[] = [];
+  const blocks = unfolded.split(/BEGIN:VCARD/i).slice(1);
+
+  for (const block of blocks) {
+    const body = block.split(/END:VCARD/i)[0];
+    if (!body) continue;
+    const contact: VCardContact = { ...emptyForm };
+    const phones: string[] = [];
+    const emails: string[] = [];
+    const urls: string[] = [];
+    const addresses: string[] = [];
+
+    for (const rawLine of body.split("\n")) {
+      const line = rawLine.trim();
+      if (!line) continue;
+      const colonIdx = line.indexOf(":");
+      if (colonIdx === -1) continue;
+      const left = line.slice(0, colonIdx);
+      const value = line.slice(colonIdx + 1);
+      const parts = left.split(";");
+      const prop = parts[0].toUpperCase();
+      const params = parts.slice(1);
+      const encoding = params.find((p) => /^ENCODING=/i.test(p))?.split("=")[1];
+      const decoded = decodeVCardValue(value, encoding);
+
+      if (prop === "FN" && !contact.name) {
+        contact.name = decoded;
+      } else if (prop === "N" && !contact.name) {
+        // N: Family;Given;Middle;Prefix;Suffix
+        const [family = "", given = ""] = decoded.split(";");
+        const full = [given, family].filter(Boolean).join(" ").trim();
+        if (full) contact.name = full;
+      } else if (prop === "ORG") {
+        const org = decoded.split(";")[0].trim();
+        if (org) {
+          // If we already have a personal name, keep it as contact_name and use org as name
+          if (contact.name && !contact.contact_name) contact.contact_name = contact.name;
+          contact.name = org;
+        }
+      } else if (prop === "TITLE" && !contact.contact_name) {
+        contact.contact_name = decoded;
+      } else if (prop === "TEL") {
+        phones.push(decoded);
+      } else if (prop === "EMAIL") {
+        emails.push(decoded);
+      } else if (prop === "URL") {
+        urls.push(decoded);
+      } else if (prop === "ADR") {
+        // ADR: PO;Ext;Street;City;Region;PostalCode;Country
+        const [, , street = "", city = "", region = "", postal = "", country = ""] = decoded.split(";");
+        const formatted = [street, [city, region].filter(Boolean).join(", "), postal, country]
+          .filter((p) => p && p.trim())
+          .join(", ");
+        if (formatted) addresses.push(formatted);
+      } else if (prop === "NOTE") {
+        contact.notes = contact.notes ? `${contact.notes}\n${decoded}` : decoded;
+      } else if (prop === "CATEGORIES" && !contact.category) {
+        contact.category = decoded.split(",")[0].trim();
+      }
+    }
+
+    contact.phone = phones[0] ?? "";
+    contact.email = emails[0] ?? "";
+    contact.website = urls[0] ?? "";
+    contact.address = addresses[0] ?? "";
+
+    if (contact.name.trim()) cards.push(contact);
+  }
+  return cards;
+};
   const navigate = useNavigate();
   const { role, user } = useAuth();
   const canEdit = role === "foreman" || role === "office" || role === "admin";
