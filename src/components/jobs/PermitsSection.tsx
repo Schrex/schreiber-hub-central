@@ -134,7 +134,8 @@ export const PermitsSection = ({ jobId }: Props) => {
   const userName = (uid: string | null) =>
     users.find((u) => u.user_id === uid)?.display_name ?? "Unknown";
 
-  const reset = () =>
+  const reset = () => {
+    setFile(null);
     setForm({
       permit_type: "Building",
       permit_type_custom: "",
@@ -148,6 +149,7 @@ export const PermitsSection = ({ jobId }: Props) => {
       expiration_date: "",
       notes: "",
     });
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
