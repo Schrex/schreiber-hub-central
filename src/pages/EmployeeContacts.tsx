@@ -811,7 +811,7 @@ const EmployeeContacts = () => {
             <DialogTitle>Convert to login</DialogTitle>
             <DialogDescription>
               Create a real account for {convertTarget?.name}. They'll sign in with the email and default password
-              you set here. Once converted, the contact is removed from the directory.
+              you set here. The contact stays in the directory and now shows a "Login" badge.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
