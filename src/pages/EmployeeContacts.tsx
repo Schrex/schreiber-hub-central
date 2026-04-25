@@ -199,6 +199,15 @@ const EmployeeContacts = () => {
     load();
   }, []);
 
+  // Scroll the focused contact into view after data loads
+  useEffect(() => {
+    if (!focusId || loading) return;
+    const el = document.getElementById(`contact-${focusId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [focusId, loading, contacts]);
+
   const departments = useMemo(() => {
     const set = new Set<string>();
     contacts.forEach((c) => c.department && set.add(c.department));
