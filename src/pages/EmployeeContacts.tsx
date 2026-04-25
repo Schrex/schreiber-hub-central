@@ -703,7 +703,7 @@ const EmployeeContacts = () => {
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
-                    {canConvert && (
+                    {canConvert && !c.converted_user_id && (
                       <Button
                         size="icon"
                         variant="ghost"
