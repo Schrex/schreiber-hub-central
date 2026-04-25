@@ -447,6 +447,7 @@ const EmployeeContacts = () => {
     }
   };
 
+  const downloadContact = (c: EmployeeContact) => {
     downloadVCard({
       fullName: c.name,
       organization: c.department ?? undefined,
