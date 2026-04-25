@@ -17,6 +17,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { downloadVCard, downloadVCards } from "@/lib/vcard";
 import { fetchCurrentPositions, type CurrentPosition } from "@/lib/currentPositions";
 import { getContactPickerUnavailableReason, isContactPickerSupported, pickContactsFromDevice } from "@/lib/contactPicker";
+import { AddEmployeeWizard } from "@/components/AddEmployeeWizard";
 
 type EmployeeContact = {
   id: string;
