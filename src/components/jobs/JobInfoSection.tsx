@@ -80,16 +80,7 @@ const Body = ({ info }: { info: JobInfo }) => {
   );
 
   return (
-    <section className="rounded-2xl border border-primary/30 bg-surface p-4">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
-          <ClipboardList className="h-3.5 w-3.5" /> Job Info
-        </h2>
-        <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
-          <Lock className="h-2.5 w-2.5" /> Foreman
-        </span>
-      </div>
-
+    <div>
       {/* Topline */}
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
         <Stat label="Manhours" value={info.totalManhours.toLocaleString()} />
