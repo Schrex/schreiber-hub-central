@@ -52,8 +52,23 @@ const ITEMS: Item[] = [
   { key: "perks", label: "Perks", icon: Sparkles, to: "/perks", match: ["/time-off", "/apparel", "/referrals"] },
   { key: "tools", label: "Tools", icon: Wrench, to: "/tools", match: ["/tools/performance-reviews", "/tools/handbook", "/tools/trucking"] },
   { key: "position", label: "Position", icon: IdCard, to: "/my-position" },
-  { key: "receipts", label: "Receipts", icon: Receipt, href: "https://app.divvy.co/" },
+  { key: "receipts", label: "Receipts", icon: Receipt },
 ];
+
+const openDivvy = () => {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    const start = Date.now();
+    window.location.href = "divvy://";
+    setTimeout(() => {
+      if (Date.now() - start < 2000) {
+        window.open("https://app.divvy.co/", "_blank", "noopener,noreferrer");
+      }
+    }, 1200);
+    return;
+  }
+  window.open("https://app.divvy.co/", "_blank", "noopener,noreferrer");
+};
 
 export const BottomNav = () => {
   const navigate = useNavigate();
@@ -83,7 +98,8 @@ export const BottomNav = () => {
                     ) ?? false)
                   : false;
             const handleClick = () => {
-              if (item.to) navigate(item.to);
+              if (item.key === "receipts") openDivvy();
+              else if (item.to) navigate(item.to);
               else if (item.href) window.open(item.href, "_blank", "noopener,noreferrer");
             };
             return (
