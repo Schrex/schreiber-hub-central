@@ -760,7 +760,7 @@ const Schedule = () => {
                               )}
                               <div className="text-xs text-muted-foreground">
                                 {a.start_time && <>{a.start_time.slice(0, 5)} · </>}
-                                {a.role_on_job ?? positionsByUser.get(a.user_id)?.title ?? "—"}
+                                {positionsByUser.get(a.user_id)?.title ?? "—"}
                               </div>
                             </div>
                             {canEdit && !isPastDay && (
