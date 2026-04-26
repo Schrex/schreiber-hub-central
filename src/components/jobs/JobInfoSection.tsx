@@ -12,7 +12,16 @@ import {
   CheckCircle2,
   Info,
   Lock,
+  FileText,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { JOB_INFO, type JobInfo } from "./jobInfoData";
 
 interface Props {
@@ -20,12 +29,38 @@ interface Props {
 }
 
 export const JobInfoSection = ({ jobNumber }: Props) => {
+  const [open, setOpen] = useState(false);
   const info: JobInfo | undefined = useMemo(
     () => (jobNumber ? JOB_INFO[jobNumber] : undefined),
     [jobNumber],
   );
   if (!info) return null;
-  return <Body info={info} />;
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full justify-start gap-2">
+          <FileText className="h-4 w-4 text-primary" />
+          <span className="flex-1 text-left">
+            <span className="block text-sm font-semibold">Job Report</span>
+            <span className="block text-[10px] font-normal text-muted-foreground">
+              Estimator data · scope · crews · materials
+            </span>
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+            <Lock className="h-2.5 w-2.5" /> Foreman
+          </span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" /> Job Report
+          </DialogTitle>
+        </DialogHeader>
+        <Body info={info} />
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 const Body = ({ info }: { info: JobInfo }) => {
@@ -45,16 +80,7 @@ const Body = ({ info }: { info: JobInfo }) => {
   );
 
   return (
-    <section className="rounded-2xl border border-primary/30 bg-surface p-4">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
-          <ClipboardList className="h-3.5 w-3.5" /> Job Info
-        </h2>
-        <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
-          <Lock className="h-2.5 w-2.5" /> Foreman
-        </span>
-      </div>
-
+    <div>
       {/* Topline */}
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
         <Stat label="Manhours" value={info.totalManhours.toLocaleString()} />
@@ -313,7 +339,7 @@ const Body = ({ info }: { info: JobInfo }) => {
           )}
         </div>
       </Group>
-    </section>
+    </div>
   );
 };
 
