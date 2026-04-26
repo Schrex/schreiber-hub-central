@@ -30,10 +30,14 @@ interface Props {
 
 export const JobInfoSection = ({ jobNumber }: Props) => {
   const [open, setOpen] = useState(false);
-  const info: JobInfo | undefined = useMemo(
-    () => (jobNumber ? JOB_INFO[jobNumber] : undefined),
-    [jobNumber],
-  );
+  const info: JobInfo | undefined = useMemo(() => {
+    if (!jobNumber) return undefined;
+    // Try exact match, then with/without "J" prefix
+    const raw = jobNumber.trim();
+    const noJ = raw.replace(/^J/i, "");
+    const withJ = `J${noJ}`;
+    return JOB_INFO[raw] ?? JOB_INFO[withJ] ?? JOB_INFO[noJ];
+  }, [jobNumber]);
   if (!info) return null;
   return (
     <Dialog open={open} onOpenChange={setOpen}>
