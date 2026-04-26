@@ -536,6 +536,7 @@ export type Database = {
           effective_date: string
           end_date: string | null
           id: string
+          is_salaried: boolean
           notes: string | null
           pay_rate: number
           position_id: string
@@ -548,6 +549,7 @@ export type Database = {
           effective_date?: string
           end_date?: string | null
           id?: string
+          is_salaried?: boolean
           notes?: string | null
           pay_rate: number
           position_id: string
@@ -560,6 +562,7 @@ export type Database = {
           effective_date?: string
           end_date?: string | null
           id?: string
+          is_salaried?: boolean
           notes?: string | null
           pay_rate?: number
           position_id?: string
