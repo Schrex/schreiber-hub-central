@@ -98,7 +98,8 @@ export const BottomNav = () => {
                     ) ?? false)
                   : false;
             const handleClick = () => {
-              if (item.to) navigate(item.to);
+              if (item.key === "receipts") openDivvy();
+              else if (item.to) navigate(item.to);
               else if (item.href) window.open(item.href, "_blank", "noopener,noreferrer");
             };
             return (
