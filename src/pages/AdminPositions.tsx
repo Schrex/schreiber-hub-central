@@ -333,7 +333,7 @@ const AdminPositions = () => {
                         {userHistory.map((a) => (
                           <div key={a.id} className="flex items-center justify-between rounded bg-muted/50 px-2 py-1 text-xs">
                             <span>
-                              {a.position?.title} · {fmtMoney(a.pay_rate)}/hr · {a.effective_date}
+                              {a.position?.title} · {fmtMoney(a.pay_rate)}{a.is_salaried ? "/yr" : "/hr"} · {a.effective_date}
                               {a.end_date ? ` → ${a.end_date}` : " (current)"}
                             </span>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteAssignment(a.id)}>
