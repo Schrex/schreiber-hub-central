@@ -842,7 +842,7 @@ const Schedule = () => {
                             .map((a) =>
                               `${a.jobs?.name ?? "Job"}${
                                 a.start_time ? ` · ${a.start_time.slice(0, 5)}` : ""
-                              }${a.role_on_job ? ` · ${a.role_on_job}` : ""}`,
+                              }`,
                             )
                             .join(" / ")}
                         </div>
