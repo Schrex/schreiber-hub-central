@@ -497,15 +497,9 @@ const Schedule = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Start time</Label>
-                      <Input type="time" value={formStart} onChange={(e) => setFormStart(e.target.value)} />
-                    </div>
-                    <div>
-                      <Label>Role on job</Label>
-                      <Input placeholder="Foreman, Operator…" value={formRole} onChange={(e) => setFormRole(e.target.value)} />
-                    </div>
+                  <div>
+                    <Label>Start time</Label>
+                    <Input type="time" value={formStart} onChange={(e) => setFormStart(e.target.value)} />
                   </div>
                   <div>
                     <Label>Notes</Label>
