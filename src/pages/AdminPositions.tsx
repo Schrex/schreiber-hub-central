@@ -313,7 +313,10 @@ const AdminPositions = () => {
                         ) : cur ? (
                           <span>
                             <span className="font-semibold">{cur.position?.title}</span>
-                            <span className="text-muted-foreground"> · {fmtMoney(cur.pay_rate)}/hr</span>
+                            <span className="text-muted-foreground"> · {fmtMoney(cur.pay_rate)}{cur.is_salaried ? "/yr" : "/hr"}</span>
+                            <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] uppercase ${cur.is_salaried ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                              {cur.is_salaried ? "Salary" : "Hourly"}
+                            </span>
                           </span>
                         ) : (
                           <span className="text-muted-foreground italic">No position assigned</span>
