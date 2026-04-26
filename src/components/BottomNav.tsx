@@ -40,7 +40,8 @@ type Item = {
   key: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  to: string;
+  to?: string;
+  href?: string;
   match?: string[]; // additional path prefixes that should mark active
 };
 
@@ -50,10 +51,9 @@ const ITEMS: Item[] = [
   { key: "schedule", label: "Schedule", icon: Calendar, to: "/schedule" },
   { key: "trucking", label: "Trucking", icon: DumpTruck, to: "/dispatch" },
   { key: "perks", label: "Perks", icon: Sparkles, to: "/perks", match: ["/time-off", "/apparel", "/referrals"] },
-  { key: "tools", label: "Tools", icon: Wrench, to: "/tools" },
+  { key: "tools", label: "Tools", icon: Wrench, to: "/tools", match: ["/tools/performance-reviews", "/tools/handbook", "/tools/trucking"] },
   { key: "position", label: "Position", icon: IdCard, to: "/my-position" },
-  { key: "receipts", label: "Receipts", icon: Receipt, to: "/tools" },
-  { key: "reviews", label: "Reviews", icon: ClipboardList, to: "/tools/performance-reviews" },
+  { key: "receipts", label: "Receipts", icon: Receipt, href: "https://app.bill.com/" },
 ];
 
 export const BottomNav = () => {
