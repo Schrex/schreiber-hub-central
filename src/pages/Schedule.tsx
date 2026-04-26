@@ -89,7 +89,7 @@ const Schedule = () => {
   const [formJob, setFormJob] = useState<string>("");
   const [formUserIds, setFormUserIds] = useState<string[]>([]);
   const [formStart, setFormStart] = useState<string>("07:00");
-  const [formRole, setFormRole] = useState<string>("");
+  
   const [formNotes, setFormNotes] = useState<string>("");
   const [formStartDate, setFormStartDate] = useState<string>(todayStr());
   const [formEndDate, setFormEndDate] = useState<string>(todayStr());
@@ -251,7 +251,7 @@ const Schedule = () => {
     setFormJob("");
     setFormUserIds([]);
     setFormStart("07:00");
-    setFormRole("");
+    
     setFormNotes("");
     setFormStartDate(selectedDate);
     setFormEndDate(selectedDate);
@@ -288,7 +288,6 @@ const Schedule = () => {
         user_id: uid,
         assignment_date: dt,
         start_time: formStart || null,
-        role_on_job: formRole || null,
         notes: formNotes || null,
         created_by: user?.id ?? null,
       })),
@@ -497,15 +496,9 @@ const Schedule = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Start time</Label>
-                      <Input type="time" value={formStart} onChange={(e) => setFormStart(e.target.value)} />
-                    </div>
-                    <div>
-                      <Label>Role on job</Label>
-                      <Input placeholder="Foreman, Operator…" value={formRole} onChange={(e) => setFormRole(e.target.value)} />
-                    </div>
+                  <div>
+                    <Label>Start time</Label>
+                    <Input type="time" value={formStart} onChange={(e) => setFormStart(e.target.value)} />
                   </div>
                   <div>
                     <Label>Notes</Label>
@@ -616,8 +609,7 @@ const Schedule = () => {
                     )}
                   </div>
                   <div className="px-4 py-3 text-sm">
-                    {a.role_on_job && <div><span className="text-muted-foreground">Role:</span> {a.role_on_job}</div>}
-                    {a.notes && <div className="mt-1 text-muted-foreground">{a.notes}</div>}
+                    {a.notes && <div className="text-muted-foreground">{a.notes}</div>}
                     <Button
                       size="sm"
                       variant="outline"
@@ -655,10 +647,10 @@ const Schedule = () => {
             <div className="space-y-3">
               {allByJob.map(({ job, list, job_id }) => {
                 const foremen = list.filter((a) =>
-                  (a.role_on_job ?? "").toLowerCase().includes("foreman"),
+                  (positionsByUser.get(a.user_id)?.title ?? "").toLowerCase().includes("foreman"),
                 );
                 const crew = list.filter(
-                  (a) => !(a.role_on_job ?? "").toLowerCase().includes("foreman"),
+                  (a) => !(positionsByUser.get(a.user_id)?.title ?? "").toLowerCase().includes("foreman"),
                 );
                 const earliest = list
                   .map((a) => a.start_time)
@@ -768,7 +760,7 @@ const Schedule = () => {
                               )}
                               <div className="text-xs text-muted-foreground">
                                 {a.start_time && <>{a.start_time.slice(0, 5)} · </>}
-                                {a.role_on_job ?? positionsByUser.get(a.user_id)?.title ?? "—"}
+                                {positionsByUser.get(a.user_id)?.title ?? "—"}
                               </div>
                             </div>
                             {canEdit && !isPastDay && (
@@ -850,7 +842,7 @@ const Schedule = () => {
                             .map((a) =>
                               `${a.jobs?.name ?? "Job"}${
                                 a.start_time ? ` · ${a.start_time.slice(0, 5)}` : ""
-                              }${a.role_on_job ? ` · ${a.role_on_job}` : ""}`,
+                              }`,
                             )
                             .join(" / ")}
                         </div>
