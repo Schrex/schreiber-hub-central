@@ -59,20 +59,20 @@ async function moveToDlq(
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
 ): Promise<void> {
-  const payload = msg.message
-  await (supabase.from('email_send_log') as any).insert({
+  const payload = msg.message as Record<string, any>
+  await supabase.from('email_send_log').insert({
     message_id: payload.message_id,
     template_name: (payload.label || queue) as string,
     recipient_email: payload.to,
     status: 'dlq',
     error_message: reason,
-  })
-  const { error } = await (supabase.rpc as any)('move_to_dlq', {
+  } as any)
+  const { error } = await supabase.rpc('move_to_dlq' as any, {
     source_queue: queue,
     dlq_name: `${queue}_dlq`,
     message_id: msg.msg_id,
     payload,
-  })
+  } as any)
   if (error) {
     console.error('Failed to move message to DLQ', { queue, msg_id: msg.msg_id, reason, error })
   }
@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
               ? msg.message.message_id
               : null
           )
-          .filter((id: any): id is string => Boolean(id))
+          .filter((id: string | null): id is string => Boolean(id))
       )
     )
     const failedAttemptsByMessageId = new Map<string, number>()
