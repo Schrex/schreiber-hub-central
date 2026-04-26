@@ -31,6 +31,7 @@ interface Position {
   min_pay_rate: number;
   max_pay_rate: number;
   is_active: boolean;
+  is_salaried: boolean;
   sort_order: number;
 }
 
@@ -50,6 +51,7 @@ interface Assignment {
   effective_date: string;
   end_date: string | null;
   notes: string | null;
+  is_salaried: boolean;
   position: { title: string } | null;
 }
 
