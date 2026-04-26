@@ -251,7 +251,7 @@ const Schedule = () => {
     setFormJob("");
     setFormUserIds([]);
     setFormStart("07:00");
-    setFormRole("");
+    
     setFormNotes("");
     setFormStartDate(selectedDate);
     setFormEndDate(selectedDate);
