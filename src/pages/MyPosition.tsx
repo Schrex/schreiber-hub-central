@@ -160,7 +160,7 @@ const MyPosition = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold">{fmtMoney(r.pay_rate)}<span className="text-xs font-normal text-muted-foreground">/hr</span></div>
+                    <div className="font-semibold">{fmtMoney(r.pay_rate)}<span className="text-xs font-normal text-muted-foreground">{r.is_salaried ? "/yr" : "/hr"}</span></div>
                   </div>
                 </Card>
               ))}
