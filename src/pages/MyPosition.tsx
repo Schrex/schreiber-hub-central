@@ -130,8 +130,8 @@ const MyPosition = () => {
                 />
               </div>
               <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                <span>{fmtMoney(current.position.min_pay_rate)}/hr</span>
-                <span>{fmtMoney(current.position.max_pay_rate)}/hr</span>
+                <span>{fmtMoney(current.position.min_pay_rate)}{current.position.is_salaried ? "/yr" : "/hr"}</span>
+                <span>{fmtMoney(current.position.max_pay_rate)}{current.position.is_salaried ? "/yr" : "/hr"}</span>
               </div>
             </div>
 
