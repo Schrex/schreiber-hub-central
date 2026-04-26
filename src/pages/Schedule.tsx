@@ -647,10 +647,10 @@ const Schedule = () => {
             <div className="space-y-3">
               {allByJob.map(({ job, list, job_id }) => {
                 const foremen = list.filter((a) =>
-                  (a.role_on_job ?? "").toLowerCase().includes("foreman"),
+                  (positionsByUser.get(a.user_id)?.title ?? "").toLowerCase().includes("foreman"),
                 );
                 const crew = list.filter(
-                  (a) => !(a.role_on_job ?? "").toLowerCase().includes("foreman"),
+                  (a) => !(positionsByUser.get(a.user_id)?.title ?? "").toLowerCase().includes("foreman"),
                 );
                 const earliest = list
                   .map((a) => a.start_time)
