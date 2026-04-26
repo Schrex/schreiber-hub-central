@@ -168,7 +168,7 @@ const AdminPositions = () => {
   };
 
   const openAssign = () => {
-    setAssignForm({ user_id: "", position_id: "", pay_rate: "", effective_date: new Date().toISOString().slice(0, 10), notes: "" });
+    setAssignForm({ user_id: "", position_id: "", pay_rate: "", effective_date: new Date().toISOString().slice(0, 10), notes: "", is_salaried: false });
     setAssignDialog(true);
   };
 
@@ -191,6 +191,7 @@ const AdminPositions = () => {
       pay_rate: rate,
       effective_date: assignForm.effective_date,
       notes: assignForm.notes.trim() || null,
+      is_salaried: assignForm.is_salaried,
     });
     if (error) return toast.error(error.message);
     toast.success("Assignment saved");
