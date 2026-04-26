@@ -31,6 +31,7 @@ interface Position {
   min_pay_rate: number;
   max_pay_rate: number;
   is_active: boolean;
+  is_salaried: boolean;
   sort_order: number;
 }
 
@@ -50,6 +51,7 @@ interface Assignment {
   effective_date: string;
   end_date: string | null;
   notes: string | null;
+  is_salaried: boolean;
   position: { title: string } | null;
 }
 
@@ -64,10 +66,10 @@ const AdminPositions = () => {
 
   const [posDialog, setPosDialog] = useState(false);
   const [editing, setEditing] = useState<Position | null>(null);
-  const [posForm, setPosForm] = useState({ title: "", description: "", min_pay_rate: "", max_pay_rate: "", is_active: true });
+  const [posForm, setPosForm] = useState({ title: "", description: "", min_pay_rate: "", max_pay_rate: "", is_active: true, is_salaried: false });
 
   const [assignDialog, setAssignDialog] = useState(false);
-  const [assignForm, setAssignForm] = useState({ user_id: "", position_id: "", pay_rate: "", effective_date: new Date().toISOString().slice(0, 10), notes: "" });
+  const [assignForm, setAssignForm] = useState({ user_id: "", position_id: "", pay_rate: "", effective_date: new Date().toISOString().slice(0, 10), notes: "", is_salaried: false });
 
   const load = async () => {
     setLoading(true);
@@ -75,7 +77,7 @@ const AdminPositions = () => {
       supabase.from("positions").select("*").order("sort_order").order("title"),
       supabase.from("profiles").select("user_id, display_name, email, contact_id").eq("is_active", true),
       supabase.from("employee_contacts").select("id, name, email, converted_user_id").eq("is_active", true).order("name"),
-      supabase.from("employee_positions").select("id, user_id, position_id, pay_rate, effective_date, end_date, notes, position:positions(title)").order("effective_date", { ascending: false }),
+      supabase.from("employee_positions").select("id, user_id, position_id, pay_rate, effective_date, end_date, notes, is_salaried, position:positions(title)").order("effective_date", { ascending: false }),
     ]);
 
     // Unify: every active contact + any active profile that has no contact link yet
@@ -118,7 +120,7 @@ const AdminPositions = () => {
 
   const openNewPosition = () => {
     setEditing(null);
-    setPosForm({ title: "", description: "", min_pay_rate: "", max_pay_rate: "", is_active: true });
+    setPosForm({ title: "", description: "", min_pay_rate: "", max_pay_rate: "", is_active: true, is_salaried: false });
     setPosDialog(true);
   };
 
@@ -130,6 +132,7 @@ const AdminPositions = () => {
       min_pay_rate: String(p.min_pay_rate),
       max_pay_rate: String(p.max_pay_rate),
       is_active: p.is_active,
+      is_salaried: p.is_salaried,
     });
     setPosDialog(true);
   };
@@ -145,6 +148,7 @@ const AdminPositions = () => {
       min_pay_rate: min,
       max_pay_rate: max,
       is_active: posForm.is_active,
+      is_salaried: posForm.is_salaried,
     };
     const { error } = editing
       ? await supabase.from("positions").update(payload).eq("id", editing.id)
@@ -164,7 +168,7 @@ const AdminPositions = () => {
   };
 
   const openAssign = () => {
-    setAssignForm({ user_id: "", position_id: "", pay_rate: "", effective_date: new Date().toISOString().slice(0, 10), notes: "" });
+    setAssignForm({ user_id: "", position_id: "", pay_rate: "", effective_date: new Date().toISOString().slice(0, 10), notes: "", is_salaried: false });
     setAssignDialog(true);
   };
 
@@ -187,6 +191,7 @@ const AdminPositions = () => {
       pay_rate: rate,
       effective_date: assignForm.effective_date,
       notes: assignForm.notes.trim() || null,
+      is_salaried: assignForm.is_salaried,
     });
     if (error) return toast.error(error.message);
     toast.success("Assignment saved");
@@ -246,12 +251,17 @@ const AdminPositions = () => {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">{p.title}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] uppercase ${p.is_salaried ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {p.is_salaried ? "Salary" : "Hourly"}
+                    </span>
                     {!p.is_active && (
                       <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase">Inactive</span>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {fmtMoney(p.min_pay_rate)} – {fmtMoney(p.max_pay_rate)}/hr
+                    {p.is_salaried
+                      ? `${fmtMoney(p.min_pay_rate)} – ${fmtMoney(p.max_pay_rate)}/yr`
+                      : `${fmtMoney(p.min_pay_rate)} – ${fmtMoney(p.max_pay_rate)}/hr`}
                     {p.description && ` · ${p.description}`}
                   </div>
                 </div>
@@ -303,7 +313,10 @@ const AdminPositions = () => {
                         ) : cur ? (
                           <span>
                             <span className="font-semibold">{cur.position?.title}</span>
-                            <span className="text-muted-foreground"> · {fmtMoney(cur.pay_rate)}/hr</span>
+                            <span className="text-muted-foreground"> · {fmtMoney(cur.pay_rate)}{cur.is_salaried ? "/yr" : "/hr"}</span>
+                            <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] uppercase ${cur.is_salaried ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                              {cur.is_salaried ? "Salary" : "Hourly"}
+                            </span>
                           </span>
                         ) : (
                           <span className="text-muted-foreground italic">No position assigned</span>
@@ -320,7 +333,7 @@ const AdminPositions = () => {
                         {userHistory.map((a) => (
                           <div key={a.id} className="flex items-center justify-between rounded bg-muted/50 px-2 py-1 text-xs">
                             <span>
-                              {a.position?.title} · {fmtMoney(a.pay_rate)}/hr · {a.effective_date}
+                              {a.position?.title} · {fmtMoney(a.pay_rate)}{a.is_salaried ? "/yr" : "/hr"} · {a.effective_date}
                               {a.end_date ? ` → ${a.end_date}` : " (current)"}
                             </span>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteAssignment(a.id)}>
@@ -353,13 +366,17 @@ const AdminPositions = () => {
               <Label>Description</Label>
               <Textarea value={posForm.description} onChange={(e) => setPosForm({ ...posForm, description: e.target.value })} rows={2} />
             </div>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-3">
+              <Switch checked={posForm.is_salaried} onCheckedChange={(v) => setPosForm({ ...posForm, is_salaried: v })} />
+              <Label className="cursor-pointer">Salaried position (annual pay)</Label>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Min Pay ($/hr)</Label>
+                <Label>Min Pay ({posForm.is_salaried ? "$/yr" : "$/hr"})</Label>
                 <Input type="number" step="0.01" value={posForm.min_pay_rate} onChange={(e) => setPosForm({ ...posForm, min_pay_rate: e.target.value })} />
               </div>
               <div>
-                <Label>Max Pay ($/hr)</Label>
+                <Label>Max Pay ({posForm.is_salaried ? "$/yr" : "$/hr"})</Label>
                 <Input type="number" step="0.01" value={posForm.max_pay_rate} onChange={(e) => setPosForm({ ...posForm, max_pay_rate: e.target.value })} />
               </div>
             </div>
@@ -401,21 +418,30 @@ const AdminPositions = () => {
               <Label>Position</Label>
               <Select value={assignForm.position_id} onValueChange={(v) => {
                 const p = positions.find((x) => x.id === v);
-                setAssignForm({ ...assignForm, position_id: v, pay_rate: p ? String(p.min_pay_rate) : assignForm.pay_rate });
+                setAssignForm({
+                  ...assignForm,
+                  position_id: v,
+                  pay_rate: p ? String(p.min_pay_rate) : assignForm.pay_rate,
+                  is_salaried: p ? p.is_salaried : assignForm.is_salaried,
+                });
               }}>
                 <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
                 <SelectContent>
                   {positions.filter((p) => p.is_active).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.title} ({fmtMoney(p.min_pay_rate)}–{fmtMoney(p.max_pay_rate)})
+                      {p.title} ({fmtMoney(p.min_pay_rate)}–{fmtMoney(p.max_pay_rate)}{p.is_salaried ? "/yr" : "/hr"})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-3">
+              <Switch checked={assignForm.is_salaried} onCheckedChange={(v) => setAssignForm({ ...assignForm, is_salaried: v })} />
+              <Label className="cursor-pointer">Paid as salary (annual)</Label>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Pay Rate ($/hr)</Label>
+                <Label>Pay Rate ({assignForm.is_salaried ? "$/yr" : "$/hr"})</Label>
                 <Input type="number" step="0.01" value={assignForm.pay_rate} onChange={(e) => setAssignForm({ ...assignForm, pay_rate: e.target.value })} />
               </div>
               <div>

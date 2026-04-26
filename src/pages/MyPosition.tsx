@@ -12,12 +12,14 @@ interface AssignmentRow {
   effective_date: string;
   end_date: string | null;
   notes: string | null;
+  is_salaried: boolean;
   position: {
     id: string;
     title: string;
     description: string | null;
     min_pay_rate: number;
     max_pay_rate: number;
+    is_salaried: boolean;
   } | null;
 }
 
@@ -38,7 +40,7 @@ const MyPosition = () => {
     (async () => {
       const { data, error } = await supabase
         .from("employee_positions")
-        .select("id, pay_rate, effective_date, end_date, notes, position:positions(id, title, description, min_pay_rate, max_pay_rate)")
+        .select("id, pay_rate, effective_date, end_date, notes, is_salaried, position:positions(id, title, description, min_pay_rate, max_pay_rate, is_salaried)")
         .eq("user_id", user.id)
         .order("effective_date", { ascending: false });
       if (!error && data) setRows(data as unknown as AssignmentRow[]);
@@ -114,7 +116,7 @@ const MyPosition = () => {
                   Effective {fmtDate(current.effective_date)}
                 </div>
               </div>
-              <div className="mt-1 font-display text-3xl">{fmtMoney(current.pay_rate)}<span className="text-sm font-normal text-muted-foreground">/hr</span></div>
+              <div className="mt-1 font-display text-3xl">{fmtMoney(current.pay_rate)}<span className="text-sm font-normal text-muted-foreground">{current.is_salaried ? "/yr" : "/hr"}</span></div>
             </div>
 
             <div>
@@ -128,8 +130,8 @@ const MyPosition = () => {
                 />
               </div>
               <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                <span>{fmtMoney(current.position.min_pay_rate)}/hr</span>
-                <span>{fmtMoney(current.position.max_pay_rate)}/hr</span>
+                <span>{fmtMoney(current.position.min_pay_rate)}{current.position.is_salaried ? "/yr" : "/hr"}</span>
+                <span>{fmtMoney(current.position.max_pay_rate)}{current.position.is_salaried ? "/yr" : "/hr"}</span>
               </div>
             </div>
 
@@ -158,7 +160,7 @@ const MyPosition = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold">{fmtMoney(r.pay_rate)}<span className="text-xs font-normal text-muted-foreground">/hr</span></div>
+                    <div className="font-semibold">{fmtMoney(r.pay_rate)}<span className="text-xs font-normal text-muted-foreground">{r.is_salaried ? "/yr" : "/hr"}</span></div>
                   </div>
                 </Card>
               ))}
