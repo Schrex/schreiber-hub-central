@@ -46,7 +46,7 @@ const TILES: Tile[] = [
   { key: "employee-contacts", label: "Employee Contacts", hint: "Crew phone book", icon: Users, roles: ["employee", "foreman", "office", "admin"], to: "/employee-contacts" },
   { key: "maintenance", label: "Equipment", hint: "Log issues (HCSS)", icon: Wrench, roles: ["employee", "foreman", "office", "admin"], href: "https://mr.hcssapps.com" },
   { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], href: "https://app.clearstory.build" },
-  { key: "receipts", label: "Submit Receipt", hint: "Snap & send", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.bill.com/" },
+  { key: "receipts", label: "Submit Receipt", hint: "Bill Spend & Expense", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.divvy.co/" },
   { key: "perks", label: "My Perks", hint: "Apparel, time off & referrals", icon: Sparkles, roles: ["employee", "foreman", "office", "admin"], to: "/perks" },
   
   { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, roles: ["employee", "foreman", "office", "admin"], to: "/tools" },
