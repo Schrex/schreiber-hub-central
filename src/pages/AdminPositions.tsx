@@ -251,12 +251,17 @@ const AdminPositions = () => {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">{p.title}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] uppercase ${p.is_salaried ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {p.is_salaried ? "Salary" : "Hourly"}
+                    </span>
                     {!p.is_active && (
                       <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase">Inactive</span>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {fmtMoney(p.min_pay_rate)} – {fmtMoney(p.max_pay_rate)}/hr
+                    {p.is_salaried
+                      ? `${fmtMoney(p.min_pay_rate)} – ${fmtMoney(p.max_pay_rate)}/yr`
+                      : `${fmtMoney(p.min_pay_rate)} – ${fmtMoney(p.max_pay_rate)}/hr`}
                     {p.description && ` · ${p.description}`}
                   </div>
                 </div>
