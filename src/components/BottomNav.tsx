@@ -76,15 +76,21 @@ export const BottomNav = () => {
             const active =
               item.to === "/"
                 ? pathname === "/"
-                : pathname === item.to ||
-                  pathname.startsWith(item.to + "/") ||
-                  (item.match?.some(
-                    (m) => pathname === m || pathname.startsWith(m + "/"),
-                  ) ?? false);
+                : item.to
+                  ? pathname === item.to ||
+                    pathname.startsWith(item.to + "/") ||
+                    (item.match?.some(
+                      (m) => pathname === m || pathname.startsWith(m + "/"),
+                    ) ?? false)
+                  : false;
+            const handleClick = () => {
+              if (item.to) navigate(item.to);
+              else if (item.href) window.open(item.href, "_blank", "noopener,noreferrer");
+            };
             return (
               <li key={item.key} className="shrink-0">
                 <button
-                  onClick={() => navigate(item.to)}
+                  onClick={handleClick}
                   className={cn(
                     "flex w-16 flex-col items-center justify-center gap-1 px-1 py-2 text-[9px] font-semibold uppercase tracking-tight transition-colors",
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground",
