@@ -6,7 +6,6 @@ import {
   Wrench,
   IdCard,
   Receipt,
-  ClipboardList,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -40,7 +39,8 @@ type Item = {
   key: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  to: string;
+  to?: string;
+  href?: string;
   match?: string[]; // additional path prefixes that should mark active
 };
 
@@ -50,10 +50,9 @@ const ITEMS: Item[] = [
   { key: "schedule", label: "Schedule", icon: Calendar, to: "/schedule" },
   { key: "trucking", label: "Trucking", icon: DumpTruck, to: "/dispatch" },
   { key: "perks", label: "Perks", icon: Sparkles, to: "/perks", match: ["/time-off", "/apparel", "/referrals"] },
-  { key: "tools", label: "Tools", icon: Wrench, to: "/tools" },
+  { key: "tools", label: "Tools", icon: Wrench, to: "/tools", match: ["/tools/performance-reviews", "/tools/handbook", "/tools/trucking"] },
   { key: "position", label: "Position", icon: IdCard, to: "/my-position" },
-  { key: "receipts", label: "Receipts", icon: Receipt, to: "/tools" },
-  { key: "reviews", label: "Reviews", icon: ClipboardList, to: "/tools/performance-reviews" },
+  { key: "receipts", label: "Receipts", icon: Receipt, href: "https://app.bill.com/" },
 ];
 
 export const BottomNav = () => {
@@ -76,15 +75,21 @@ export const BottomNav = () => {
             const active =
               item.to === "/"
                 ? pathname === "/"
-                : pathname === item.to ||
-                  pathname.startsWith(item.to + "/") ||
-                  (item.match?.some(
-                    (m) => pathname === m || pathname.startsWith(m + "/"),
-                  ) ?? false);
+                : item.to
+                  ? pathname === item.to ||
+                    pathname.startsWith(item.to + "/") ||
+                    (item.match?.some(
+                      (m) => pathname === m || pathname.startsWith(m + "/"),
+                    ) ?? false)
+                  : false;
+            const handleClick = () => {
+              if (item.to) navigate(item.to);
+              else if (item.href) window.open(item.href, "_blank", "noopener,noreferrer");
+            };
             return (
               <li key={item.key} className="shrink-0">
                 <button
-                  onClick={() => navigate(item.to)}
+                  onClick={handleClick}
                   className={cn(
                     "flex w-16 flex-col items-center justify-center gap-1 px-1 py-2 text-[9px] font-semibold uppercase tracking-tight transition-colors",
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground",
