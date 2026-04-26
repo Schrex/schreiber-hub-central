@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_equipment: {
+        Row: {
+          activity_id: string
+          code: string
+          created_at: string
+          description: string
+          id: string
+          share_of_shift: number
+          sort_order: number
+        }
+        Insert: {
+          activity_id: string
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          share_of_shift?: number
+          sort_order?: number
+        }
+        Update: {
+          activity_id?: string
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          share_of_shift?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_equipment_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "bid_item_activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       benefit_types: {
         Row: {
           created_at: string
@@ -41,6 +79,197 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bid_item_activities: {
+        Row: {
+          bid_item_id: string
+          created_at: string
+          crew_id: string | null
+          description: string
+          id: string
+          manhours: number
+          notes: string | null
+          production_rate: number | null
+          production_unit: string | null
+          shifts: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bid_item_id: string
+          created_at?: string
+          crew_id?: string | null
+          description: string
+          id?: string
+          manhours?: number
+          notes?: string | null
+          production_rate?: number | null
+          production_unit?: string | null
+          shifts?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bid_item_id?: string
+          created_at?: string
+          crew_id?: string | null
+          description?: string
+          id?: string
+          manhours?: number
+          notes?: string | null
+          production_rate?: number | null
+          production_unit?: string | null
+          shifts?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bid_item_activities_bid_item_id_fkey"
+            columns: ["bid_item_id"]
+            isOneToOne: false
+            referencedRelation: "bid_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bid_item_activities_crew_id_fkey"
+            columns: ["crew_id"]
+            isOneToOne: false
+            referencedRelation: "crews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bid_item_materials: {
+        Row: {
+          bid_item_id: string
+          created_at: string
+          description: string
+          id: string
+          notes: string | null
+          quantity: number
+          sort_order: number
+          unit: string
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          bid_item_id: string
+          created_at?: string
+          description: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          bid_item_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bid_item_materials_bid_item_id_fkey"
+            columns: ["bid_item_id"]
+            isOneToOne: false
+            referencedRelation: "bid_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bid_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          item_code: string
+          job_id: string
+          notes: string | null
+          phase_id: string | null
+          quantity: number
+          sort_order: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          item_code: string
+          job_id: string
+          notes?: string | null
+          phase_id?: string | null
+          quantity?: number
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          item_code?: string
+          job_id?: string
+          notes?: string | null
+          phase_id?: string | null
+          quantity?: number
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bid_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bid_items_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "bid_phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bid_phases: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
           name?: string
           sort_order?: number
           updated_at?: string
@@ -132,6 +361,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crews: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          size: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          is_active?: boolean
+          size?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          size?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       dig_tickets: {
         Row: {
