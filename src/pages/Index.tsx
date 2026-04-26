@@ -46,7 +46,7 @@ const TILES: Tile[] = [
   { key: "employee-contacts", label: "Employee Contacts", hint: "Crew phone book", icon: Users, roles: ["employee", "foreman", "office", "admin"], to: "/employee-contacts" },
   { key: "maintenance", label: "Equipment", hint: "Log issues (HCSS)", icon: Wrench, roles: ["employee", "foreman", "office", "admin"], href: "https://mr.hcssapps.com" },
   { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], href: "https://app.clearstory.build" },
-  { key: "receipts", label: "Submit Receipt", hint: "Snap & send", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.bill.com/" },
+  { key: "receipts", label: "Submit Receipt", hint: "Bill Spend & Expense", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.divvy.co/" },
   { key: "perks", label: "My Perks", hint: "Apparel, time off & referrals", icon: Sparkles, roles: ["employee", "foreman", "office", "admin"], to: "/perks" },
   
   { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, roles: ["employee", "foreman", "office", "admin"], to: "/tools" },
@@ -68,21 +68,19 @@ const Index = () => {
       return;
     }
     if (t.key === "receipts") {
-      // Try to open the Bill.com mobile app, fall back to web after a short delay
+      // Try to open the Bill Spend & Expense (Divvy) mobile app, fall back to web
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
         const start = Date.now();
-        // Bill.com iOS/Android universal link
-        window.location.href = "billcom://";
+        window.location.href = "divvy://";
         setTimeout(() => {
-          // If the app didn't open (page still here), open web app
           if (Date.now() - start < 2000) {
-            window.open("https://app.bill.com/", "_blank", "noopener,noreferrer");
+            window.open("https://app.divvy.co/", "_blank", "noopener,noreferrer");
           }
         }, 1200);
         return;
       }
-      window.open("https://app.bill.com/", "_blank", "noopener,noreferrer");
+      window.open("https://app.divvy.co/", "_blank", "noopener,noreferrer");
       return;
     }
     if (t.href) window.open(t.href, "_blank", "noopener,noreferrer");
