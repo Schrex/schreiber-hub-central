@@ -12,12 +12,14 @@ interface AssignmentRow {
   effective_date: string;
   end_date: string | null;
   notes: string | null;
+  is_salaried: boolean;
   position: {
     id: string;
     title: string;
     description: string | null;
     min_pay_rate: number;
     max_pay_rate: number;
+    is_salaried: boolean;
   } | null;
 }
 
