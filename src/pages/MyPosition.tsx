@@ -40,7 +40,7 @@ const MyPosition = () => {
     (async () => {
       const { data, error } = await supabase
         .from("employee_positions")
-        .select("id, pay_rate, effective_date, end_date, notes, position:positions(id, title, description, min_pay_rate, max_pay_rate)")
+        .select("id, pay_rate, effective_date, end_date, notes, is_salaried, position:positions(id, title, description, min_pay_rate, max_pay_rate, is_salaried)")
         .eq("user_id", user.id)
         .order("effective_date", { ascending: false });
       if (!error && data) setRows(data as unknown as AssignmentRow[]);
