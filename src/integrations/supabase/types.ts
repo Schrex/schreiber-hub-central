@@ -14,44 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      activity_equipment: {
-        Row: {
-          activity_id: string
-          code: string
-          created_at: string
-          description: string
-          id: string
-          share_of_shift: number
-          sort_order: number
-        }
-        Insert: {
-          activity_id: string
-          code: string
-          created_at?: string
-          description: string
-          id?: string
-          share_of_shift?: number
-          sort_order?: number
-        }
-        Update: {
-          activity_id?: string
-          code?: string
-          created_at?: string
-          description?: string
-          id?: string
-          share_of_shift?: number
-          sort_order?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "activity_equipment_activity_id_fkey"
-            columns: ["activity_id"]
-            isOneToOne: false
-            referencedRelation: "bid_item_activities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       benefit_types: {
         Row: {
           created_at: string
@@ -88,44 +50,56 @@ export type Database = {
       bid_item_activities: {
         Row: {
           bid_item_id: string
+          code: string
           created_at: string
           crew_id: string | null
           description: string
+          equipment: string[]
           id: string
           manhours: number
           notes: string | null
-          production_rate: number | null
-          production_unit: string | null
+          qty: number
+          rate: number | null
+          rate_by: string
           shifts: number
           sort_order: number
+          unit: string
           updated_at: string
         }
         Insert: {
           bid_item_id: string
+          code?: string
           created_at?: string
           crew_id?: string | null
           description: string
+          equipment?: string[]
           id?: string
           manhours?: number
           notes?: string | null
-          production_rate?: number | null
-          production_unit?: string | null
+          qty?: number
+          rate?: number | null
+          rate_by?: string
           shifts?: number
           sort_order?: number
+          unit?: string
           updated_at?: string
         }
         Update: {
           bid_item_id?: string
+          code?: string
           created_at?: string
           crew_id?: string | null
           description?: string
+          equipment?: string[]
           id?: string
           manhours?: number
           notes?: string | null
-          production_rate?: number | null
-          production_unit?: string | null
+          qty?: number
+          rate?: number | null
+          rate_by?: string
           shifts?: number
           sort_order?: number
+          unit?: string
           updated_at?: string
         }
         Relationships: [
@@ -203,6 +177,7 @@ export type Database = {
           phase_id: string | null
           quantity: number
           sort_order: number
+          sub: string | null
           unit: string
           updated_at: string
         }
@@ -216,6 +191,7 @@ export type Database = {
           phase_id?: string | null
           quantity?: number
           sort_order?: number
+          sub?: string | null
           unit?: string
           updated_at?: string
         }
@@ -229,6 +205,7 @@ export type Database = {
           phase_id?: string | null
           quantity?: number
           sort_order?: number
+          sub?: string | null
           unit?: string
           updated_at?: string
         }
@@ -252,25 +229,31 @@ export type Database = {
       bid_phases: {
         Row: {
           code: string
+          color: string
           created_at: string
           id: string
           name: string
+          short_label: string | null
           sort_order: number
           updated_at: string
         }
         Insert: {
           code: string
+          color?: string
           created_at?: string
           id?: string
           name: string
+          short_label?: string | null
           sort_order?: number
           updated_at?: string
         }
         Update: {
           code?: string
+          color?: string
           created_at?: string
           id?: string
           name?: string
+          short_label?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -944,6 +927,76 @@ export type Database = {
         }
         Relationships: []
       }
+      job_exclusions: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          job_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          job_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_exclusions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_notes: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          job_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          job_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_notes_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_permits: {
         Row: {
           created_at: string
@@ -1106,6 +1159,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "job_plans_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_unit_pricing: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          job_id: string
+          name: string
+          price: number
+          sort_order: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          job_id: string
+          name: string
+          price: number
+          sort_order?: number
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_unit_pricing_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
