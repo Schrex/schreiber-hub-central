@@ -52,7 +52,7 @@ const TILES: Tile[] = [
   { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, roles: ["employee", "foreman", "office", "admin"], to: "/tools" },
   { key: "myposition", label: "My Position", hint: "Title, pay & range — private", icon: IdCard, roles: ["employee", "foreman", "office", "admin"], to: "/my-position" },
   { key: "newhire", label: "New Hires", hint: "Send onboarding", icon: UserPlus, roles: ["admin"] },
-  { key: "positions", label: "Positions & Pay", hint: "Roles, ranges, assignments", icon: DollarSign, roles: ["admin"], to: "/admin/positions" },
+  { key: "hr", label: "HR", hint: "Reviews, pay, time off & contacts", icon: Briefcase, roles: ["admin"], to: "/hr" },
   { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, roles: ["admin"], to: "/admin/users" },
 ];
 
