@@ -366,13 +366,17 @@ const AdminPositions = () => {
               <Label>Description</Label>
               <Textarea value={posForm.description} onChange={(e) => setPosForm({ ...posForm, description: e.target.value })} rows={2} />
             </div>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-3">
+              <Switch checked={posForm.is_salaried} onCheckedChange={(v) => setPosForm({ ...posForm, is_salaried: v })} />
+              <Label className="cursor-pointer">Salaried position (annual pay)</Label>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Min Pay ($/hr)</Label>
+                <Label>Min Pay ({posForm.is_salaried ? "$/yr" : "$/hr"})</Label>
                 <Input type="number" step="0.01" value={posForm.min_pay_rate} onChange={(e) => setPosForm({ ...posForm, min_pay_rate: e.target.value })} />
               </div>
               <div>
-                <Label>Max Pay ($/hr)</Label>
+                <Label>Max Pay ({posForm.is_salaried ? "$/yr" : "$/hr"})</Label>
                 <Input type="number" step="0.01" value={posForm.max_pay_rate} onChange={(e) => setPosForm({ ...posForm, max_pay_rate: e.target.value })} />
               </div>
             </div>
