@@ -288,7 +288,6 @@ const Schedule = () => {
         user_id: uid,
         assignment_date: dt,
         start_time: formStart || null,
-        role_on_job: formRole || null,
         notes: formNotes || null,
         created_by: user?.id ?? null,
       })),
