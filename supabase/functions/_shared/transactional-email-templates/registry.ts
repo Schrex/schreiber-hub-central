@@ -6,7 +6,7 @@ export interface TemplateEntry {
   subject: string | ((data: any) => string)
   displayName?: string
   previewData?: Record<string, unknown>
-  to?: string | ((data: any) => string)
+  to?: string
 }
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
