@@ -484,47 +484,104 @@ export type Database = {
       employee_contacts: {
         Row: {
           address: string | null
+          bank_account_holder: string | null
+          bank_account_number: string | null
+          bank_account_type: string | null
+          bank_name: string | null
+          bank_routing_number: string | null
           converted_user_id: string | null
           created_at: string
           created_by: string | null
+          date_of_birth: string | null
           department: string | null
+          drivers_license_class: string | null
+          drivers_license_expires: string | null
+          drivers_license_number: string | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          hire_date: string | null
           id: string
           is_active: boolean
           job_title: string | null
           name: string
           notes: string | null
+          osha_card_number: string | null
+          osha_expires: string | null
+          other_certifications: string | null
           phone: string | null
+          ssn: string | null
+          terminated_by: string | null
+          termination_date: string | null
+          termination_reason: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          bank_account_holder?: string | null
+          bank_account_number?: string | null
+          bank_account_type?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
           converted_user_id?: string | null
           created_at?: string
           created_by?: string | null
+          date_of_birth?: string | null
           department?: string | null
+          drivers_license_class?: string | null
+          drivers_license_expires?: string | null
+          drivers_license_number?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          hire_date?: string | null
           id?: string
           is_active?: boolean
           job_title?: string | null
           name: string
           notes?: string | null
+          osha_card_number?: string | null
+          osha_expires?: string | null
+          other_certifications?: string | null
           phone?: string | null
+          ssn?: string | null
+          terminated_by?: string | null
+          termination_date?: string | null
+          termination_reason?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          bank_account_holder?: string | null
+          bank_account_number?: string | null
+          bank_account_type?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
           converted_user_id?: string | null
           created_at?: string
           created_by?: string | null
+          date_of_birth?: string | null
           department?: string | null
+          drivers_license_class?: string | null
+          drivers_license_expires?: string | null
+          drivers_license_number?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          hire_date?: string | null
           id?: string
           is_active?: boolean
           job_title?: string | null
           name?: string
           notes?: string | null
+          osha_card_number?: string | null
+          osha_expires?: string | null
+          other_certifications?: string | null
           phone?: string | null
+          ssn?: string | null
+          terminated_by?: string | null
+          termination_date?: string | null
+          termination_reason?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -856,6 +913,157 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      onboarding_document_templates: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          is_active: boolean
+          is_built_in: boolean
+          mime_type: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          is_active?: boolean
+          is_built_in?: boolean
+          mime_type?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          is_active?: boolean
+          is_built_in?: boolean
+          mime_type?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      onboarding_documents: {
+        Row: {
+          created_at: string
+          decline_reason: string | null
+          declined_at: string | null
+          id: string
+          sent_at: string
+          sent_by: string | null
+          signed_at: string | null
+          signed_file_path: string | null
+          source_file_path: string
+          status: Database["public"]["Enums"]["onboarding_doc_status"]
+          template_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          decline_reason?: string | null
+          declined_at?: string | null
+          id?: string
+          sent_at?: string
+          sent_by?: string | null
+          signed_at?: string | null
+          signed_file_path?: string | null
+          source_file_path: string
+          status?: Database["public"]["Enums"]["onboarding_doc_status"]
+          template_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          decline_reason?: string | null
+          declined_at?: string | null
+          id?: string
+          sent_at?: string
+          sent_by?: string | null
+          signed_at?: string | null
+          signed_file_path?: string | null
+          source_file_path?: string
+          status?: Database["public"]["Enums"]["onboarding_doc_status"]
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_document_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_signatures: {
+        Row: {
+          document_id: string
+          id: string
+          signature_image: string
+          signed_at: string
+          signed_ip: string | null
+          signed_user_agent: string | null
+          typed_name: string
+          user_id: string
+        }
+        Insert: {
+          document_id: string
+          id?: string
+          signature_image: string
+          signed_at?: string
+          signed_ip?: string | null
+          signed_user_agent?: string | null
+          typed_name: string
+          user_id: string
+        }
+        Update: {
+          document_id?: string
+          id?: string
+          signature_image?: string
+          signed_at?: string
+          signed_ip?: string | null
+          signed_user_agent?: string | null
+          typed_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_signatures_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pay_audit_log: {
         Row: {
@@ -1392,6 +1600,7 @@ export type Database = {
       dispatch_rate_type: "hourly" | "per_load" | "per_ton" | "flat" | "other"
       dispatch_status: "scheduled" | "in_progress" | "complete" | "cancelled"
       job_status: "active" | "on_hold" | "complete"
+      onboarding_doc_status: "pending" | "viewed" | "signed" | "declined"
       performance_review_status: "draft" | "submitted" | "acknowledged"
       permit_status:
         | "not_started"
@@ -1568,6 +1777,7 @@ export const Constants = {
       dispatch_rate_type: ["hourly", "per_load", "per_ton", "flat", "other"],
       dispatch_status: ["scheduled", "in_progress", "complete", "cancelled"],
       job_status: ["active", "on_hold", "complete"],
+      onboarding_doc_status: ["pending", "viewed", "signed", "declined"],
       performance_review_status: ["draft", "submitted", "acknowledged"],
       permit_status: [
         "not_started",
