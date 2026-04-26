@@ -609,8 +609,7 @@ const Schedule = () => {
                     )}
                   </div>
                   <div className="px-4 py-3 text-sm">
-                    {a.role_on_job && <div><span className="text-muted-foreground">Role:</span> {a.role_on_job}</div>}
-                    {a.notes && <div className="mt-1 text-muted-foreground">{a.notes}</div>}
+                    {a.notes && <div className="text-muted-foreground">{a.notes}</div>}
                     <Button
                       size="sm"
                       variant="outline"
