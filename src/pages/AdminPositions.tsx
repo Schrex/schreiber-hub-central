@@ -120,7 +120,7 @@ const AdminPositions = () => {
 
   const openNewPosition = () => {
     setEditing(null);
-    setPosForm({ title: "", description: "", min_pay_rate: "", max_pay_rate: "", is_active: true });
+    setPosForm({ title: "", description: "", min_pay_rate: "", max_pay_rate: "", is_active: true, is_salaried: false });
     setPosDialog(true);
   };
 
@@ -132,6 +132,7 @@ const AdminPositions = () => {
       min_pay_rate: String(p.min_pay_rate),
       max_pay_rate: String(p.max_pay_rate),
       is_active: p.is_active,
+      is_salaried: p.is_salaried,
     });
     setPosDialog(true);
   };
@@ -147,6 +148,7 @@ const AdminPositions = () => {
       min_pay_rate: min,
       max_pay_rate: max,
       is_active: posForm.is_active,
+      is_salaried: posForm.is_salaried,
     };
     const { error } = editing
       ? await supabase.from("positions").update(payload).eq("id", editing.id)
