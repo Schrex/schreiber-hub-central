@@ -418,21 +418,30 @@ const AdminPositions = () => {
               <Label>Position</Label>
               <Select value={assignForm.position_id} onValueChange={(v) => {
                 const p = positions.find((x) => x.id === v);
-                setAssignForm({ ...assignForm, position_id: v, pay_rate: p ? String(p.min_pay_rate) : assignForm.pay_rate });
+                setAssignForm({
+                  ...assignForm,
+                  position_id: v,
+                  pay_rate: p ? String(p.min_pay_rate) : assignForm.pay_rate,
+                  is_salaried: p ? p.is_salaried : assignForm.is_salaried,
+                });
               }}>
                 <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
                 <SelectContent>
                   {positions.filter((p) => p.is_active).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.title} ({fmtMoney(p.min_pay_rate)}–{fmtMoney(p.max_pay_rate)})
+                      {p.title} ({fmtMoney(p.min_pay_rate)}–{fmtMoney(p.max_pay_rate)}{p.is_salaried ? "/yr" : "/hr"})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-3">
+              <Switch checked={assignForm.is_salaried} onCheckedChange={(v) => setAssignForm({ ...assignForm, is_salaried: v })} />
+              <Label className="cursor-pointer">Paid as salary (annual)</Label>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Pay Rate ($/hr)</Label>
+                <Label>Pay Rate ({assignForm.is_salaried ? "$/yr" : "$/hr"})</Label>
                 <Input type="number" step="0.01" value={assignForm.pay_rate} onChange={(e) => setAssignForm({ ...assignForm, pay_rate: e.target.value })} />
               </div>
               <div>
