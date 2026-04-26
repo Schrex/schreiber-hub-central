@@ -68,21 +68,19 @@ const Index = () => {
       return;
     }
     if (t.key === "receipts") {
-      // Try to open the Bill.com mobile app, fall back to web after a short delay
+      // Try to open the Bill Spend & Expense (Divvy) mobile app, fall back to web
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
         const start = Date.now();
-        // Bill.com iOS/Android universal link
-        window.location.href = "billcom://";
+        window.location.href = "divvy://";
         setTimeout(() => {
-          // If the app didn't open (page still here), open web app
           if (Date.now() - start < 2000) {
-            window.open("https://app.bill.com/", "_blank", "noopener,noreferrer");
+            window.open("https://app.divvy.co/", "_blank", "noopener,noreferrer");
           }
         }, 1200);
         return;
       }
-      window.open("https://app.bill.com/", "_blank", "noopener,noreferrer");
+      window.open("https://app.divvy.co/", "_blank", "noopener,noreferrer");
       return;
     }
     if (t.href) window.open(t.href, "_blank", "noopener,noreferrer");
