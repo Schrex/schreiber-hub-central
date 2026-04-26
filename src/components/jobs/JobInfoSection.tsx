@@ -339,7 +339,7 @@ const Body = ({ info }: { info: JobInfo }) => {
           )}
         </div>
       </Group>
-    </section>
+    </div>
   );
 };
 
