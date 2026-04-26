@@ -77,7 +77,7 @@ const AdminPositions = () => {
       supabase.from("positions").select("*").order("sort_order").order("title"),
       supabase.from("profiles").select("user_id, display_name, email, contact_id").eq("is_active", true),
       supabase.from("employee_contacts").select("id, name, email, converted_user_id").eq("is_active", true).order("name"),
-      supabase.from("employee_positions").select("id, user_id, position_id, pay_rate, effective_date, end_date, notes, position:positions(title)").order("effective_date", { ascending: false }),
+      supabase.from("employee_positions").select("id, user_id, position_id, pay_rate, effective_date, end_date, notes, is_salaried, position:positions(title)").order("effective_date", { ascending: false }),
     ]);
 
     // Unify: every active contact + any active profile that has no contact link yet
