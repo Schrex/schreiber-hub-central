@@ -24,6 +24,7 @@ import Vendors from "./pages/Vendors.tsx";
 import EmployeeContacts from "./pages/EmployeeContacts.tsx";
 import Perks from "./pages/Perks.tsx";
 import AdminPositions from "./pages/AdminPositions.tsx";
+import HR from "./pages/HR.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,10 @@ const App = () => (
             <Route
               path="/admin/positions"
               element={<ProtectedRoute requireRole="admin"><AdminPositions /></ProtectedRoute>}
+            />
+            <Route
+              path="/hr"
+              element={<ProtectedRoute requireRole="admin"><HR /></ProtectedRoute>}
             />
             <Route
               path="/admin/users"
