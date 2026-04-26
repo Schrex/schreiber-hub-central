@@ -66,10 +66,10 @@ const AdminPositions = () => {
 
   const [posDialog, setPosDialog] = useState(false);
   const [editing, setEditing] = useState<Position | null>(null);
-  const [posForm, setPosForm] = useState({ title: "", description: "", min_pay_rate: "", max_pay_rate: "", is_active: true });
+  const [posForm, setPosForm] = useState({ title: "", description: "", min_pay_rate: "", max_pay_rate: "", is_active: true, is_salaried: false });
 
   const [assignDialog, setAssignDialog] = useState(false);
-  const [assignForm, setAssignForm] = useState({ user_id: "", position_id: "", pay_rate: "", effective_date: new Date().toISOString().slice(0, 10), notes: "" });
+  const [assignForm, setAssignForm] = useState({ user_id: "", position_id: "", pay_rate: "", effective_date: new Date().toISOString().slice(0, 10), notes: "", is_salaried: false });
 
   const load = async () => {
     setLoading(true);
