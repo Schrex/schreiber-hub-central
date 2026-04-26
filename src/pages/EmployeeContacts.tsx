@@ -667,24 +667,24 @@ const EmployeeContacts = () => {
               <Card
                 key={c.id}
                 id={`contact-${c.id}`}
-                className={`p-3 transition ${focusId === c.id ? "ring-2 ring-primary shadow-md" : ""}`}
+                className={`p-2 transition ${focusId === c.id ? "ring-2 ring-primary shadow-md" : ""}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="truncate font-semibold">{c.name}</h3>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <h3 className="truncate text-sm font-semibold">{c.name}</h3>
                       {c.converted_user_id && (
-                        <Badge variant="default" className="text-[10px]" title="Has app login">
-                          <KeyRound className="mr-1 h-2.5 w-2.5" /> Login
+                        <Badge variant="default" className="px-1 py-0 text-[9px]" title="Has app login">
+                          <KeyRound className="mr-0.5 h-2 w-2" /> Login
                         </Badge>
                       )}
                       {c.department && (
-                        <Badge variant="secondary" className="text-[10px]">
+                        <Badge variant="secondary" className="px-1 py-0 text-[9px]">
                           {c.department}
                         </Badge>
                       )}
                       {c.converted_user_id && positions.get(c.converted_user_id) && (
-                        <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary" title="Current assigned position">
+                        <Badge variant="outline" className="border-primary/30 bg-primary/5 px-1 py-0 text-[9px] text-primary" title="Current assigned position">
                           {positions.get(c.converted_user_id)!.title}
                         </Badge>
                       )}
@@ -695,17 +695,17 @@ const EmployeeContacts = () => {
                         : undefined;
                       const display = livePos?.title ?? c.job_title;
                       return display ? (
-                        <p className="mt-0.5 text-xs text-muted-foreground">{display}</p>
+                        <p className="text-[11px] text-muted-foreground">{display}</p>
                       ) : null;
                     })()}
-                    <div className="mt-2 space-y-1 text-xs">
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
                       {c.phone && (
-                        <a href={`tel:${c.phone}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
+                        <a href={`tel:${c.phone}`} className="flex items-center gap-1 text-foreground hover:text-primary">
                           <Phone className="h-3 w-3" /> {c.phone}
                         </a>
                       )}
                       {c.email && (
-                        <a href={`mailto:${c.email}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
+                        <a href={`mailto:${c.email}`} className="flex items-center gap-1 text-foreground hover:text-primary">
                           <Mail className="h-3 w-3" /> {c.email}
                         </a>
                       )}
@@ -714,43 +714,45 @@ const EmployeeContacts = () => {
                           href={`https://maps.google.com/?q=${encodeURIComponent(c.address)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-start gap-1.5 text-foreground hover:text-primary"
+                          className="flex items-center gap-1 text-foreground hover:text-primary"
                         >
-                          <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> <span>{c.address}</span>
+                          <MapPin className="h-3 w-3 shrink-0" /> <span className="truncate max-w-[180px]">{c.address}</span>
                         </a>
                       )}
-                      {c.notes && <p className="text-muted-foreground">{c.notes}</p>}
                     </div>
+                    {c.notes && <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{c.notes}</p>}
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex shrink-0 items-center gap-0.5">
                     <Button
                       size="icon"
                       variant="ghost"
+                      className="h-7 w-7"
                       onClick={() => downloadContact(c)}
                       aria-label="Save to phone contacts"
                       title="Save to contacts"
                     >
-                      <Download className="h-4 w-4" />
+                      <Download className="h-3.5 w-3.5" />
                     </Button>
                     {canEdit && (
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(c)} aria-label="Edit">
-                        <Pencil className="h-4 w-4" />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(c)} aria-label="Edit">
+                        <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     )}
                     {canConvert && !c.converted_user_id && (
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="h-7 w-7"
                         onClick={() => openConvert(c)}
                         aria-label="Convert to login"
                         title="Convert to login"
                       >
-                        <KeyRound className="h-4 w-4" />
+                        <KeyRound className="h-3.5 w-3.5" />
                       </Button>
                     )}
                     {canDelete && (
-                      <Button size="icon" variant="ghost" onClick={() => remove(c)} aria-label="Delete">
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(c)} aria-label="Delete">
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </Button>
                     )}
                   </div>
