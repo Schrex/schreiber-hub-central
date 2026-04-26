@@ -56,12 +56,12 @@ export type Database = {
           description: string
           equipment: string[]
           id: string
-          manhours: number
+          manhours: number | null
           notes: string | null
           qty: number
           rate: number | null
           rate_by: string
-          shifts: number
+          shifts: number | null
           sort_order: number
           unit: string
           updated_at: string
@@ -74,12 +74,12 @@ export type Database = {
           description: string
           equipment?: string[]
           id?: string
-          manhours?: number
+          manhours?: number | null
           notes?: string | null
           qty?: number
           rate?: number | null
           rate_by?: string
-          shifts?: number
+          shifts?: number | null
           sort_order?: number
           unit?: string
           updated_at?: string
@@ -92,12 +92,12 @@ export type Database = {
           description?: string
           equipment?: string[]
           id?: string
-          manhours?: number
+          manhours?: number | null
           notes?: string | null
           qty?: number
           rate?: number | null
           rate_by?: string
-          shifts?: number
+          shifts?: number | null
           sort_order?: number
           unit?: string
           updated_at?: string
