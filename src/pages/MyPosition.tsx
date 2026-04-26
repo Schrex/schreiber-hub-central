@@ -116,7 +116,7 @@ const MyPosition = () => {
                   Effective {fmtDate(current.effective_date)}
                 </div>
               </div>
-              <div className="mt-1 font-display text-3xl">{fmtMoney(current.pay_rate)}<span className="text-sm font-normal text-muted-foreground">/hr</span></div>
+              <div className="mt-1 font-display text-3xl">{fmtMoney(current.pay_rate)}<span className="text-sm font-normal text-muted-foreground">{current.is_salaried ? "/yr" : "/hr"}</span></div>
             </div>
 
             <div>
