@@ -123,6 +123,7 @@ const ForemanReport = ({ jobNumber, open }: { jobNumber: string; open: boolean }
         .or(`job_number.eq.${jobNumber},job_number.eq.${cleaned}`).maybeSingle();
       if (!jobRow || cancelled) { setLoading(false); return; }
       setJobName(jobRow.name);
+      setJobId(jobRow.id);
 
       const [phRes, cRes, biRes, nRes, eRes, pRes] = await Promise.all([
         supabase.from("bid_phases").select("*").order("sort_order"),
