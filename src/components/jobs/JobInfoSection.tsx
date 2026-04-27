@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { EstimateUploads } from "./EstimateUploads";
 
 interface Props { jobNumber: string | null }
 
