@@ -110,6 +110,7 @@ const ForemanReport = ({ jobNumber, open }: { jobNumber: string; open: boolean }
   const [exclusions, setExclusions] = useState<Note[]>([]);
   const [pricing, setPricing] = useState<UnitPrice[]>([]);
   const [jobName, setJobName] = useState<string>("");
+  const [jobId, setJobId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
