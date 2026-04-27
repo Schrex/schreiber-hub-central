@@ -462,7 +462,7 @@ const BidItemCard = ({ item, expanded, onToggle, totalManHrs }: { item: BidItem;
   );
 };
 
-const ScopeCard = ({ notes, exclusions, pricing }: { notes: Note[]; exclusions: Note[]; pricing: UnitPrice[] }) => (
+const ScopeCard = ({ notes, exclusions, pricing, jobId }: { notes: Note[]; exclusions: Note[]; pricing: UnitPrice[]; jobId: string | null }) => (
   <div className="px-3 py-3 space-y-3">
     <div className="bg-stone-900 text-white rounded-2xl p-4 shadow-md">
       <div className="flex items-center gap-2 mb-1">
