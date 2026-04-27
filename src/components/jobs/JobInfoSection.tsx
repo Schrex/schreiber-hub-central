@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { EstimateUploads } from "./EstimateUploads";
 
 interface Props { jobNumber: string | null }
 
@@ -109,6 +110,7 @@ const ForemanReport = ({ jobNumber, open }: { jobNumber: string; open: boolean }
   const [exclusions, setExclusions] = useState<Note[]>([]);
   const [pricing, setPricing] = useState<UnitPrice[]>([]);
   const [jobName, setJobName] = useState<string>("");
+  const [jobId, setJobId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -121,6 +123,7 @@ const ForemanReport = ({ jobNumber, open }: { jobNumber: string; open: boolean }
         .or(`job_number.eq.${jobNumber},job_number.eq.${cleaned}`).maybeSingle();
       if (!jobRow || cancelled) { setLoading(false); return; }
       setJobName(jobRow.name);
+      setJobId(jobRow.id);
 
       const [phRes, cRes, biRes, nRes, eRes, pRes] = await Promise.all([
         supabase.from("bid_phases").select("*").order("sort_order"),
@@ -273,7 +276,7 @@ const ForemanReport = ({ jobNumber, open }: { jobNumber: string; open: boolean }
           )}
         </div>
       ) : (
-        <ScopeCard notes={notes} exclusions={exclusions} pricing={pricing} />
+        <ScopeCard notes={notes} exclusions={exclusions} pricing={pricing} jobId={jobId} />
       )}
 
       {/* Bottom tabs */}
@@ -459,7 +462,7 @@ const BidItemCard = ({ item, expanded, onToggle, totalManHrs }: { item: BidItem;
   );
 };
 
-const ScopeCard = ({ notes, exclusions, pricing }: { notes: Note[]; exclusions: Note[]; pricing: UnitPrice[] }) => (
+const ScopeCard = ({ notes, exclusions, pricing, jobId }: { notes: Note[]; exclusions: Note[]; pricing: UnitPrice[]; jobId: string | null }) => (
   <div className="px-3 py-3 space-y-3">
     <div className="bg-stone-900 text-white rounded-2xl p-4 shadow-md">
       <div className="flex items-center gap-2 mb-1">
@@ -468,6 +471,8 @@ const ScopeCard = ({ notes, exclusions, pricing }: { notes: Note[]; exclusions: 
       </div>
       <p className="text-[12px] text-stone-300 leading-tight">When the GC asks for something, check here first. If it's in <span className="font-bold text-amber-400">Exclusions</span>, it's a change order.</p>
     </div>
+
+    {jobId && <EstimateUploads jobId={jobId} />}
 
     {notes.length > 0 && (
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">

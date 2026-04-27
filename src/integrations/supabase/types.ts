@@ -927,6 +927,48 @@ export type Database = {
         }
         Relationships: []
       }
+      job_estimates: {
+        Row: {
+          created_at: string
+          file_path: string
+          file_size: number | null
+          id: string
+          job_id: string
+          mime_type: string | null
+          notes: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          job_id: string
+          mime_type?: string | null
+          notes?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          job_id?: string
+          mime_type?: string | null
+          notes?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Relationships: []
+      }
       job_exclusions: {
         Row: {
           body: string
