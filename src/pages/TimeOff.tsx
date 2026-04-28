@@ -193,7 +193,52 @@ const TimeOffPage = () => {
       }).eq("id", req.id);
       if (error) throw error;
       toast.success("Approved");
-      // Calendar invites will be wired up once Outlook is connected
+
+      // Notify admins, foremen, and the current Equipment Manager
+      try {
+        const [{ data: roleRows }, { data: posRows }] = await Promise.all([
+          supabase.from("user_roles").select("user_id, role").in("role", ["admin", "foreman"]),
+          supabase
+            .from("employee_positions")
+            .select("user_id, positions!inner(title), end_date")
+            .eq("positions.title", "Equipment Manager")
+            .is("end_date", null),
+        ]);
+        const userIds = new Set<string>();
+        (roleRows ?? []).forEach((r: any) => r.user_id && userIds.add(r.user_id));
+        (posRows ?? []).forEach((r: any) => r.user_id && userIds.add(r.user_id));
+        if (userIds.size > 0) {
+          const { data: profs } = await supabase
+            .from("profiles")
+            .select("user_id, email, display_name")
+            .in("user_id", Array.from(userIds));
+          const recipients = (profs ?? []).filter((p: any) => p.email);
+          const dateRange = renderRange(req);
+          const decidedBy = displayName ?? "Admin";
+          await Promise.all(
+            recipients.map((p: any) =>
+              supabase.functions.invoke("send-transactional-email", {
+                body: {
+                  templateName: "time-off-approved",
+                  recipientEmail: p.email,
+                  idempotencyKey: `time-off-approved-${req.id}-${p.user_id}`,
+                  templateData: {
+                    requesterName: req.requester_name ?? "Employee",
+                    type: TYPE_LABEL[req.type],
+                    dateRange,
+                    halfDay: req.half_day !== "none" ? req.half_day.toUpperCase() : "",
+                    reason: req.reason ?? "",
+                    decidedBy,
+                  },
+                },
+              }),
+            ),
+          );
+        }
+      } catch (notifyErr) {
+        console.error("Failed to send approval notifications", notifyErr);
+      }
+
       load();
     } catch (err: any) {
       toast.error(err.message ?? "Failed to approve");
