@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { SignaturePad } from "@/components/safety/SignaturePad";
 
@@ -16,11 +17,12 @@ interface SafetyRule { id: string; title: string; body: string; category: string
 interface ToolboxTalk { id: string; title: string; category: string | null; content: string; quiz_questions: any; created_with_ai: boolean; is_active: boolean; }
 interface QuizQ { question: string; options: string[]; correct_index: number; }
 interface SessionRow { id: string; talk_id: string; foreman_id: string; foreman_name: string | null; status: string; started_at: string; recording_started_at: string | null; recording_stopped_at: string | null; audio_path: string | null; transcript: string | null; }
-interface Attendee { id: string; session_id: string; attendee_name: string; signature_data: string | null; signed_at: string | null; quiz_score: number | null; quiz_total: number | null; quiz_completed_at: string | null; }
+interface Attendee { id: string; session_id: string; user_id: string | null; attendee_name: string; signature_data: string | null; signed_at: string | null; quiz_score: number | null; quiz_total: number | null; quiz_completed_at: string | null; }
 
 const Safety = () => {
   const { role, user, displayName } = useAuth();
   const isAdmin = role === "admin";
+  // Only foremen lead toolbox talks. Admins can also access for oversight.
   const isForeman = role === "foreman" || isAdmin;
 
   return (
@@ -328,7 +330,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   const [recording, setRecording] = useState(false);
   const [recBusy, setRecBusy] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
-  const [newName, setNewName] = useState("");
+  const [employees, setEmployees] = useState<{ user_id: string; display_name: string | null }[]>([]);
+  const [pickUserId, setPickUserId] = useState<string>("");
   const [signFor, setSignFor] = useState<Attendee | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
   const [quizFor, setQuizFor] = useState<Attendee | null>(null);
@@ -344,11 +347,23 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   };
   useEffect(() => { loadAttendees(); }, [session.id]);
 
+  useEffect(() => {
+    supabase.from("profiles").select("user_id, display_name").eq("is_active", true).order("display_name").then(({ data }) => {
+      setEmployees((data as { user_id: string; display_name: string | null }[]) ?? []);
+    });
+  }, []);
+
   const addAttendee = async () => {
-    if (!newName.trim()) return;
-    const { error } = await supabase.from("toolbox_talk_attendees").insert({ session_id: session.id, attendee_name: newName.trim() });
+    if (!pickUserId) return;
+    const emp = employees.find(e => e.user_id === pickUserId);
+    if (!emp) return;
+    const { error } = await supabase.from("toolbox_talk_attendees").insert({
+      session_id: session.id,
+      user_id: emp.user_id,
+      attendee_name: emp.display_name ?? "Employee",
+    });
     if (error) { toast.error(error.message); return; }
-    setNewName("");
+    setPickUserId("");
     loadAttendees();
   };
 
@@ -441,8 +456,19 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
       <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
         <h3 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground"><Users className="inline h-3 w-3 mr-1" />Attendees</h3>
         <div className="flex gap-2">
-          <Input placeholder="Add name…" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addAttendee(); }} />
-          <Button onClick={addAttendee}><Plus className="h-4 w-4" /></Button>
+          <Select value={pickUserId} onValueChange={setPickUserId}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select employee…" />
+            </SelectTrigger>
+            <SelectContent>
+              {employees
+                .filter((e) => !attendees.some((a) => a.user_id === e.user_id))
+                .map((e) => (
+                  <SelectItem key={e.user_id} value={e.user_id}>{e.display_name ?? "—"}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={addAttendee} disabled={!pickUserId}><Plus className="h-4 w-4" /></Button>
         </div>
         <div className="space-y-2">
           {attendees.map((a) => (
