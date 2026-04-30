@@ -315,6 +315,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
                   {new Date(s.started_at).toLocaleString()} · {s.status}
                 </p>
                 <p className="text-sm">{talk?.title ?? "Talk"}</p>
+                {s.transcript && <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{s.transcript}</p>}
               </button>
             );
           })}
@@ -447,9 +448,24 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
           </Button>
         )}
         {transcript && (
-          <details><summary className="cursor-pointer text-xs text-primary">Show transcript</summary>
+          <details open className="rounded-lg border border-border p-2">
+            <summary className="cursor-pointer text-xs uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+              <span>Transcript</span>
+              <button
+                type="button"
+                className="text-primary text-[10px] hover:underline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigator.clipboard.writeText(transcript);
+                  toast.success("Transcript copied");
+                }}
+              >Copy</button>
+            </summary>
             <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/80">{transcript}</p>
           </details>
+        )}
+        {!transcript && session.audio_path && (
+          <p className="text-xs text-muted-foreground">Transcript not available yet.</p>
         )}
       </div>
 
