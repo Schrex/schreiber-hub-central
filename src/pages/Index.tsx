@@ -18,6 +18,7 @@ import {
   IdCard,
   DollarSign,
   Users,
+  HardHat,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { HeaderBar } from "@/components/home/HeaderBar";
@@ -50,6 +51,7 @@ const TILES: Tile[] = [
   { key: "perks", label: "My Perks", hint: "Apparel, time off & referrals", icon: Sparkles, roles: ["employee", "foreman", "office", "admin"], to: "/perks" },
   
   { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, roles: ["employee", "foreman", "office", "admin"], to: "/tools" },
+  { key: "safety", label: "Safety", hint: "Rules & toolbox talks", icon: HardHat, roles: ["employee", "foreman", "office", "admin"], to: "/safety" },
   { key: "myposition", label: "My Position", hint: "Title, pay & range — private", icon: IdCard, roles: ["employee", "foreman", "office", "admin"], to: "/my-position" },
   { key: "hr", label: "HR", hint: "Reviews, pay, time off, contacts & new hires", icon: Briefcase, roles: ["admin"], to: "/hr" },
   { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, roles: ["admin"], to: "/admin/users" },
