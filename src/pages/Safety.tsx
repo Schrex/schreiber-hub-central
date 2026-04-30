@@ -456,8 +456,19 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
       <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
         <h3 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground"><Users className="inline h-3 w-3 mr-1" />Attendees</h3>
         <div className="flex gap-2">
-          <Input placeholder="Add name…" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addAttendee(); }} />
-          <Button onClick={addAttendee}><Plus className="h-4 w-4" /></Button>
+          <Select value={pickUserId} onValueChange={setPickUserId}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select employee…" />
+            </SelectTrigger>
+            <SelectContent>
+              {employees
+                .filter((e) => !attendees.some((a) => a.user_id === e.user_id))
+                .map((e) => (
+                  <SelectItem key={e.user_id} value={e.user_id}>{e.display_name ?? "—"}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={addAttendee} disabled={!pickUserId}><Plus className="h-4 w-4" /></Button>
         </div>
         <div className="space-y-2">
           {attendees.map((a) => (
