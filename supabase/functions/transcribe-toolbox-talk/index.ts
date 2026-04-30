@@ -63,7 +63,14 @@ Deno.serve(async (req) => {
     if (!resp.ok) {
       const t = await resp.text()
       console.error('ElevenLabs error', resp.status, t)
-      throw new Error('Transcription failed')
+      let reason = 'transcription_unavailable'
+      let message = 'Transcription service unavailable. Recording was saved.'
+      if (resp.status === 401 && t.includes('detected_unusual_activity')) {
+        reason = 'elevenlabs_free_tier_blocked'
+        message = 'ElevenLabs free tier is blocked for this account. Upgrade to a paid plan to enable transcription.'
+      }
+      await admin.from('toolbox_talk_sessions').update({ transcript: `[${message}]` }).eq('id', sessionId)
+      return new Response(JSON.stringify({ ok: false, reason, message, fallback: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
     const data = await resp.json()
     const transcript = data.text ?? ''
@@ -73,6 +80,6 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true, transcript }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (e) {
     console.error('transcribe-toolbox-talk error', e)
-    return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    return new Response(JSON.stringify({ ok: false, error: (e as Error).message, fallback: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
