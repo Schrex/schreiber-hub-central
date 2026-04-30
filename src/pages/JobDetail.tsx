@@ -13,6 +13,7 @@ import { PlansSection } from "@/components/jobs/PlansSection";
 import { PhotosSection } from "@/components/jobs/PhotosSection";
 import { JobInfoSection } from "@/components/jobs/JobInfoSection";
 import { JobLookahead } from "@/components/jobs/JobLookahead";
+import { SafetyInspectionButton } from "@/components/jobs/SafetyInspectionButton";
 
 interface Job {
   id: string;
@@ -164,6 +165,8 @@ const JobDetail = () => {
         />
         <PermitsSection jobId={job.id} />
         <DigTicketsSection jobId={job.id} />
+
+        <SafetyInspectionButton jobId={job.id} />
 
         {mapsUrl && (
           <Button asChild variant="outline" className="w-full">
