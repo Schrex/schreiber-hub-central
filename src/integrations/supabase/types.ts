@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       benefit_types: {
         Row: {
           created_at: string
@@ -1717,6 +1738,80 @@ export type Database = {
         }
         Relationships: []
       }
+      safety_inspections: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          notes: string | null
+          recipient_email: string
+          requested_by: string | null
+          requested_by_name: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          notes?: string | null
+          recipient_email: string
+          requested_by?: string | null
+          requested_by_name?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          notes?: string | null
+          recipient_email?: string
+          requested_by?: string | null
+          requested_by_name?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_inspections_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_rules: {
+        Row: {
+          body: string
+          category: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       schedule_assignments: {
         Row: {
           assignment_date: string
@@ -1839,6 +1934,161 @@ export type Database = {
           type?: Database["public"]["Enums"]["time_off_type"]
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      toolbox_talk_attendees: {
+        Row: {
+          attendee_name: string
+          created_at: string
+          id: string
+          quiz_answers: Json | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          quiz_total: number | null
+          session_id: string
+          signature_data: string | null
+          signed_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attendee_name: string
+          created_at?: string
+          id?: string
+          quiz_answers?: Json | null
+          quiz_completed_at?: string | null
+          quiz_score?: number | null
+          quiz_total?: number | null
+          session_id: string
+          signature_data?: string | null
+          signed_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attendee_name?: string
+          created_at?: string
+          id?: string
+          quiz_answers?: Json | null
+          quiz_completed_at?: string | null
+          quiz_score?: number | null
+          quiz_total?: number | null
+          session_id?: string
+          signature_data?: string | null
+          signed_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "toolbox_talk_attendees_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "toolbox_talk_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      toolbox_talk_sessions: {
+        Row: {
+          audio_path: string | null
+          completed_at: string | null
+          created_at: string
+          foreman_id: string
+          foreman_name: string | null
+          id: string
+          job_id: string | null
+          recording_started_at: string | null
+          recording_stopped_at: string | null
+          started_at: string
+          status: string
+          talk_id: string
+          transcript: string | null
+          updated_at: string
+        }
+        Insert: {
+          audio_path?: string | null
+          completed_at?: string | null
+          created_at?: string
+          foreman_id: string
+          foreman_name?: string | null
+          id?: string
+          job_id?: string | null
+          recording_started_at?: string | null
+          recording_stopped_at?: string | null
+          started_at?: string
+          status?: string
+          talk_id: string
+          transcript?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audio_path?: string | null
+          completed_at?: string | null
+          created_at?: string
+          foreman_id?: string
+          foreman_name?: string | null
+          id?: string
+          job_id?: string | null
+          recording_started_at?: string | null
+          recording_stopped_at?: string | null
+          started_at?: string
+          status?: string
+          talk_id?: string
+          transcript?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "toolbox_talk_sessions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "toolbox_talk_sessions_talk_id_fkey"
+            columns: ["talk_id"]
+            isOneToOne: false
+            referencedRelation: "toolbox_talks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      toolbox_talks: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          created_with_ai: boolean
+          id: string
+          is_active: boolean
+          quiz_questions: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          created_by?: string | null
+          created_with_ai?: boolean
+          id?: string
+          is_active?: boolean
+          quiz_questions?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          created_with_ai?: boolean
+          id?: string
+          is_active?: boolean
+          quiz_questions?: Json
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
