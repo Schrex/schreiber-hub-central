@@ -21,6 +21,7 @@ interface Attendee { id: string; session_id: string; attendee_name: string; sign
 const Safety = () => {
   const { role, user, displayName } = useAuth();
   const isAdmin = role === "admin";
+  // Only foremen lead toolbox talks. Admins can also access for oversight.
   const isForeman = role === "foreman" || isAdmin;
 
   return (
