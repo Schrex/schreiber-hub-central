@@ -315,6 +315,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
                   {new Date(s.started_at).toLocaleString()} · {s.status}
                 </p>
                 <p className="text-sm">{talk?.title ?? "Talk"}</p>
+                {s.transcript && <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{s.transcript}</p>}
               </button>
             );
           })}
