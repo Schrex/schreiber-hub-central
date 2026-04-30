@@ -330,7 +330,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   const [recording, setRecording] = useState(false);
   const [recBusy, setRecBusy] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
-  const [newName, setNewName] = useState("");
+  const [employees, setEmployees] = useState<{ user_id: string; display_name: string | null }[]>([]);
+  const [pickUserId, setPickUserId] = useState<string>("");
   const [signFor, setSignFor] = useState<Attendee | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
   const [quizFor, setQuizFor] = useState<Attendee | null>(null);
@@ -346,11 +347,23 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   };
   useEffect(() => { loadAttendees(); }, [session.id]);
 
+  useEffect(() => {
+    supabase.from("profiles").select("user_id, display_name").eq("is_active", true).order("display_name").then(({ data }) => {
+      setEmployees((data as { user_id: string; display_name: string | null }[]) ?? []);
+    });
+  }, []);
+
   const addAttendee = async () => {
-    if (!newName.trim()) return;
-    const { error } = await supabase.from("toolbox_talk_attendees").insert({ session_id: session.id, attendee_name: newName.trim() });
+    if (!pickUserId) return;
+    const emp = employees.find(e => e.user_id === pickUserId);
+    if (!emp) return;
+    const { error } = await supabase.from("toolbox_talk_attendees").insert({
+      session_id: session.id,
+      user_id: emp.user_id,
+      attendee_name: emp.display_name ?? "Employee",
+    });
     if (error) { toast.error(error.message); return; }
-    setNewName("");
+    setPickUserId("");
     loadAttendees();
   };
 
