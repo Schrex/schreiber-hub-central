@@ -996,6 +996,29 @@ const EmployeeContacts = () => {
               </div>
             </div>
             <div>
+              <Label htmlFor="ec-manager">Direct manager</Label>
+              <Select
+                value={form.manager_contact_id || "__none__"}
+                onValueChange={(v) => setForm({ ...form, manager_contact_id: v === "__none__" ? "" : v })}
+              >
+                <SelectTrigger id="ec-manager">
+                  <SelectValue placeholder="Select manager" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— None —</SelectItem>
+                  {contacts
+                    .filter((m) => m.is_active && m.id !== editing?.id)
+                    .slice()
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}{m.job_title ? ` — ${m.job_title}` : ""}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label htmlFor="ec-phone">Phone</Label>
               <Input id="ec-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             </div>
