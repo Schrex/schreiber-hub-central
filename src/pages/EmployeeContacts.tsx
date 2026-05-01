@@ -72,6 +72,21 @@ const HEADER_MAP: Record<string, keyof typeof emptyForm> = {
   "full name": "name",
   employee: "name",
   "employee name": "name",
+  "first name": "first_name",
+  first_name: "first_name",
+  firstname: "first_name",
+  given: "first_name",
+  "given name": "first_name",
+  "last name": "last_name",
+  last_name: "last_name",
+  lastname: "last_name",
+  surname: "last_name",
+  family: "last_name",
+  "family name": "last_name",
+  "middle initial": "middle_initial",
+  middle_initial: "middle_initial",
+  mi: "middle_initial",
+  middle: "middle_initial",
   job_title: "job_title",
   "job title": "job_title",
   title: "job_title",
@@ -94,6 +109,13 @@ const HEADER_MAP: Record<string, keyof typeof emptyForm> = {
   notes: "notes",
   note: "notes",
   comments: "notes",
+};
+
+const splitName = (full: string): { first: string; last: string } => {
+  const parts = full.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { first: "", last: "" };
+  if (parts.length === 1) return { first: parts[0], last: "" };
+  return { first: parts[0], last: parts.slice(1).join(" ") };
 };
 
 const decodeVCardValue = (val: string, encoding?: string) => {
