@@ -465,7 +465,36 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
           </details>
         )}
         {!transcript && session.audio_path && (
-          <p className="text-xs text-muted-foreground">Transcript not available yet.</p>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Transcript not available yet.</p>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={recBusy}
+              onClick={async () => {
+                try {
+                  setRecBusy(true);
+                  toast.message("Transcribing…");
+                  const { data, error } = await supabase.functions.invoke("transcribe-toolbox-talk", {
+                    body: { sessionId: session.id, audioPath: session.audio_path },
+                  });
+                  if (error) throw error;
+                  if (data?.transcript) {
+                    setTranscript(data.transcript);
+                    toast.success("Transcript ready");
+                  } else {
+                    toast.error(data?.message ?? "Transcription unavailable");
+                  }
+                } catch (e: any) {
+                  toast.error(e.message ?? "Retry failed");
+                } finally {
+                  setRecBusy(false);
+                }
+              }}
+            >
+              Retry transcription
+            </Button>
+          </div>
         )}
       </div>
 
