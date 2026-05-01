@@ -18,6 +18,7 @@ import { downloadVCard, downloadVCards } from "@/lib/vcard";
 import { fetchCurrentPositions, type CurrentPosition } from "@/lib/currentPositions";
 import { getContactPickerUnavailableReason, isContactPickerSupported, pickContactsFromDevice } from "@/lib/contactPicker";
 import { AddEmployeeWizard } from "@/components/AddEmployeeWizard";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type EmployeeContact = {
   id: string;
