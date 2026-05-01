@@ -24,6 +24,8 @@ import { useNavigate } from "react-router-dom";
 import { HeaderBar } from "@/components/home/HeaderBar";
 import { WeatherStrip } from "@/components/home/WeatherStrip";
 import { AppTile } from "@/components/home/AppTile";
+import { RoleSwitcher } from "@/components/home/RoleSwitcher";
+import { useState } from "react";
 import { useAuth, type Role } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
@@ -60,7 +62,8 @@ const TILES: Tile[] = [
 const Index = () => {
   const { role, displayName, positionTitle, signOut } = useAuth();
   const navigate = useNavigate();
-  const effectiveRole: Role = role ?? "employee";
+  const [previewRole, setPreviewRole] = useState<Role | null>(null);
+  const effectiveRole: Role = previewRole ?? role ?? "employee";
   const visible = TILES.filter((t) => t.roles.includes(effectiveRole));
 
   const handleTile = (t: Tile) => {
@@ -93,6 +96,10 @@ const Index = () => {
 
       <main className="mx-auto max-w-2xl space-y-5 px-4 pb-12">
         <WeatherStrip />
+
+        {role === "admin" && (
+          <RoleSwitcher value={effectiveRole} onChange={setPreviewRole} />
+        )}
 
         <section>
           <div className="mb-3 flex items-end justify-between">
