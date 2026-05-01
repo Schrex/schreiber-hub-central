@@ -6,6 +6,7 @@ export type CurrentPosition = {
   title: string;
   pay_rate: number;
   effective_date: string;
+  is_salaried: boolean;
 };
 
 /**
