@@ -367,7 +367,13 @@ const EmployeeContacts = () => {
 
       if (isVCard) {
         const text = await file.text();
-        const cards = parseVCards(text);
+        const cards = parseVCards(text).map((c) => {
+          if (!c.first_name && !c.last_name && c.name) {
+            const { first, last } = splitName(c.name);
+            return { ...c, first_name: first, last_name: last };
+          }
+          return c;
+        });
         if (cards.length === 0) {
           toast({ title: "No contacts found in vCard", variant: "destructive" });
           return;
