@@ -30,6 +30,8 @@ type EmployeeContact = {
   department: string | null;
   phone: string | null;
   email: string | null;
+  work_email: string | null;
+  personal_email: string | null;
   address: string | null;
   notes: string | null;
   is_active: boolean;
