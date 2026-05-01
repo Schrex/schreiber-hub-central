@@ -409,13 +409,27 @@ const EmployeeContacts = () => {
           const field = HEADER_MAP[norm];
           if (field) mapped[field] = String(row[key] ?? "").trim();
         });
+        // Derive first/last from `name` column when first/last weren't provided
+        if ((!mapped.first_name || !mapped.last_name) && mapped.name) {
+          const { first, last } = splitName(mapped.name);
+          if (!mapped.first_name) mapped.first_name = first;
+          if (!mapped.last_name) mapped.last_name = last;
+        }
+        // Build name from first/last when name column missing
+        if (!mapped.name && (mapped.first_name || mapped.last_name)) {
+          mapped.name = [mapped.first_name, mapped.last_name].filter(Boolean).join(" ").trim();
+        }
         const parsed = contactSchema.safeParse(mapped);
         if (!parsed.success) {
           errors.push(`Row ${idx + 2}: ${parsed.error.errors[0].message}`);
           return;
         }
+        const fullName = [parsed.data.first_name, parsed.data.last_name].filter(Boolean).join(" ").trim();
         records.push({
-          name: parsed.data.name,
+          name: fullName,
+          first_name: parsed.data.first_name,
+          last_name: parsed.data.last_name,
+          middle_initial: parsed.data.middle_initial ? parsed.data.middle_initial.toUpperCase() : null,
           job_title: parsed.data.job_title || null,
           department: parsed.data.department || null,
           phone: parsed.data.phone || null,
