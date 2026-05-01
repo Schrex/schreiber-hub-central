@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Briefcase, DollarSign, TrendingUp, Lock } from "lucide-react";
+import { ArrowLeft, Briefcase, DollarSign, TrendingUp, Lock, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+
+interface PromotionTarget {
+  id: string;
+  title: string;
+  description: string | null;
+  min_pay_rate: number;
+  max_pay_rate: number;
+  is_salaried: boolean;
+  heldBy: string[];
+}
 
 interface AssignmentRow {
   id: string;
@@ -34,6 +44,7 @@ const MyPosition = () => {
   const { user } = useAuth();
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [promotions, setPromotions] = useState<PromotionTarget[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -45,6 +56,58 @@ const MyPosition = () => {
         .order("effective_date", { ascending: false });
       if (!error && data) setRows(data as unknown as AssignmentRow[]);
       setLoading(false);
+    })();
+  }, [user]);
+
+  // Load possible promotions based on org chart hierarchy
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("contact_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const contactId = profile?.contact_id;
+      if (!contactId) return;
+
+      const { data: allNodes } = await supabase
+        .from("org_chart_nodes")
+        .select("id, name, title, parent_id, contact_id");
+      if (!allNodes) return;
+
+      const myNode = allNodes.find((n) => n.contact_id === contactId);
+      if (!myNode || !myNode.parent_id) return;
+
+      const parentNode = allNodes.find((n) => n.id === myNode.parent_id);
+      if (!parentNode) return;
+
+      // Promotion candidates: my manager's title + my manager's peers (uncles/aunts)
+      const candidates = allNodes.filter(
+        (n) => n.id === parentNode.id || (parentNode.parent_id && n.parent_id === parentNode.parent_id),
+      );
+
+      const titleToHolders = new Map<string, string[]>();
+      candidates.forEach((n) => {
+        if (!n.title) return;
+        const arr = titleToHolders.get(n.title) ?? [];
+        arr.push(n.name);
+        titleToHolders.set(n.title, arr);
+      });
+
+      const titles = Array.from(titleToHolders.keys());
+      if (titles.length === 0) return;
+
+      const { data: positions } = await supabase
+        .from("positions")
+        .select("id, title, description, min_pay_rate, max_pay_rate, is_salaried")
+        .in("title", titles);
+
+      const promos: PromotionTarget[] = (positions ?? []).map((p) => ({
+        ...p,
+        heldBy: titleToHolders.get(p.title) ?? [],
+      }));
+      setPromotions(promos);
     })();
   }, [user]);
 
