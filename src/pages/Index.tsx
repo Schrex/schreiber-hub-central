@@ -50,7 +50,7 @@ const TILES: Tile[] = [
   { key: "receipts", label: "Submit Receipt", hint: "Bill Spend & Expense", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.divvy.co/" },
   { key: "perks", label: "My Perks", hint: "Apparel, time off & referrals", icon: Sparkles, roles: ["employee", "foreman", "office", "admin"], to: "/perks" },
   
-  { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, roles: ["employee", "foreman", "office", "admin"], to: "/tools" },
+  { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, roles: ["foreman", "office", "admin"], to: "/tools" },
   { key: "safety", label: "Safety", hint: "Rules & toolbox talks", icon: HardHat, roles: ["employee", "foreman", "office", "admin"], to: "/safety" },
   { key: "myposition", label: "My Position", hint: "Title, pay & range — private", icon: IdCard, roles: ["employee", "foreman", "office", "admin"], to: "/my-position" },
   { key: "hr", label: "HR", hint: "Reviews, pay, time off, contacts & new hires", icon: Briefcase, roles: ["admin"], to: "/hr" },
