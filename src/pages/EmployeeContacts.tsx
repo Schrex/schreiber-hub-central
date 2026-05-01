@@ -894,12 +894,23 @@ const EmployeeContacts = () => {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label htmlFor="ec-title">Job title</Label>
-                <Input
-                  id="ec-title"
-                  placeholder="Operator, Foreman…"
-                  value={form.job_title}
-                  onChange={(e) => setForm({ ...form, job_title: e.target.value })}
-                />
+                <Select
+                  value={form.job_title || "__none__"}
+                  onValueChange={(v) => setForm({ ...form, job_title: v === "__none__" ? "" : v })}
+                >
+                  <SelectTrigger id="ec-title">
+                    <SelectValue placeholder="Select position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— None —</SelectItem>
+                    {positionTitles.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                    {form.job_title && !positionTitles.includes(form.job_title) && (
+                      <SelectItem value={form.job_title}>{form.job_title} (legacy)</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="ec-dept">Department</Label>
