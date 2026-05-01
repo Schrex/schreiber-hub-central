@@ -850,6 +850,14 @@ const EmployeeContacts = () => {
                         <p className="text-[11px] text-muted-foreground">{display}</p>
                       ) : null;
                     })()}
+                    {c.manager_contact_id && (() => {
+                      const mgr = contacts.find((x) => x.id === c.manager_contact_id);
+                      return mgr ? (
+                        <p className="text-[11px] text-muted-foreground">
+                          Reports to <span className="font-medium text-foreground">{mgr.name}</span>
+                        </p>
+                      ) : null;
+                    })()}
                     <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
                       {c.phone && (
                         <a href={`tel:${c.phone}`} className="flex items-center gap-1 text-foreground hover:text-primary">
