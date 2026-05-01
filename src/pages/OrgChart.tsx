@@ -37,14 +37,14 @@ const buildTrees = (nodes: OrgNode[]): TreeNode[] => {
 const NodeCard = ({ node, onClick }: { node: TreeNode; onClick: (n: TreeNode) => void }) => (
   <button
     onClick={() => onClick(node)}
-    className="group flex w-44 flex-col items-center gap-2 rounded-xl border border-border bg-surface p-3 text-center shadow-sm transition hover:border-primary/50 hover:bg-primary/5"
+    className="group flex w-28 flex-col items-center gap-1 rounded-lg border border-border bg-surface p-1.5 text-center shadow-sm transition hover:border-primary/50 hover:bg-primary/5"
   >
-    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
-      <User className="h-6 w-6" />
+    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
+      <User className="h-3.5 w-3.5" />
     </span>
-    <span className="text-sm font-semibold leading-tight">{node.name}</span>
+    <span className="text-[11px] font-semibold leading-tight">{node.name}</span>
     {node.title && (
-      <span className="text-[11px] leading-tight text-muted-foreground">{node.title}</span>
+      <span className="text-[9px] leading-tight text-muted-foreground line-clamp-2">{node.title}</span>
     )}
   </button>
 );
@@ -56,14 +56,14 @@ const Branch = ({ node, onClick }: { node: TreeNode; onClick: (n: TreeNode) => v
       <NodeCard node={node} onClick={onClick} />
       {hasKids && (
         <>
-          <div className="h-4 w-px bg-border" />
-          <div className="relative flex items-start gap-6">
+          <div className="h-2 w-px bg-border" />
+          <div className="relative flex items-start gap-2">
             {node.children.length > 1 && (
               <div className="absolute left-0 right-0 top-0 h-px bg-border" />
             )}
             {node.children.map((child) => (
-              <div key={child.id} className="relative flex flex-col items-center pt-4">
-                <div className="absolute top-0 h-4 w-px bg-border" />
+              <div key={child.id} className="relative flex flex-col items-center pt-2">
+                <div className="absolute top-0 h-2 w-px bg-border" />
                 <Branch node={child} onClick={onClick} />
               </div>
             ))}
