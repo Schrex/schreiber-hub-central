@@ -22,6 +22,9 @@ import { AddEmployeeWizard } from "@/components/AddEmployeeWizard";
 type EmployeeContact = {
   id: string;
   name: string;
+  first_name: string | null;
+  last_name: string | null;
+  middle_initial: string | null;
   job_title: string | null;
   department: string | null;
   phone: string | null;
@@ -32,17 +35,29 @@ type EmployeeContact = {
   converted_user_id: string | null;
 };
 
-const contactSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(200),
-  job_title: z.string().trim().max(100).optional().or(z.literal("")),
-  department: z.string().trim().max(100).optional().or(z.literal("")),
-  phone: z.string().trim().max(50).optional().or(z.literal("")),
-  email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
-  address: z.string().trim().max(500).optional().or(z.literal("")),
-  notes: z.string().trim().max(2000).optional().or(z.literal("")),
-});
+const contactSchema = z
+  .object({
+    first_name: z.string().trim().min(1, "First name is required").max(100),
+    last_name: z.string().trim().min(1, "Last name is required").max(100),
+    middle_initial: z
+      .string()
+      .trim()
+      .max(1, "Middle initial must be a single letter")
+      .optional()
+      .or(z.literal("")),
+    name: z.string().trim().max(200).optional().or(z.literal("")),
+    job_title: z.string().trim().max(100).optional().or(z.literal("")),
+    department: z.string().trim().max(100).optional().or(z.literal("")),
+    phone: z.string().trim().max(50).optional().or(z.literal("")),
+    email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
+    address: z.string().trim().max(500).optional().or(z.literal("")),
+    notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  });
 
 const emptyForm = {
+  first_name: "",
+  last_name: "",
+  middle_initial: "",
   name: "",
   job_title: "",
   department: "",
@@ -57,6 +72,21 @@ const HEADER_MAP: Record<string, keyof typeof emptyForm> = {
   "full name": "name",
   employee: "name",
   "employee name": "name",
+  "first name": "first_name",
+  first_name: "first_name",
+  firstname: "first_name",
+  given: "first_name",
+  "given name": "first_name",
+  "last name": "last_name",
+  last_name: "last_name",
+  lastname: "last_name",
+  surname: "last_name",
+  family: "last_name",
+  "family name": "last_name",
+  "middle initial": "middle_initial",
+  middle_initial: "middle_initial",
+  mi: "middle_initial",
+  middle: "middle_initial",
   job_title: "job_title",
   "job title": "job_title",
   title: "job_title",
@@ -79,6 +109,13 @@ const HEADER_MAP: Record<string, keyof typeof emptyForm> = {
   notes: "notes",
   note: "notes",
   comments: "notes",
+};
+
+const splitName = (full: string): { first: string; last: string } => {
+  const parts = full.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { first: "", last: "" };
+  if (parts.length === 1) return { first: parts[0], last: "" };
+  return { first: parts[0], last: parts.slice(1).join(" ") };
 };
 
 const decodeVCardValue = (val: string, encoding?: string) => {
@@ -245,7 +282,12 @@ const EmployeeContacts = () => {
 
   const openEdit = (c: EmployeeContact) => {
     setEditing(c);
+    const fallbackFirst = c.first_name ?? c.name.split(" ").slice(0, 1).join(" ");
+    const fallbackLast = c.last_name ?? c.name.split(" ").slice(1).join(" ");
     setForm({
+      first_name: fallbackFirst,
+      last_name: fallbackLast,
+      middle_initial: c.middle_initial ?? "",
       name: c.name,
       job_title: c.job_title ?? "",
       department: c.department ?? "",
@@ -264,8 +306,12 @@ const EmployeeContacts = () => {
       return;
     }
     setSaving(true);
+    const fullName = [parsed.data.first_name, parsed.data.last_name].filter(Boolean).join(" ").trim();
     const payload = {
-      name: parsed.data.name,
+      name: fullName,
+      first_name: parsed.data.first_name,
+      last_name: parsed.data.last_name,
+      middle_initial: parsed.data.middle_initial ? parsed.data.middle_initial.toUpperCase() : null,
       job_title: parsed.data.job_title || null,
       department: parsed.data.department || null,
       phone: parsed.data.phone || null,
@@ -321,7 +367,13 @@ const EmployeeContacts = () => {
 
       if (isVCard) {
         const text = await file.text();
-        const cards = parseVCards(text);
+        const cards = parseVCards(text).map((c) => {
+          if (!c.first_name && !c.last_name && c.name) {
+            const { first, last } = splitName(c.name);
+            return { ...c, first_name: first, last_name: last };
+          }
+          return c;
+        });
         if (cards.length === 0) {
           toast({ title: "No contacts found in vCard", variant: "destructive" });
           return;
@@ -357,13 +409,27 @@ const EmployeeContacts = () => {
           const field = HEADER_MAP[norm];
           if (field) mapped[field] = String(row[key] ?? "").trim();
         });
+        // Derive first/last from `name` column when first/last weren't provided
+        if ((!mapped.first_name || !mapped.last_name) && mapped.name) {
+          const { first, last } = splitName(mapped.name);
+          if (!mapped.first_name) mapped.first_name = first;
+          if (!mapped.last_name) mapped.last_name = last;
+        }
+        // Build name from first/last when name column missing
+        if (!mapped.name && (mapped.first_name || mapped.last_name)) {
+          mapped.name = [mapped.first_name, mapped.last_name].filter(Boolean).join(" ").trim();
+        }
         const parsed = contactSchema.safeParse(mapped);
         if (!parsed.success) {
           errors.push(`Row ${idx + 2}: ${parsed.error.errors[0].message}`);
           return;
         }
+        const fullName = [parsed.data.first_name, parsed.data.last_name].filter(Boolean).join(" ").trim();
         records.push({
-          name: parsed.data.name,
+          name: fullName,
+          first_name: parsed.data.first_name,
+          last_name: parsed.data.last_name,
+          middle_initial: parsed.data.middle_initial ? parsed.data.middle_initial.toUpperCase() : null,
           job_title: parsed.data.job_title || null,
           department: parsed.data.department || null,
           phone: parsed.data.phone || null,
@@ -444,13 +510,18 @@ const EmployeeContacts = () => {
         toast({ title: "No contact selected", description: "Nothing was imported." });
         return;
       }
-      const queue = picked.map((p) => ({
-        ...emptyForm,
-        name: p.name,
-        phone: p.phone,
-        email: p.email,
-        address: p.address,
-      }));
+      const queue = picked.map((p) => {
+        const { first, last } = splitName(p.name);
+        return {
+          ...emptyForm,
+          name: p.name,
+          first_name: first,
+          last_name: last,
+          phone: p.phone,
+          email: p.email,
+          address: p.address,
+        };
+      });
       setReviewQueue(queue);
       setReviewIndex(0);
       setEditing(null);
@@ -780,9 +851,34 @@ const EmployeeContacts = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
-            <div>
-              <Label htmlFor="ec-name">Name *</Label>
-              <Input id="ec-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <div className="grid grid-cols-[1fr_70px_1fr] gap-2">
+              <div>
+                <Label htmlFor="ec-first">First name *</Label>
+                <Input
+                  id="ec-first"
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ec-mi">M.I.</Label>
+                <Input
+                  id="ec-mi"
+                  maxLength={1}
+                  value={form.middle_initial}
+                  onChange={(e) =>
+                    setForm({ ...form, middle_initial: e.target.value.replace(/[^A-Za-z]/g, "").toUpperCase() })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="ec-last">Last name *</Label>
+                <Input
+                  id="ec-last"
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>

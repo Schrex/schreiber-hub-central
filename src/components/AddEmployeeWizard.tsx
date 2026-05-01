@@ -28,7 +28,9 @@ const fmtMoney = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 
 const schema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(200),
+  first_name: z.string().trim().min(1, "First name is required").max(100),
+  last_name: z.string().trim().min(1, "Last name is required").max(100),
+  middle_initial: z.string().trim().max(1, "Middle initial must be a single letter").optional().or(z.literal("")),
   email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
   phone: z.string().trim().max(50).optional().or(z.literal("")),
   address: z.string().trim().max(500).optional().or(z.literal("")),
@@ -37,7 +39,9 @@ const schema = z.object({
 });
 
 const emptyForm = {
-  name: "",
+  first_name: "",
+  last_name: "",
+  middle_initial: "",
   email: "",
   phone: "",
   address: "",
@@ -125,8 +129,12 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
     }
 
     setSaving(true);
+    const fullName = [parsed.data.first_name, parsed.data.last_name].filter(Boolean).join(" ").trim();
     const payload: Record<string, unknown> = {
-      name: parsed.data.name,
+      name: fullName,
+      first_name: parsed.data.first_name,
+      last_name: parsed.data.last_name,
+      middle_initial: parsed.data.middle_initial ? parsed.data.middle_initial.toUpperCase() : null,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
@@ -178,9 +186,37 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
           {/* Identity */}
           <section className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Identity</h3>
-            <div>
-              <Label htmlFor="ae-name">Name *</Label>
-              <Input id="ae-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <div className="grid grid-cols-[1fr_70px_1fr] gap-2">
+              <div>
+                <Label htmlFor="ae-first">First name *</Label>
+                <Input
+                  id="ae-first"
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ae-mi">M.I.</Label>
+                <Input
+                  id="ae-mi"
+                  maxLength={1}
+                  value={form.middle_initial}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      middle_initial: e.target.value.replace(/[^A-Za-z]/g, "").toUpperCase(),
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="ae-last">Last name *</Label>
+                <Input
+                  id="ae-last"
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>

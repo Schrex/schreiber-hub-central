@@ -10,6 +10,9 @@ type Role = 'employee' | 'foreman' | 'office' | 'admin'
 interface Body {
   // Identity (always required)
   name: string
+  first_name?: string | null
+  last_name?: string | null
+  middle_initial?: string | null
   email?: string | null
   phone?: string | null
   address?: string | null
@@ -84,6 +87,9 @@ Deno.serve(async (req) => {
       .from('employee_contacts')
       .insert({
         name,
+        first_name: body.first_name?.trim() || null,
+        last_name: body.last_name?.trim() || null,
+        middle_initial: body.middle_initial?.trim()?.charAt(0).toUpperCase() || null,
         email: body.email?.trim() || null,
         phone: body.phone?.trim() || null,
         address: body.address?.trim() || null,
