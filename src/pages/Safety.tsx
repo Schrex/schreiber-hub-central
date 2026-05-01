@@ -708,6 +708,7 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
   useEffect(() => () => {
     audioRef.current?.pause();
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+    if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
 
   const toggle = async () => {
