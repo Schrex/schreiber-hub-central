@@ -63,17 +63,12 @@ Deno.serve(async (req) => {
     }).select('id').single()
     if (insErr) throw insErr
 
-    // Send email via the transactional dispatcher
-    const sendResp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-transactional-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-        apikey: Deno.env.get('SUPABASE_ANON_KEY')!,
-      },
-      body: JSON.stringify({
+    // Send email via the transactional dispatcher using supabase-js (handles auth headers correctly)
+    const { data: sendData, error: sendErr } = await admin.functions.invoke('send-transactional-email', {
+      body: {
         templateName: 'safety-inspection-request',
         recipientEmail: recipient,
+        idempotencyKey: `safety-inspection-${insp.id}`,
         templateData: {
           jobNumber: job.job_number ?? '',
           jobName: job.name ?? '',
@@ -87,12 +82,11 @@ Deno.serve(async (req) => {
           notes: notes ?? job.notes ?? '',
           requestedByName,
         },
-      }),
+      },
     })
 
-    if (!sendResp.ok) {
-      const t = await sendResp.text()
-      console.error('email send failed', sendResp.status, t)
+    if (sendErr) {
+      console.error('email send failed', sendErr)
       await admin.from('safety_inspections').update({ status: 'failed' }).eq('id', insp.id)
       throw new Error('Failed to send email')
     }
