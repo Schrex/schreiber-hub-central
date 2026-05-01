@@ -8,12 +8,13 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
 export const SafetyInspectionButton = ({ jobId }: { jobId: string }) => {
-  const { role } = useAuth();
+  const { role: realRole, effectiveRole } = useAuth();
+  const role = effectiveRole ?? realRole;
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (role !== "admin") return null;
+  if (role !== "office") return null;
 
   const submit = async () => {
     setBusy(true);
@@ -35,15 +36,15 @@ export const SafetyInspectionButton = ({ jobId }: { jobId: string }) => {
   return (
     <>
       <Button variant="outline" className="w-full" onClick={() => setOpen(true)}>
-        <ShieldCheck className="mr-2 h-4 w-4" /> Request safety inspection
+        <ShieldCheck className="mr-2 h-4 w-4" /> Enroll in 3rd-party safety inspections
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Request safety inspection</DialogTitle>
+            <DialogTitle>Enroll in 3rd-party safety inspections</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Sends this job's details to York Safety Solutions to add to the inspection list.
+            Adds this job to York Safety Solutions' routine 3rd-party inspection rotation.
           </p>
           <Textarea
             placeholder="Optional notes (site access, scheduling, hazards...)"
