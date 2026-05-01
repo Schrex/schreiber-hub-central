@@ -208,7 +208,7 @@ const parseVCards = (text: string): VCardContact[] => {
 
 const EmployeeContacts = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const focusId = searchParams.get("focus");
   const { role, user } = useAuth();
   const canEdit = role === "foreman" || role === "office" || role === "admin";
@@ -854,7 +854,17 @@ const EmployeeContacts = () => {
                       const mgr = contacts.find((x) => x.id === c.manager_contact_id);
                       return mgr ? (
                         <p className="text-[11px] text-muted-foreground">
-                          Reports to <span className="font-medium text-foreground">{mgr.name}</span>
+                          Manager:{" "}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSearchParams({ focus: mgr.id });
+                            }}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {mgr.name}
+                          </button>
                         </p>
                       ) : null;
                     })()}
