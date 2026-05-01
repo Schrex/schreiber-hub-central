@@ -28,7 +28,9 @@ const fmtMoney = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 
 const schema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(200),
+  first_name: z.string().trim().min(1, "First name is required").max(100),
+  last_name: z.string().trim().min(1, "Last name is required").max(100),
+  middle_initial: z.string().trim().max(1, "Middle initial must be a single letter").optional().or(z.literal("")),
   email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
   phone: z.string().trim().max(50).optional().or(z.literal("")),
   address: z.string().trim().max(500).optional().or(z.literal("")),
@@ -37,7 +39,9 @@ const schema = z.object({
 });
 
 const emptyForm = {
-  name: "",
+  first_name: "",
+  last_name: "",
+  middle_initial: "",
   email: "",
   phone: "",
   address: "",
