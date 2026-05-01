@@ -14,6 +14,7 @@ import { PhotosSection } from "@/components/jobs/PhotosSection";
 import { JobInfoSection } from "@/components/jobs/JobInfoSection";
 import { JobLookahead } from "@/components/jobs/JobLookahead";
 import { SafetyInspectionButton } from "@/components/jobs/SafetyInspectionButton";
+import { RequestTruckButton } from "@/components/jobs/RequestTruckButton";
 
 interface Job {
   id: string;
