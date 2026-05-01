@@ -775,12 +775,14 @@ export type Database = {
           osha_card_number: string | null
           osha_expires: string | null
           other_certifications: string | null
+          personal_email: string | null
           phone: string | null
           ssn: string | null
           terminated_by: string | null
           termination_date: string | null
           termination_reason: string | null
           updated_at: string
+          work_email: string | null
         }
         Insert: {
           address?: string | null
@@ -812,12 +814,14 @@ export type Database = {
           osha_card_number?: string | null
           osha_expires?: string | null
           other_certifications?: string | null
+          personal_email?: string | null
           phone?: string | null
           ssn?: string | null
           terminated_by?: string | null
           termination_date?: string | null
           termination_reason?: string | null
           updated_at?: string
+          work_email?: string | null
         }
         Update: {
           address?: string | null
@@ -849,12 +853,14 @@ export type Database = {
           osha_card_number?: string | null
           osha_expires?: string | null
           other_certifications?: string | null
+          personal_email?: string | null
           phone?: string | null
           ssn?: string | null
           terminated_by?: string | null
           termination_date?: string | null
           termination_reason?: string | null
           updated_at?: string
+          work_email?: string | null
         }
         Relationships: []
       }

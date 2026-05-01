@@ -30,6 +30,8 @@ type EmployeeContact = {
   department: string | null;
   phone: string | null;
   email: string | null;
+  work_email: string | null;
+  personal_email: string | null;
   address: string | null;
   notes: string | null;
   is_active: boolean;
@@ -51,6 +53,8 @@ const contactSchema = z
     department: z.string().trim().max(100).optional().or(z.literal("")),
     phone: z.string().trim().max(50).optional().or(z.literal("")),
     email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
+    work_email: z.string().trim().max(255).email("Invalid work email").optional().or(z.literal("")),
+    personal_email: z.string().trim().max(255).email("Invalid personal email").optional().or(z.literal("")),
     address: z.string().trim().max(500).optional().or(z.literal("")),
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
   });
@@ -64,6 +68,8 @@ const emptyForm = {
   department: "",
   phone: "",
   email: "",
+  work_email: "",
+  personal_email: "",
   address: "",
   notes: "",
 };
@@ -105,6 +111,13 @@ const HEADER_MAP: Record<string, keyof typeof emptyForm> = {
   cell: "phone",
   email: "email",
   "email address": "email",
+  "work email": "work_email",
+  work_email: "work_email",
+  "business email": "work_email",
+  "company email": "work_email",
+  "personal email": "personal_email",
+  personal_email: "personal_email",
+  "home email": "personal_email",
   address: "address",
   location: "address",
   notes: "notes",
@@ -282,7 +295,9 @@ const EmployeeContacts = () => {
         (c.department ?? "").toLowerCase().includes(q) ||
         (c.job_title ?? "").toLowerCase().includes(q) ||
         (c.phone ?? "").toLowerCase().includes(q) ||
-        (c.email ?? "").toLowerCase().includes(q)
+        (c.email ?? "").toLowerCase().includes(q) ||
+        (c.work_email ?? "").toLowerCase().includes(q) ||
+        (c.personal_email ?? "").toLowerCase().includes(q)
       );
     });
   }, [contacts, search, deptFilter]);
@@ -304,6 +319,8 @@ const EmployeeContacts = () => {
       department: c.department ?? "",
       phone: c.phone ?? "",
       email: c.email ?? "",
+      work_email: c.work_email ?? "",
+      personal_email: c.personal_email ?? "",
       address: c.address ?? "",
       notes: c.notes ?? "",
     });
@@ -326,7 +343,9 @@ const EmployeeContacts = () => {
       job_title: parsed.data.job_title || null,
       department: parsed.data.department || null,
       phone: parsed.data.phone || null,
-      email: parsed.data.email || null,
+      work_email: parsed.data.work_email || null,
+      personal_email: parsed.data.personal_email || null,
+      email: parsed.data.work_email || parsed.data.personal_email || parsed.data.email || null,
       address: parsed.data.address || null,
       notes: parsed.data.notes || null,
     };
@@ -444,7 +463,9 @@ const EmployeeContacts = () => {
           job_title: parsed.data.job_title || null,
           department: parsed.data.department || null,
           phone: parsed.data.phone || null,
-          email: parsed.data.email || null,
+          work_email: parsed.data.work_email || null,
+          personal_email: parsed.data.personal_email || null,
+          email: parsed.data.work_email || parsed.data.personal_email || parsed.data.email || null,
           address: parsed.data.address || null,
           notes: parsed.data.notes || null,
           created_by: user?.id ?? null,
@@ -786,11 +807,14 @@ const EmployeeContacts = () => {
                           <Phone className="h-3 w-3" /> {c.phone}
                         </a>
                       )}
-                      {c.email && (
-                        <a href={`mailto:${c.email}`} className="flex items-center gap-1 text-foreground hover:text-primary">
-                          <Mail className="h-3 w-3" /> {c.email}
-                        </a>
-                      )}
+                      {(() => {
+                        const displayEmail = c.work_email || c.personal_email || c.email;
+                        return displayEmail ? (
+                          <a href={`mailto:${displayEmail}`} className="flex items-center gap-1 text-foreground hover:text-primary">
+                            <Mail className="h-3 w-3" /> {displayEmail}
+                          </a>
+                        ) : null;
+                      })()}
                       {c.address && (
                         <a
                           href={`https://maps.google.com/?q=${encodeURIComponent(c.address)}`}
@@ -922,14 +946,30 @@ const EmployeeContacts = () => {
                 />
               </div>
             </div>
+            <div>
+              <Label htmlFor="ec-phone">Phone</Label>
+              <Input id="ec-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label htmlFor="ec-phone">Phone</Label>
-                <Input id="ec-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <Label htmlFor="ec-work-email">Work email</Label>
+                <Input
+                  id="ec-work-email"
+                  type="email"
+                  placeholder="name@company.com"
+                  value={form.work_email}
+                  onChange={(e) => setForm({ ...form, work_email: e.target.value })}
+                />
               </div>
               <div>
-                <Label htmlFor="ec-email">Email</Label>
-                <Input id="ec-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Label htmlFor="ec-personal-email">Personal email</Label>
+                <Input
+                  id="ec-personal-email"
+                  type="email"
+                  placeholder="name@gmail.com"
+                  value={form.personal_email}
+                  onChange={(e) => setForm({ ...form, personal_email: e.target.value })}
+                />
               </div>
             </div>
             <div>
