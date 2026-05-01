@@ -1,8 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import { ShoppingBag, Palmtree, HandCoins, ChevronRight, Sparkles, Wrench, Cog } from "lucide-react";
+import { ShoppingBag, Palmtree, HandCoins, ChevronRight, Sparkles, Wrench, Cog, Network } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 
-const ITEMS = [
+type PerkItem = {
+  key: string;
+  label: string;
+  hint: string;
+  icon: typeof ShoppingBag;
+  to?: string;
+  href?: string;
+};
+
+const ITEMS: PerkItem[] = [
   {
     key: "apparel",
     label: "Order Apparel",
@@ -37,6 +46,13 @@ const ITEMS = [
     hint: "Reserve a day in the shop",
     icon: Cog,
     to: "/shop-booking",
+  },
+  {
+    key: "orgchart",
+    label: "Org Chart",
+    hint: "See who's who at Schreiber Excavating",
+    icon: Network,
+    href: "/org-chart.pdf",
   },
 ];
 
