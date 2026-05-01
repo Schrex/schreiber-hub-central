@@ -295,7 +295,9 @@ const EmployeeContacts = () => {
         (c.department ?? "").toLowerCase().includes(q) ||
         (c.job_title ?? "").toLowerCase().includes(q) ||
         (c.phone ?? "").toLowerCase().includes(q) ||
-        (c.email ?? "").toLowerCase().includes(q)
+        (c.email ?? "").toLowerCase().includes(q) ||
+        (c.work_email ?? "").toLowerCase().includes(q) ||
+        (c.personal_email ?? "").toLowerCase().includes(q)
       );
     });
   }, [contacts, search, deptFilter]);
