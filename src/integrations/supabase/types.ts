@@ -906,6 +906,93 @@ export type Database = {
           },
         ]
       }
+      equipment_items: {
+        Row: {
+          created_at: string
+          daily_rate: number | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          photo_url: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_rate?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          photo_url?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_rate?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          photo_url?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      equipment_rentals: {
+        Row: {
+          created_at: string
+          end_date: string
+          equipment_id: string
+          equipment_name: string
+          id: string
+          notes: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["equipment_rental_status"]
+          updated_at: string
+          user_id: string
+          waiver_agreed_at: string
+          waiver_name: string
+          waiver_signature_path: string
+          waiver_text: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          equipment_id: string
+          equipment_name: string
+          id?: string
+          notes?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["equipment_rental_status"]
+          updated_at?: string
+          user_id: string
+          waiver_agreed_at?: string
+          waiver_name: string
+          waiver_signature_path: string
+          waiver_text: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          equipment_id?: string
+          equipment_name?: string
+          id?: string
+          notes?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["equipment_rental_status"]
+          updated_at?: string
+          user_id?: string
+          waiver_agreed_at?: string
+          waiver_name?: string
+          waiver_signature_path?: string
+          waiver_text?: string
+        }
+        Relationships: []
+      }
       handbook_documents: {
         Row: {
           created_at: string
@@ -1859,6 +1946,39 @@ export type Database = {
           },
         ]
       }
+      shop_reservations: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          purpose: string
+          reserved_date: string
+          status: Database["public"]["Enums"]["shop_reservation_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purpose: string
+          reserved_date: string
+          status?: Database["public"]["Enums"]["shop_reservation_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purpose?: string
+          reserved_date?: string
+          status?: Database["public"]["Enums"]["shop_reservation_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -2256,6 +2376,13 @@ export type Database = {
       dispatch_invoice_status: "not_billed" | "billed" | "paid"
       dispatch_rate_type: "hourly" | "per_load" | "per_ton" | "flat" | "other"
       dispatch_status: "scheduled" | "in_progress" | "complete" | "cancelled"
+      equipment_rental_status:
+        | "requested"
+        | "approved"
+        | "denied"
+        | "picked_up"
+        | "returned"
+        | "cancelled"
       job_status: "active" | "on_hold" | "complete"
       onboarding_doc_status: "pending" | "viewed" | "signed" | "declined"
       performance_review_status: "draft" | "submitted" | "acknowledged"
@@ -2284,6 +2411,12 @@ export type Database = {
         | "closed"
         | "rejected"
       referral_type: "hire" | "job"
+      shop_reservation_status:
+        | "requested"
+        | "approved"
+        | "denied"
+        | "completed"
+        | "cancelled"
       time_off_half_day: "none" | "am" | "pm"
       time_off_status: "pending" | "approved" | "denied" | "cancelled"
       time_off_type: "vacation" | "sick" | "personal" | "other"
@@ -2433,6 +2566,14 @@ export const Constants = {
       dispatch_invoice_status: ["not_billed", "billed", "paid"],
       dispatch_rate_type: ["hourly", "per_load", "per_ton", "flat", "other"],
       dispatch_status: ["scheduled", "in_progress", "complete", "cancelled"],
+      equipment_rental_status: [
+        "requested",
+        "approved",
+        "denied",
+        "picked_up",
+        "returned",
+        "cancelled",
+      ],
       job_status: ["active", "on_hold", "complete"],
       onboarding_doc_status: ["pending", "viewed", "signed", "declined"],
       performance_review_status: ["draft", "submitted", "acknowledged"],
@@ -2464,6 +2605,13 @@ export const Constants = {
         "rejected",
       ],
       referral_type: ["hire", "job"],
+      shop_reservation_status: [
+        "requested",
+        "approved",
+        "denied",
+        "completed",
+        "cancelled",
+      ],
       time_off_half_day: ["none", "am", "pm"],
       time_off_status: ["pending", "approved", "denied", "cancelled"],
       time_off_type: ["vacation", "sick", "personal", "other"],
