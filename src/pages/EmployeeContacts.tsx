@@ -215,6 +215,9 @@ const EmployeeContacts = () => {
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
   const [positions, setPositions] = useState<Map<string, CurrentPosition>>(new Map());
   const [positionTitles, setPositionTitles] = useState<string[]>([]);
+  const [positionsList, setPositionsList] = useState<Array<{ id: string; title: string; min_pay_rate: number; max_pay_rate: number; is_salaried: boolean }>>([]);
+  const [posForm, setPosForm] = useState({ position_id: "", pay_rate: "", effective_date: new Date().toISOString().slice(0, 10), is_salaried: false });
+  const [posFormDirty, setPosFormDirty] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState<string>("all");
