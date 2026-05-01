@@ -697,3 +697,51 @@ const AdminSettings = () => {
 };
 
 export default Safety;
+
+/* -------------------- Read-aloud (foreman voice) -------------------- */
+const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?: string }) => {
+  const [busy, setBusy] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const urlRef = useRef<string | null>(null);
+
+  useEffect(() => () => {
+    audioRef.current?.pause();
+    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+  }, []);
+
+  const toggle = async () => {
+    if (playing && audioRef.current) {
+      audioRef.current.pause();
+      setPlaying(false);
+      return;
+    }
+    if (audioRef.current && urlRef.current) {
+      try { await audioRef.current.play(); setPlaying(true); return; } catch {}
+    }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("speak-toolbox-talk", { body: { text } });
+      if (error) throw error;
+      // supabase-js returns the binary as a Blob when the response is non-JSON
+      const blob = data instanceof Blob ? data : new Blob([data as ArrayBuffer], { type: "audio/mpeg" });
+      const url = URL.createObjectURL(blob);
+      urlRef.current = url;
+      const audio = new Audio(url);
+      audio.onended = () => setPlaying(false);
+      audio.onpause = () => setPlaying(false);
+      audioRef.current = audio;
+      await audio.play();
+      setPlaying(true);
+    } catch (e: any) {
+      toast.error(e.message ?? "Voice playback failed");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Button type="button" variant="secondary" className="w-full" onClick={toggle} disabled={busy || !text}>
+      {playing ? <Pause className="mr-2 h-4 w-4" /> : <Volume2 className="mr-2 h-4 w-4" />}
+      {busy ? "Loading voice…" : playing ? "Pause" : label}
+    </Button>
+  );
+};
