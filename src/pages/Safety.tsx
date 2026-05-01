@@ -214,7 +214,16 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
               {t.created_with_ai && <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />}
             </div>
           </summary>
+          {t.image_url && (
+            <img src={t.image_url} alt={t.title} loading="lazy" className="mt-3 w-full rounded-lg border border-border object-cover max-h-64" />
+          )}
+          {t.video_url && (
+            <video src={t.video_url} controls className="mt-3 w-full rounded-lg border border-border" />
+          )}
           <div className="mt-3 whitespace-pre-wrap text-sm text-foreground/90">{t.content}</div>
+          {(t.voice_script || t.content) && (
+            <div className="mt-3"><ReadAloudButton text={t.voice_script || t.content} /></div>
+          )}
           {Array.isArray(t.quiz_questions) && t.quiz_questions.length > 0 && (
             <p className="mt-3 text-[10px] uppercase tracking-wider text-muted-foreground">
               Quiz: {t.quiz_questions.length} question{t.quiz_questions.length === 1 ? "" : "s"}
