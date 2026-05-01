@@ -1024,6 +1024,84 @@ const EmployeeContacts = () => {
               <Label htmlFor="ec-notes">Notes</Label>
               <Textarea id="ec-notes" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </div>
+            {canConvert && editing && (
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Position assignment</Label>
+                  {positions.get(editing.converted_user_id ?? "") && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Current: {positions.get(editing.converted_user_id!)!.title}
+                    </Badge>
+                  )}
+                </div>
+                {!editing.converted_user_id ? (
+                  <p className="text-xs text-muted-foreground">
+                    Convert this contact to a login first, then you can assign a position and pay rate.
+                  </p>
+                ) : (
+                  <div className="grid gap-2">
+                    <div>
+                      <Label htmlFor="ec-pos" className="text-xs">Position</Label>
+                      <Select
+                        value={posForm.position_id || "__none__"}
+                        onValueChange={(v) => {
+                          const sel = positionsList.find((p) => p.id === v);
+                          setPosForm({
+                            ...posForm,
+                            position_id: v === "__none__" ? "" : v,
+                            is_salaried: sel?.is_salaried ?? posForm.is_salaried,
+                            pay_rate: posForm.pay_rate || (sel ? String(sel.min_pay_rate) : ""),
+                          });
+                          setPosFormDirty(true);
+                        }}
+                      >
+                        <SelectTrigger id="ec-pos">
+                          <SelectValue placeholder="Select position" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— None —</SelectItem>
+                          {positionsList.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="ec-rate" className="text-xs">
+                          Pay rate {posForm.is_salaried ? "(annual)" : "(hourly)"}
+                        </Label>
+                        <Input
+                          id="ec-rate"
+                          type="number"
+                          step="0.01"
+                          value={posForm.pay_rate}
+                          onChange={(e) => {
+                            setPosForm({ ...posForm, pay_rate: e.target.value });
+                            setPosFormDirty(true);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="ec-eff" className="text-xs">Effective date</Label>
+                        <Input
+                          id="ec-eff"
+                          type="date"
+                          value={posForm.effective_date}
+                          onChange={(e) => {
+                            setPosForm({ ...posForm, effective_date: e.target.value });
+                            setPosFormDirty(true);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Saving creates a new assignment and ends any current one the day before.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             {reviewQueue.length > 0 ? (
