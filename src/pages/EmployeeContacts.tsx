@@ -265,6 +265,7 @@ const EmployeeContacts = () => {
 
   useEffect(() => {
     load();
+    if (!canConvert) return;
     supabase
       .from("positions")
       .select("id, title, min_pay_rate, max_pay_rate, is_salaried")
@@ -276,7 +277,7 @@ const EmployeeContacts = () => {
         setPositionsList(list);
         setPositionTitles(list.map((p) => p.title));
       });
-  }, []);
+  }, [canConvert]);
 
   // Scroll the focused contact into view after data loads
   useEffect(() => {
