@@ -941,14 +941,30 @@ const EmployeeContacts = () => {
                 />
               </div>
             </div>
+            <div>
+              <Label htmlFor="ec-phone">Phone</Label>
+              <Input id="ec-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label htmlFor="ec-phone">Phone</Label>
-                <Input id="ec-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <Label htmlFor="ec-work-email">Work email</Label>
+                <Input
+                  id="ec-work-email"
+                  type="email"
+                  placeholder="name@company.com"
+                  value={form.work_email}
+                  onChange={(e) => setForm({ ...form, work_email: e.target.value })}
+                />
               </div>
               <div>
-                <Label htmlFor="ec-email">Email</Label>
-                <Input id="ec-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Label htmlFor="ec-personal-email">Personal email</Label>
+                <Input
+                  id="ec-personal-email"
+                  type="email"
+                  placeholder="name@gmail.com"
+                  value={form.personal_email}
+                  onChange={(e) => setForm({ ...form, personal_email: e.target.value })}
+                />
               </div>
             </div>
             <div>
