@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldAlert, BookOpen, Mic, Plus, Sparkles, Settings as SettingsIcon, Play, Square, Users, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ShieldAlert, BookOpen, Mic, Plus, Sparkles, Settings as SettingsIcon, Play, Square, Users, CheckCircle2, Volume2, Pause } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { SignaturePad } from "@/components/safety/SignaturePad";
 
 interface SafetyRule { id: string; title: string; body: string; category: string | null; sort_order: number; is_active: boolean; }
-interface ToolboxTalk { id: string; title: string; category: string | null; content: string; quiz_questions: any; created_with_ai: boolean; is_active: boolean; }
+interface ToolboxTalk { id: string; title: string; category: string | null; content: string; quiz_questions: any; created_with_ai: boolean; is_active: boolean; image_url?: string | null; video_url?: string | null; voice_script?: string | null; }
 interface QuizQ { question: string; options: string[]; correct_index: number; }
 interface SessionRow { id: string; talk_id: string; foreman_id: string; foreman_name: string | null; status: string; started_at: string; recording_started_at: string | null; recording_stopped_at: string | null; audio_path: string | null; transcript: string | null; }
 interface Attendee { id: string; session_id: string; user_id: string | null; attendee_name: string; signature_data: string | null; signed_at: string | null; quiz_score: number | null; quiz_total: number | null; quiz_completed_at: string | null; }
