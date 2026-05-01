@@ -22,7 +22,7 @@ export async function fetchCurrentPositions(
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
     .from("employee_positions")
-    .select("user_id, position_id, pay_rate, effective_date, end_date, position:positions(title)")
+    .select("user_id, position_id, pay_rate, effective_date, end_date, is_salaried, position:positions(title)")
     .in("user_id", userIds)
     .lte("effective_date", today)
     .or(`end_date.is.null,end_date.gte.${today}`)
@@ -36,6 +36,7 @@ export async function fetchCurrentPositions(
       title: row.position?.title ?? "Position",
       pay_rate: Number(row.pay_rate ?? 0),
       effective_date: row.effective_date,
+      is_salaried: !!row.is_salaried,
     });
   }
   return map;
