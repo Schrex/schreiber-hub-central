@@ -134,7 +134,7 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
-  const [form, setForm] = useState({ title: "", category: "", content: "", quiz_questions: [] as QuizQ[] });
+  const [form, setForm] = useState({ title: "", category: "", content: "", quiz_questions: [] as QuizQ[], image_url: "" as string | null | "", voice_script: "", video_url: "" as string | null | "" });
   const [aiTopic, setAiTopic] = useState("");
 
   const load = async () => {
@@ -158,6 +158,9 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
         category: data.category || form.category,
         content: data.content || "",
         quiz_questions: Array.isArray(data.quiz_questions) ? data.quiz_questions : [],
+        image_url: data.image_url ?? "",
+        voice_script: data.voice_script ?? "",
+        video_url: "",
       });
       toast.success("AI draft ready — review and save");
     } catch (e: any) {
@@ -175,10 +178,13 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
       content: form.content,
       quiz_questions: form.quiz_questions as any,
       created_with_ai: true,
+      image_url: form.image_url || null,
+      voice_script: form.voice_script || null,
+      video_url: form.video_url || null,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Talk saved to library");
-    setForm({ title: "", category: "", content: "", quiz_questions: [] });
+    setForm({ title: "", category: "", content: "", quiz_questions: [], image_url: "", voice_script: "", video_url: "" });
     setAiTopic("");
     setOpen(false);
     load();
