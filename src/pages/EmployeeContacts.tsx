@@ -212,7 +212,7 @@ const EmployeeContacts = () => {
   const focusId = searchParams.get("focus");
   const { role: realRole, effectiveRole, user } = useAuth();
   const role = effectiveRole ?? realRole;
-  const canEdit = role === "foreman" || role === "office" || role === "admin";
+  const canEdit = role === "foreman" || role === "admin";
   const canDelete = role === "office" || role === "admin";
   const canConvert = role === "admin";
 
