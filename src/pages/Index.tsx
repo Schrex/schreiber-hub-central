@@ -25,7 +25,6 @@ import { HeaderBar } from "@/components/home/HeaderBar";
 import { WeatherStrip } from "@/components/home/WeatherStrip";
 import { AppTile } from "@/components/home/AppTile";
 import { RoleSwitcher } from "@/components/home/RoleSwitcher";
-import { useState } from "react";
 import { useAuth, type Role } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
@@ -60,20 +59,9 @@ const TILES: Tile[] = [
 ];
 
 const Index = () => {
-  const { role, displayName, positionTitle, signOut } = useAuth();
+  const { role, effectiveRole: ctxRole, setPreviewRole, displayName, positionTitle, signOut } = useAuth();
   const navigate = useNavigate();
-  const [previewRole, setPreviewRoleState] = useState<Role | null>(() => {
-    if (typeof window === "undefined") return null;
-    const v = sessionStorage.getItem("previewRole");
-    return v && ["employee", "foreman", "office", "admin"].includes(v) ? (v as Role) : null;
-  });
-  const setPreviewRole = (r: Role | null) => {
-    setPreviewRoleState(r);
-    if (typeof window === "undefined") return;
-    if (r && r !== role) sessionStorage.setItem("previewRole", r);
-    else sessionStorage.removeItem("previewRole");
-  };
-  const effectiveRole: Role = previewRole ?? role ?? "employee";
+  const effectiveRole: Role = ctxRole ?? "employee";
   const visible = TILES.filter((t) => t.roles.includes(effectiveRole));
 
   const handleTile = (t: Tile) => {
