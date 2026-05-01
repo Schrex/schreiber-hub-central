@@ -366,8 +366,38 @@ const EmployeeContacts = () => {
 
     if (editing) {
       const { error } = await supabase.from("employee_contacts").update(payload).eq("id", editing.id);
-      if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
-      else {
+      if (error) {
+        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      } else {
+        // Optionally save the position assignment (admin only, contact must have a login)
+        if (canConvert && editing.converted_user_id && posFormDirty && posForm.position_id) {
+          const rate = parseFloat(posForm.pay_rate);
+          if (isNaN(rate)) {
+            toast({ title: "Pay rate required", description: "Enter a numeric pay rate to assign a position.", variant: "destructive" });
+            setSaving(false);
+            return;
+          }
+          const dayBefore = new Date(posForm.effective_date + "T00:00:00");
+          dayBefore.setDate(dayBefore.getDate() - 1);
+          const dayBeforeStr = dayBefore.toISOString().slice(0, 10);
+          await supabase
+            .from("employee_positions")
+            .update({ end_date: dayBeforeStr })
+            .eq("user_id", editing.converted_user_id)
+            .is("end_date", null);
+          const { error: posErr } = await supabase.from("employee_positions").insert({
+            user_id: editing.converted_user_id,
+            position_id: posForm.position_id,
+            pay_rate: rate,
+            effective_date: posForm.effective_date,
+            is_salaried: posForm.is_salaried,
+          });
+          if (posErr) {
+            toast({ title: "Position not saved", description: posErr.message, variant: "destructive" });
+            setSaving(false);
+            return;
+          }
+        }
         toast({ title: "Contact updated" });
         setDialogOpen(false);
         load();
