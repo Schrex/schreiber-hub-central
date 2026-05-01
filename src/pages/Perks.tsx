@@ -52,7 +52,7 @@ const ITEMS: PerkItem[] = [
     label: "Org Chart",
     hint: "See who's who at Schreiber Excavating",
     icon: Network,
-    href: "/org-chart.pdf",
+    to: "/org-chart",
   },
 ];
 
