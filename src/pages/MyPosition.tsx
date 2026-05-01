@@ -207,6 +207,45 @@ const MyPosition = () => {
           </Card>
         )}
 
+        {!loading && promotions.length > 0 && (
+          <section>
+            <h3 className="mb-2 flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-primary" /> Possible Promotions
+            </h3>
+            <p className="mb-2 px-1 text-[11px] text-muted-foreground">
+              Next-step roles based on your spot in the org chart.
+            </p>
+            <div className="space-y-2">
+              {promotions.map((p) => (
+                <Card key={p.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold">{p.title}</div>
+                      {p.description && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">{p.description}</p>
+                      )}
+                      {p.heldBy.length > 0 && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Currently held by {p.heldBy.join(", ")}
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Range</div>
+                      <div className="text-sm font-semibold">
+                        {fmtMoney(p.min_pay_rate)} – {fmtMoney(p.max_pay_rate)}
+                        <span className="ml-0.5 text-[10px] font-normal text-muted-foreground">
+                          {p.is_salaried ? "/yr" : "/hr"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
         {history.length > 0 && (
           <section>
             <h3 className="mb-2 px-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
