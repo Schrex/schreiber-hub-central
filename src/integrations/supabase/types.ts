@@ -763,10 +763,13 @@ export type Database = {
           email: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          first_name: string | null
           hire_date: string | null
           id: string
           is_active: boolean
           job_title: string | null
+          last_name: string | null
+          middle_initial: string | null
           name: string
           notes: string | null
           osha_card_number: string | null
@@ -797,10 +800,13 @@ export type Database = {
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          first_name?: string | null
           hire_date?: string | null
           id?: string
           is_active?: boolean
           job_title?: string | null
+          last_name?: string | null
+          middle_initial?: string | null
           name: string
           notes?: string | null
           osha_card_number?: string | null
@@ -831,10 +837,13 @@ export type Database = {
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          first_name?: string | null
           hire_date?: string | null
           id?: string
           is_active?: boolean
           job_title?: string | null
+          last_name?: string | null
+          middle_initial?: string | null
           name?: string
           notes?: string | null
           osha_card_number?: string | null
