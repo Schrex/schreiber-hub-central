@@ -452,6 +452,8 @@ const Dispatch = () => {
           </div>
         </div>
 
+        {canEdit && <div className="mt-5"><TruckRequestsPanel /></div>}
+
         {/* View tabs + range navigation */}
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
           <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)}>
