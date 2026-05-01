@@ -2061,10 +2061,13 @@ export type Database = {
           created_by: string | null
           created_with_ai: boolean
           id: string
+          image_url: string | null
           is_active: boolean
           quiz_questions: Json
           title: string
           updated_at: string
+          video_url: string | null
+          voice_script: string | null
         }
         Insert: {
           category?: string | null
@@ -2073,10 +2076,13 @@ export type Database = {
           created_by?: string | null
           created_with_ai?: boolean
           id?: string
+          image_url?: string | null
           is_active?: boolean
           quiz_questions?: Json
           title: string
           updated_at?: string
+          video_url?: string | null
+          voice_script?: string | null
         }
         Update: {
           category?: string | null
@@ -2085,10 +2091,13 @@ export type Database = {
           created_by?: string | null
           created_with_ai?: boolean
           id?: string
+          image_url?: string | null
           is_active?: boolean
           quiz_questions?: Json
           title?: string
           updated_at?: string
+          video_url?: string | null
+          voice_script?: string | null
         }
         Relationships: []
       }

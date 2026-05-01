@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldAlert, BookOpen, Mic, Plus, Sparkles, Settings as SettingsIcon, Play, Square, Users, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ShieldAlert, BookOpen, Mic, Plus, Sparkles, Settings as SettingsIcon, Play, Square, Users, CheckCircle2, Volume2, Pause } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { SignaturePad } from "@/components/safety/SignaturePad";
 
 interface SafetyRule { id: string; title: string; body: string; category: string | null; sort_order: number; is_active: boolean; }
-interface ToolboxTalk { id: string; title: string; category: string | null; content: string; quiz_questions: any; created_with_ai: boolean; is_active: boolean; }
+interface ToolboxTalk { id: string; title: string; category: string | null; content: string; quiz_questions: any; created_with_ai: boolean; is_active: boolean; image_url?: string | null; video_url?: string | null; voice_script?: string | null; }
 interface QuizQ { question: string; options: string[]; correct_index: number; }
 interface SessionRow { id: string; talk_id: string; foreman_id: string; foreman_name: string | null; status: string; started_at: string; recording_started_at: string | null; recording_stopped_at: string | null; audio_path: string | null; transcript: string | null; }
 interface Attendee { id: string; session_id: string; user_id: string | null; attendee_name: string; signature_data: string | null; signed_at: string | null; quiz_score: number | null; quiz_total: number | null; quiz_completed_at: string | null; }
@@ -134,7 +134,7 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
-  const [form, setForm] = useState({ title: "", category: "", content: "", quiz_questions: [] as QuizQ[] });
+  const [form, setForm] = useState({ title: "", category: "", content: "", quiz_questions: [] as QuizQ[], image_url: "" as string | null | "", voice_script: "", video_url: "" as string | null | "" });
   const [aiTopic, setAiTopic] = useState("");
 
   const load = async () => {
@@ -158,6 +158,9 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
         category: data.category || form.category,
         content: data.content || "",
         quiz_questions: Array.isArray(data.quiz_questions) ? data.quiz_questions : [],
+        image_url: data.image_url ?? "",
+        voice_script: data.voice_script ?? "",
+        video_url: "",
       });
       toast.success("AI draft ready — review and save");
     } catch (e: any) {
@@ -175,10 +178,13 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
       content: form.content,
       quiz_questions: form.quiz_questions as any,
       created_with_ai: true,
+      image_url: form.image_url || null,
+      voice_script: form.voice_script || null,
+      video_url: form.video_url || null,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Talk saved to library");
-    setForm({ title: "", category: "", content: "", quiz_questions: [] });
+    setForm({ title: "", category: "", content: "", quiz_questions: [], image_url: "", voice_script: "", video_url: "" });
     setAiTopic("");
     setOpen(false);
     load();
@@ -208,7 +214,16 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
               {t.created_with_ai && <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />}
             </div>
           </summary>
+          {t.image_url && (
+            <img src={t.image_url} alt={t.title} loading="lazy" className="mt-3 w-full rounded-lg border border-border object-cover max-h-64" />
+          )}
+          {t.video_url && (
+            <video src={t.video_url} controls className="mt-3 w-full rounded-lg border border-border" />
+          )}
           <div className="mt-3 whitespace-pre-wrap text-sm text-foreground/90">{t.content}</div>
+          {(t.voice_script || t.content) && (
+            <div className="mt-3"><ReadAloudButton text={t.voice_script || t.content} /></div>
+          )}
           {Array.isArray(t.quiz_questions) && t.quiz_questions.length > 0 && (
             <p className="mt-3 text-[10px] uppercase tracking-wider text-muted-foreground">
               Quiz: {t.quiz_questions.length} question{t.quiz_questions.length === 1 ? "" : "s"}
@@ -425,10 +440,19 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   return (
     <div className="space-y-4">
       <button onClick={onExit} className="text-sm text-muted-foreground inline-flex items-center gap-1"><ArrowLeft className="h-4 w-4" /> Back</button>
-      <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{talk?.category ?? ""}</p>
         <h2 className="font-display text-lg uppercase tracking-wide">{talk?.title ?? "Toolbox talk"}</h2>
-        <details className="mt-2"><summary className="cursor-pointer text-xs text-primary">Show talk content</summary>
+        {talk?.image_url && (
+          <img src={talk.image_url} alt={talk.title} loading="lazy" className="w-full rounded-lg border border-border object-cover max-h-72" />
+        )}
+        {talk?.video_url && (
+          <video src={talk.video_url} controls className="w-full rounded-lg border border-border" />
+        )}
+        {(talk?.voice_script || talk?.content) && (
+          <ReadAloudButton text={talk?.voice_script || talk?.content || ""} label="Read to the crew" />
+        )}
+        <details><summary className="cursor-pointer text-xs text-primary">Show talk content</summary>
           <p className="mt-2 whitespace-pre-wrap text-sm">{talk?.content}</p>
         </details>
       </div>
@@ -673,3 +697,51 @@ const AdminSettings = () => {
 };
 
 export default Safety;
+
+/* -------------------- Read-aloud (foreman voice) -------------------- */
+const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?: string }) => {
+  const [busy, setBusy] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const urlRef = useRef<string | null>(null);
+
+  useEffect(() => () => {
+    audioRef.current?.pause();
+    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+  }, []);
+
+  const toggle = async () => {
+    if (playing && audioRef.current) {
+      audioRef.current.pause();
+      setPlaying(false);
+      return;
+    }
+    if (audioRef.current && urlRef.current) {
+      try { await audioRef.current.play(); setPlaying(true); return; } catch {}
+    }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("speak-toolbox-talk", { body: { text } });
+      if (error) throw error;
+      // supabase-js returns the binary as a Blob when the response is non-JSON
+      const blob = data instanceof Blob ? data : new Blob([data as ArrayBuffer], { type: "audio/mpeg" });
+      const url = URL.createObjectURL(blob);
+      urlRef.current = url;
+      const audio = new Audio(url);
+      audio.onended = () => setPlaying(false);
+      audio.onpause = () => setPlaying(false);
+      audioRef.current = audio;
+      await audio.play();
+      setPlaying(true);
+    } catch (e: any) {
+      toast.error(e.message ?? "Voice playback failed");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Button type="button" variant="secondary" className="w-full" onClick={toggle} disabled={busy || !text}>
+      {playing ? <Pause className="mr-2 h-4 w-4" /> : <Volume2 className="mr-2 h-4 w-4" />}
+      {busy ? "Loading voice…" : playing ? "Pause" : label}
+    </Button>
+  );
+};
