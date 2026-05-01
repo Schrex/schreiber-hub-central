@@ -62,7 +62,8 @@ const TILES: Tile[] = [
 const Index = () => {
   const { role, displayName, positionTitle, signOut } = useAuth();
   const navigate = useNavigate();
-  const effectiveRole: Role = role ?? "employee";
+  const [previewRole, setPreviewRole] = useState<Role | null>(null);
+  const effectiveRole: Role = previewRole ?? role ?? "employee";
   const visible = TILES.filter((t) => t.roles.includes(effectiveRole));
 
   const handleTile = (t: Tile) => {
