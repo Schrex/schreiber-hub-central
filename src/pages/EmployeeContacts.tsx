@@ -36,6 +36,7 @@ type EmployeeContact = {
   notes: string | null;
   is_active: boolean;
   converted_user_id: string | null;
+  manager_contact_id: string | null;
 };
 
 const contactSchema = z
@@ -57,6 +58,7 @@ const contactSchema = z
     personal_email: z.string().trim().max(255).email("Invalid personal email").optional().or(z.literal("")),
     address: z.string().trim().max(500).optional().or(z.literal("")),
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
+    manager_contact_id: z.string().uuid().optional().or(z.literal("")),
   });
 
 const emptyForm = {
@@ -72,6 +74,7 @@ const emptyForm = {
   personal_email: "",
   address: "",
   notes: "",
+  manager_contact_id: "",
 };
 
 const HEADER_MAP: Record<string, keyof typeof emptyForm> = {
@@ -328,6 +331,7 @@ const EmployeeContacts = () => {
       personal_email: c.personal_email ?? "",
       address: c.address ?? "",
       notes: c.notes ?? "",
+      manager_contact_id: c.manager_contact_id ?? "",
     });
     // Pre-fill position assignment from currently effective record (if any)
     const livePos = c.converted_user_id ? positions.get(c.converted_user_id) : undefined;
@@ -362,6 +366,7 @@ const EmployeeContacts = () => {
       email: parsed.data.work_email || parsed.data.personal_email || parsed.data.email || null,
       address: parsed.data.address || null,
       notes: parsed.data.notes || null,
+      manager_contact_id: parsed.data.manager_contact_id || null,
     };
 
     if (editing) {
