@@ -246,6 +246,15 @@ const EmployeeContacts = () => {
 
   useEffect(() => {
     load();
+    supabase
+      .from("positions")
+      .select("title")
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("title")
+      .then(({ data }) => {
+        setPositionTitles(((data ?? []) as { title: string }[]).map((p) => p.title));
+      });
   }, []);
 
   // Scroll the focused contact into view after data loads
