@@ -81,25 +81,34 @@ const Perks = () => {
         <ul className="space-y-3">
           {ITEMS.map((item) => {
             const Icon = item.icon;
+            const className = "group flex w-full items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary/40 hover:bg-primary/5";
+            const inner = (
+              <>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Icon className="h-6 w-6" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-display text-base font-semibold">
+                    {item.label}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {item.hint}
+                  </span>
+                </span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+              </>
+            );
             return (
               <li key={item.key}>
-                <button
-                  onClick={() => navigate(item.to)}
-                  className="group flex w-full items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
-                >
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Icon className="h-6 w-6" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-display text-base font-semibold">
-                      {item.label}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {item.hint}
-                    </span>
-                  </span>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
-                </button>
+                {item.href ? (
+                  <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
+                    {inner}
+                  </a>
+                ) : (
+                  <button onClick={() => item.to && navigate(item.to)} className={className}>
+                    {inner}
+                  </button>
+                )}
               </li>
             );
           })}
