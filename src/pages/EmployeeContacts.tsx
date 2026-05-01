@@ -264,12 +264,14 @@ const EmployeeContacts = () => {
     load();
     supabase
       .from("positions")
-      .select("title")
+      .select("id, title, min_pay_rate, max_pay_rate, is_salaried")
       .eq("is_active", true)
       .order("sort_order")
       .order("title")
       .then(({ data }) => {
-        setPositionTitles(((data ?? []) as { title: string }[]).map((p) => p.title));
+        const list = (data ?? []) as Array<{ id: string; title: string; min_pay_rate: number; max_pay_rate: number; is_salaried: boolean }>;
+        setPositionsList(list);
+        setPositionTitles(list.map((p) => p.title));
       });
   }, []);
 
