@@ -260,7 +260,12 @@ const EmployeeContacts = () => {
 
   const openEdit = (c: EmployeeContact) => {
     setEditing(c);
+    const fallbackFirst = c.first_name ?? c.name.split(" ").slice(0, 1).join(" ");
+    const fallbackLast = c.last_name ?? c.name.split(" ").slice(1).join(" ");
     setForm({
+      first_name: fallbackFirst,
+      last_name: fallbackLast,
+      middle_initial: c.middle_initial ?? "",
       name: c.name,
       job_title: c.job_title ?? "",
       department: c.department ?? "",
@@ -279,8 +284,12 @@ const EmployeeContacts = () => {
       return;
     }
     setSaving(true);
+    const fullName = [parsed.data.first_name, parsed.data.last_name].filter(Boolean).join(" ").trim();
     const payload = {
-      name: parsed.data.name,
+      name: fullName,
+      first_name: parsed.data.first_name,
+      last_name: parsed.data.last_name,
+      middle_initial: parsed.data.middle_initial ? parsed.data.middle_initial.toUpperCase() : null,
       job_title: parsed.data.job_title || null,
       department: parsed.data.department || null,
       phone: parsed.data.phone || null,
