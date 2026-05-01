@@ -440,10 +440,19 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   return (
     <div className="space-y-4">
       <button onClick={onExit} className="text-sm text-muted-foreground inline-flex items-center gap-1"><ArrowLeft className="h-4 w-4" /> Back</button>
-      <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{talk?.category ?? ""}</p>
         <h2 className="font-display text-lg uppercase tracking-wide">{talk?.title ?? "Toolbox talk"}</h2>
-        <details className="mt-2"><summary className="cursor-pointer text-xs text-primary">Show talk content</summary>
+        {talk?.image_url && (
+          <img src={talk.image_url} alt={talk.title} loading="lazy" className="w-full rounded-lg border border-border object-cover max-h-72" />
+        )}
+        {talk?.video_url && (
+          <video src={talk.video_url} controls className="w-full rounded-lg border border-border" />
+        )}
+        {(talk?.voice_script || talk?.content) && (
+          <ReadAloudButton text={talk?.voice_script || talk?.content || ""} label="Read to the crew" />
+        )}
+        <details><summary className="cursor-pointer text-xs text-primary">Show talk content</summary>
           <p className="mt-2 whitespace-pre-wrap text-sm">{talk?.content}</p>
         </details>
       </div>
