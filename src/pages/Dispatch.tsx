@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { TruckRequestsPanel } from "@/components/dispatch/TruckRequestsPanel";
 
 type DispatchStatus = "scheduled" | "in_progress" | "complete" | "cancelled";
 type RateType = "hourly" | "per_load" | "per_ton" | "flat" | "other";
@@ -450,6 +451,8 @@ const Dispatch = () => {
             )}
           </div>
         </div>
+
+        {canEdit && <div className="mt-5"><TruckRequestsPanel /></div>}
 
         {/* View tabs + range navigation */}
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3">

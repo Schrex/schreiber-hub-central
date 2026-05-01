@@ -2288,6 +2288,93 @@ export type Database = {
         }
         Relationships: []
       }
+      truck_requests: {
+        Row: {
+          assigned_driver_name: string | null
+          assigned_driver_user_id: string | null
+          assigned_truck_number: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_notes: string | null
+          dispatch_order_id: string | null
+          dump_location: string | null
+          id: string
+          job_id: string
+          load_quantity: number | null
+          material: string | null
+          pickup_location: string | null
+          requested_date: string
+          requester_id: string | null
+          requester_name: string | null
+          requester_notes: string | null
+          start_time: string | null
+          status: Database["public"]["Enums"]["truck_request_status"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_driver_name?: string | null
+          assigned_driver_user_id?: string | null
+          assigned_truck_number?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_notes?: string | null
+          dispatch_order_id?: string | null
+          dump_location?: string | null
+          id?: string
+          job_id: string
+          load_quantity?: number | null
+          material?: string | null
+          pickup_location?: string | null
+          requested_date: string
+          requester_id?: string | null
+          requester_name?: string | null
+          requester_notes?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["truck_request_status"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_driver_name?: string | null
+          assigned_driver_user_id?: string | null
+          assigned_truck_number?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_notes?: string | null
+          dispatch_order_id?: string | null
+          dump_location?: string | null
+          id?: string
+          job_id?: string
+          load_quantity?: number | null
+          material?: string | null
+          pickup_location?: string | null
+          requested_date?: string
+          requester_id?: string | null
+          requester_name?: string | null
+          requester_notes?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["truck_request_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "truck_requests_dispatch_order_id_fkey"
+            columns: ["dispatch_order_id"]
+            isOneToOne: false
+            referencedRelation: "dispatch_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "truck_requests_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2487,6 +2574,7 @@ export type Database = {
       time_off_half_day: "none" | "am" | "pm"
       time_off_status: "pending" | "approved" | "denied" | "cancelled"
       time_off_type: "vacation" | "sick" | "personal" | "other"
+      truck_request_status: "pending" | "approved" | "declined" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2682,6 +2770,7 @@ export const Constants = {
       time_off_half_day: ["none", "am", "pm"],
       time_off_status: ["pending", "approved", "denied", "cancelled"],
       time_off_type: ["vacation", "sick", "personal", "other"],
+      truck_request_status: ["pending", "approved", "declined", "cancelled"],
     },
   },
 } as const
