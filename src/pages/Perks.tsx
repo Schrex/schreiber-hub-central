@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ShoppingBag, Palmtree, HandCoins, ChevronRight, Sparkles } from "lucide-react";
+import { ShoppingBag, Palmtree, HandCoins, ChevronRight, Sparkles, Wrench, Cog } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 
 const ITEMS = [
@@ -23,6 +23,20 @@ const ITEMS = [
     hint: "Refer hires & jobs — earn $",
     icon: HandCoins,
     to: "/referrals",
+  },
+  {
+    key: "equipment",
+    label: "Rent Equipment",
+    hint: "Borrow company gear — waiver required",
+    icon: Wrench,
+    to: "/equipment-rental",
+  },
+  {
+    key: "shop",
+    label: "Mechanic Shop",
+    hint: "Reserve a day in the shop",
+    icon: Cog,
+    to: "/shop-booking",
   },
 ];
 

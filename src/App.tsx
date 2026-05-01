@@ -27,6 +27,8 @@ import AdminPositions from "./pages/AdminPositions.tsx";
 import HR from "./pages/HR.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
 import Safety from "./pages/Safety.tsx";
+import EquipmentRental from "./pages/EquipmentRental.tsx";
+import ShopBooking from "./pages/ShopBooking.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -69,6 +71,8 @@ const App = () => (
               element={<ProtectedRoute requireRole="admin"><AdminUsers /></ProtectedRoute>}
             />
             <Route path="/safety" element={<ProtectedRoute><Safety /></ProtectedRoute>} />
+            <Route path="/equipment-rental" element={<ProtectedRoute><EquipmentRental /></ProtectedRoute>} />
+            <Route path="/shop-booking" element={<ProtectedRoute><ShopBooking /></ProtectedRoute>} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
