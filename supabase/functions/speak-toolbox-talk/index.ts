@@ -51,10 +51,12 @@ Deno.serve(async (req) => {
     if (!ttsResp.ok) {
       const errText = await ttsResp.text()
       console.error('elevenlabs tts failed', ttsResp.status, errText)
-      return new Response(JSON.stringify({ error: 'Voice generation failed', detail: errText.slice(0, 300) }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      // Return 200 with a fallback signal so the client can use the browser's
+      // built-in speech synthesis instead of crashing.
+      return new Response(
+        JSON.stringify({ fallback: true, reason: 'voice_unavailable', detail: errText.slice(0, 300) }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const audio = await ttsResp.arrayBuffer()
