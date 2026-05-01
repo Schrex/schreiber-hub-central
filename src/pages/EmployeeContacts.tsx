@@ -317,6 +317,8 @@ const EmployeeContacts = () => {
       department: c.department ?? "",
       phone: c.phone ?? "",
       email: c.email ?? "",
+      work_email: c.work_email ?? "",
+      personal_email: c.personal_email ?? "",
       address: c.address ?? "",
       notes: c.notes ?? "",
     });
