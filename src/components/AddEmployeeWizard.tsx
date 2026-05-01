@@ -129,8 +129,12 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
     }
 
     setSaving(true);
+    const fullName = [parsed.data.first_name, parsed.data.last_name].filter(Boolean).join(" ").trim();
     const payload: Record<string, unknown> = {
-      name: parsed.data.name,
+      name: fullName,
+      first_name: parsed.data.first_name,
+      last_name: parsed.data.last_name,
+      middle_initial: parsed.data.middle_initial ? parsed.data.middle_initial.toUpperCase() : null,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
