@@ -87,8 +87,9 @@ interface Props {
 }
 
 export const PermitsSection = ({ jobId }: Props) => {
-  const { role, user } = useAuth();
-  const canEdit = role === "foreman" || role === "office" || role === "admin";
+  const { role: realRole, effectiveRole, user } = useAuth();
+  const role = effectiveRole ?? realRole;
+  const canEdit = role === "office" || role === "admin";
   const [permits, setPermits] = useState<Permit[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(true);
