@@ -80,8 +80,9 @@ interface Plan {
 }
 
 export const PlansSection = ({ jobId }: { jobId: string }) => {
-  const { role, displayName } = useAuth();
-  const canManage = role === "foreman" || role === "office" || role === "admin";
+  const { role: realRole, effectiveRole, displayName } = useAuth();
+  const role = effectiveRole ?? realRole;
+  const canManage = role === "office" || role === "admin";
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadingCat, setUploadingCat] = useState<Category | null>(null);

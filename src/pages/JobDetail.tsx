@@ -34,8 +34,10 @@ interface Job {
 
 const JobDetail = () => {
   const { id } = useParams();
-  const { role } = useAuth();
+  const { role: realRole, effectiveRole } = useAuth();
+  const role = effectiveRole ?? realRole;
   const canSeePrivate = role === "foreman" || role === "office" || role === "admin";
+  const canSeeJobReport = role === "foreman";
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -155,7 +157,7 @@ const JobDetail = () => {
           </section>
         )}
 
-        {canSeePrivate && <JobInfoSection jobNumber={job.job_number} />}
+        {canSeeJobReport && <JobInfoSection jobNumber={job.job_number} />}
         <JobLookahead jobId={job.id} />
         <PlansSection jobId={job.id} />
         <PhotosSection
