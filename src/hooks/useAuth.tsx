@@ -8,6 +8,9 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   role: Role | null;
+  effectiveRole: Role | null;
+  previewRole: Role | null;
+  setPreviewRole: (r: Role | null) => void;
   displayName: string | null;
   positionTitle: string | null;
   loading: boolean;
@@ -23,6 +26,10 @@ const pickPrimary = (roles: Role[]): Role | null => {
   return [...roles].sort((a, b) => ROLE_RANK[a] - ROLE_RANK[b])[0];
 };
 
+const PREVIEW_KEY = "previewRole";
+const isValidRole = (v: string | null): v is Role =>
+  v === "employee" || v === "foreman" || v === "office" || v === "admin";
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -30,6 +37,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [positionTitle, setPositionTitle] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [previewRole, setPreviewRoleState] = useState<Role | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = sessionStorage.getItem(PREVIEW_KEY);
+    return isValidRole(v) ? v : null;
+  });
 
   useEffect(() => {
     // Listener FIRST
@@ -40,6 +52,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole(null);
         setDisplayName(null);
         setPositionTitle(null);
+        setPreviewRoleState(null);
+        if (typeof window !== "undefined") sessionStorage.removeItem(PREVIEW_KEY);
       } else {
         // Defer DB calls
         setTimeout(() => loadProfile(s.user.id), 0);
@@ -77,12 +91,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setPositionTitle(title);
   };
 
+  const setPreviewRole = (r: Role | null) => {
+    // Only admins can preview as another role
+    if (role !== "admin") return;
+    setPreviewRoleState(r);
+    if (typeof window === "undefined") return;
+    if (r && r !== role) sessionStorage.setItem(PREVIEW_KEY, r);
+    else sessionStorage.removeItem(PREVIEW_KEY);
+  };
+
+  // effectiveRole respects an admin's preview selection; non-admins always see their real role.
+  const effectiveRole: Role | null = role === "admin" && previewRole ? previewRole : role;
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, role, displayName, positionTitle, loading, signOut }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        role,
+        effectiveRole,
+        previewRole,
+        setPreviewRole,
+        displayName,
+        positionTitle,
+        loading,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
