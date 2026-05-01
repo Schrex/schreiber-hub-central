@@ -1,0 +1,1 @@
+ALTER TABLE public.dispatch_orders ADD COLUMN IF NOT EXISTS job_number text;
