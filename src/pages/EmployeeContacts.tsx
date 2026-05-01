@@ -22,6 +22,9 @@ import { AddEmployeeWizard } from "@/components/AddEmployeeWizard";
 type EmployeeContact = {
   id: string;
   name: string;
+  first_name: string | null;
+  last_name: string | null;
+  middle_initial: string | null;
   job_title: string | null;
   department: string | null;
   phone: string | null;
@@ -32,17 +35,29 @@ type EmployeeContact = {
   converted_user_id: string | null;
 };
 
-const contactSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(200),
-  job_title: z.string().trim().max(100).optional().or(z.literal("")),
-  department: z.string().trim().max(100).optional().or(z.literal("")),
-  phone: z.string().trim().max(50).optional().or(z.literal("")),
-  email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
-  address: z.string().trim().max(500).optional().or(z.literal("")),
-  notes: z.string().trim().max(2000).optional().or(z.literal("")),
-});
+const contactSchema = z
+  .object({
+    first_name: z.string().trim().min(1, "First name is required").max(100),
+    last_name: z.string().trim().min(1, "Last name is required").max(100),
+    middle_initial: z
+      .string()
+      .trim()
+      .max(1, "Middle initial must be a single letter")
+      .optional()
+      .or(z.literal("")),
+    name: z.string().trim().max(200).optional().or(z.literal("")),
+    job_title: z.string().trim().max(100).optional().or(z.literal("")),
+    department: z.string().trim().max(100).optional().or(z.literal("")),
+    phone: z.string().trim().max(50).optional().or(z.literal("")),
+    email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
+    address: z.string().trim().max(500).optional().or(z.literal("")),
+    notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  });
 
 const emptyForm = {
+  first_name: "",
+  last_name: "",
+  middle_initial: "",
   name: "",
   job_title: "",
   department: "",
