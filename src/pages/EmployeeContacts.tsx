@@ -18,6 +18,7 @@ import { downloadVCard, downloadVCards } from "@/lib/vcard";
 import { fetchCurrentPositions, type CurrentPosition } from "@/lib/currentPositions";
 import { getContactPickerUnavailableReason, isContactPickerSupported, pickContactsFromDevice } from "@/lib/contactPicker";
 import { AddEmployeeWizard } from "@/components/AddEmployeeWizard";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type EmployeeContact = {
   id: string;
@@ -200,6 +201,7 @@ const EmployeeContacts = () => {
 
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
   const [positions, setPositions] = useState<Map<string, CurrentPosition>>(new Map());
+  const [positionTitles, setPositionTitles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState<string>("all");
@@ -244,6 +246,15 @@ const EmployeeContacts = () => {
 
   useEffect(() => {
     load();
+    supabase
+      .from("positions")
+      .select("title")
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("title")
+      .then(({ data }) => {
+        setPositionTitles(((data ?? []) as { title: string }[]).map((p) => p.title));
+      });
   }, []);
 
   // Scroll the focused contact into view after data loads
@@ -883,12 +894,23 @@ const EmployeeContacts = () => {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label htmlFor="ec-title">Job title</Label>
-                <Input
-                  id="ec-title"
-                  placeholder="Operator, Foreman…"
-                  value={form.job_title}
-                  onChange={(e) => setForm({ ...form, job_title: e.target.value })}
-                />
+                <Select
+                  value={form.job_title || "__none__"}
+                  onValueChange={(v) => setForm({ ...form, job_title: v === "__none__" ? "" : v })}
+                >
+                  <SelectTrigger id="ec-title">
+                    <SelectValue placeholder="Select position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— None —</SelectItem>
+                    {positionTitles.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                    {form.job_title && !positionTitles.includes(form.job_title) && (
+                      <SelectItem value={form.job_title}>{form.job_title} (legacy)</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="ec-dept">Department</Label>
