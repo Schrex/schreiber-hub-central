@@ -25,7 +25,6 @@ import { HeaderBar } from "@/components/home/HeaderBar";
 import { WeatherStrip } from "@/components/home/WeatherStrip";
 import { AppTile } from "@/components/home/AppTile";
 import { RoleSwitcher } from "@/components/home/RoleSwitcher";
-import { useState } from "react";
 import { useAuth, type Role } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
