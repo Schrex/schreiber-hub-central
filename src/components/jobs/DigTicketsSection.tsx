@@ -53,8 +53,9 @@ interface Props {
 }
 
 export const DigTicketsSection = ({ jobId }: Props) => {
-  const { role, user } = useAuth();
-  const canEdit = role === "foreman" || role === "office" || role === "admin";
+  const { role: realRole, effectiveRole, user } = useAuth();
+  const role = effectiveRole ?? realRole;
+  const canEdit = role === "office" || role === "admin";
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
