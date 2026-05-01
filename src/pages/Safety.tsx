@@ -723,7 +723,33 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
     try {
       const { data, error } = await supabase.functions.invoke("speak-toolbox-talk", { body: { text } });
       if (error) throw error;
-      // supabase-js returns the binary as a Blob when the response is non-JSON
+
+      // If the edge function returned JSON with fallback:true (e.g. ElevenLabs unavailable),
+      // use the browser's built-in speech synthesis as a graceful fallback.
+      const isFallbackJson =
+        data && !(data instanceof Blob) && !(data instanceof ArrayBuffer) &&
+        typeof data === "object" && (data as any).fallback === true;
+
+      if (isFallbackJson) {
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.rate = 0.95;
+          utter.pitch = 0.95;
+          const voices = window.speechSynthesis.getVoices();
+          const male = voices.find(v => /male|daniel|fred|alex|david/i.test(v.name)) || voices.find(v => v.lang.startsWith("en"));
+          if (male) utter.voice = male;
+          utter.onend = () => setPlaying(false);
+          utter.onerror = () => setPlaying(false);
+          window.speechSynthesis.speak(utter);
+          setPlaying(true);
+          toast.message("Using device voice (premium voice unavailable)");
+        } else {
+          toast.error("Voice playback not supported on this device");
+        }
+        return;
+      }
+
       const blob = data instanceof Blob ? data : new Blob([data as ArrayBuffer], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
       urlRef.current = url;
