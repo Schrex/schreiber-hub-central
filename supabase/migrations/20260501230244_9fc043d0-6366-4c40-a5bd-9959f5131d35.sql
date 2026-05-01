@@ -1,0 +1,2 @@
+ALTER TABLE public.employee_contacts ADD COLUMN IF NOT EXISTS manager_contact_id uuid REFERENCES public.employee_contacts(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_employee_contacts_manager ON public.employee_contacts(manager_contact_id);

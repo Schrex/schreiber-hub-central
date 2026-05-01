@@ -769,6 +769,7 @@ export type Database = {
           is_active: boolean
           job_title: string | null
           last_name: string | null
+          manager_contact_id: string | null
           middle_initial: string | null
           name: string
           notes: string | null
@@ -808,6 +809,7 @@ export type Database = {
           is_active?: boolean
           job_title?: string | null
           last_name?: string | null
+          manager_contact_id?: string | null
           middle_initial?: string | null
           name: string
           notes?: string | null
@@ -847,6 +849,7 @@ export type Database = {
           is_active?: boolean
           job_title?: string | null
           last_name?: string | null
+          manager_contact_id?: string | null
           middle_initial?: string | null
           name?: string
           notes?: string | null
@@ -862,7 +865,15 @@ export type Database = {
           updated_at?: string
           work_email?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employee_contacts_manager_contact_id_fkey"
+            columns: ["manager_contact_id"]
+            isOneToOne: false
+            referencedRelation: "employee_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       employee_positions: {
         Row: {
