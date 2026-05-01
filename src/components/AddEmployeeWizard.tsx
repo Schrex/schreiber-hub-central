@@ -186,9 +186,37 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
           {/* Identity */}
           <section className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Identity</h3>
-            <div>
-              <Label htmlFor="ae-name">Name *</Label>
-              <Input id="ae-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <div className="grid grid-cols-[1fr_70px_1fr] gap-2">
+              <div>
+                <Label htmlFor="ae-first">First name *</Label>
+                <Input
+                  id="ae-first"
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ae-mi">M.I.</Label>
+                <Input
+                  id="ae-mi"
+                  maxLength={1}
+                  value={form.middle_initial}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      middle_initial: e.target.value.replace(/[^A-Za-z]/g, "").toUpperCase(),
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="ae-last">Last name *</Label>
+                <Input
+                  id="ae-last"
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
