@@ -97,6 +97,10 @@ const Index = () => {
       <main className="mx-auto max-w-2xl space-y-5 px-4 pb-12">
         <WeatherStrip />
 
+        {role === "admin" && (
+          <RoleSwitcher value={effectiveRole} onChange={setPreviewRole} />
+        )}
+
         <section>
           <div className="mb-3 flex items-end justify-between">
             <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
