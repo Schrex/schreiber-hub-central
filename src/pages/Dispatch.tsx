@@ -219,6 +219,7 @@ const Dispatch = () => {
       truck_number: form.truck_number || null,
       job_id: form.job_id || null,
       job_name: job?.name ?? null,
+      job_number: job?.job_number ?? null,
       gc: job?.gc ?? null,
       customer: job?.customer ?? null,
       material: form.material || null,
