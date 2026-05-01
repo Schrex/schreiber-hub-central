@@ -68,6 +68,8 @@ const emptyForm = {
   department: "",
   phone: "",
   email: "",
+  work_email: "",
+  personal_email: "",
   address: "",
   notes: "",
 };
