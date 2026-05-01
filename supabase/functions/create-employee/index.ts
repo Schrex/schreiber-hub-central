@@ -10,6 +10,9 @@ type Role = 'employee' | 'foreman' | 'office' | 'admin'
 interface Body {
   // Identity (always required)
   name: string
+  first_name?: string | null
+  last_name?: string | null
+  middle_initial?: string | null
   email?: string | null
   phone?: string | null
   address?: string | null
