@@ -30,6 +30,7 @@ interface DispatchOrder {
   truck_number: string | null;
   job_id: string | null;
   job_name: string | null;
+  job_number: string | null;
   gc: string | null;
   customer: string | null;
   material: string | null;
