@@ -62,7 +62,17 @@ const TILES: Tile[] = [
 const Index = () => {
   const { role, displayName, positionTitle, signOut } = useAuth();
   const navigate = useNavigate();
-  const [previewRole, setPreviewRole] = useState<Role | null>(null);
+  const [previewRole, setPreviewRoleState] = useState<Role | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = sessionStorage.getItem("previewRole");
+    return v && ["employee", "foreman", "office", "admin"].includes(v) ? (v as Role) : null;
+  });
+  const setPreviewRole = (r: Role | null) => {
+    setPreviewRoleState(r);
+    if (typeof window === "undefined") return;
+    if (r && r !== role) sessionStorage.setItem("previewRole", r);
+    else sessionStorage.removeItem("previewRole");
+  };
   const effectiveRole: Role = previewRole ?? role ?? "employee";
   const visible = TILES.filter((t) => t.roles.includes(effectiveRole));
 
