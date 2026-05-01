@@ -169,6 +169,10 @@ const JobDetail = () => {
         <PermitsSection jobId={job.id} />
         <DigTicketsSection jobId={job.id} />
 
+        {job.status === "active" && (
+          <RequestTruckButton jobId={job.id} jobAddress={job.address} />
+        )}
+
         <SafetyInspectionButton jobId={job.id} />
 
         {mapsUrl && (
