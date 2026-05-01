@@ -805,11 +805,14 @@ const EmployeeContacts = () => {
                           <Phone className="h-3 w-3" /> {c.phone}
                         </a>
                       )}
-                      {c.email && (
-                        <a href={`mailto:${c.email}`} className="flex items-center gap-1 text-foreground hover:text-primary">
-                          <Mail className="h-3 w-3" /> {c.email}
-                        </a>
-                      )}
+                      {(() => {
+                        const displayEmail = c.work_email || c.personal_email || c.email;
+                        return displayEmail ? (
+                          <a href={`mailto:${displayEmail}`} className="flex items-center gap-1 text-foreground hover:text-primary">
+                            <Mail className="h-3 w-3" /> {displayEmail}
+                          </a>
+                        ) : null;
+                      })()}
                       {c.address && (
                         <a
                           href={`https://maps.google.com/?q=${encodeURIComponent(c.address)}`}
