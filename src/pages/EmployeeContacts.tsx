@@ -851,9 +851,34 @@ const EmployeeContacts = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
-            <div>
-              <Label htmlFor="ec-name">Name *</Label>
-              <Input id="ec-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <div className="grid grid-cols-[1fr_70px_1fr] gap-2">
+              <div>
+                <Label htmlFor="ec-first">First name *</Label>
+                <Input
+                  id="ec-first"
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ec-mi">M.I.</Label>
+                <Input
+                  id="ec-mi"
+                  maxLength={1}
+                  value={form.middle_initial}
+                  onChange={(e) =>
+                    setForm({ ...form, middle_initial: e.target.value.replace(/[^A-Za-z]/g, "").toUpperCase() })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="ec-last">Last name *</Label>
+                <Input
+                  id="ec-last"
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
