@@ -215,6 +215,9 @@ const EmployeeContacts = () => {
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
   const [positions, setPositions] = useState<Map<string, CurrentPosition>>(new Map());
   const [positionTitles, setPositionTitles] = useState<string[]>([]);
+  const [positionsList, setPositionsList] = useState<Array<{ id: string; title: string; min_pay_rate: number; max_pay_rate: number; is_salaried: boolean }>>([]);
+  const [posForm, setPosForm] = useState({ position_id: "", pay_rate: "", effective_date: new Date().toISOString().slice(0, 10), is_salaried: false });
+  const [posFormDirty, setPosFormDirty] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState<string>("all");
@@ -261,12 +264,14 @@ const EmployeeContacts = () => {
     load();
     supabase
       .from("positions")
-      .select("title")
+      .select("id, title, min_pay_rate, max_pay_rate, is_salaried")
       .eq("is_active", true)
       .order("sort_order")
       .order("title")
       .then(({ data }) => {
-        setPositionTitles(((data ?? []) as { title: string }[]).map((p) => p.title));
+        const list = (data ?? []) as Array<{ id: string; title: string; min_pay_rate: number; max_pay_rate: number; is_salaried: boolean }>;
+        setPositionsList(list);
+        setPositionTitles(list.map((p) => p.title));
       });
   }, []);
 
@@ -324,6 +329,15 @@ const EmployeeContacts = () => {
       address: c.address ?? "",
       notes: c.notes ?? "",
     });
+    // Pre-fill position assignment from currently effective record (if any)
+    const livePos = c.converted_user_id ? positions.get(c.converted_user_id) : undefined;
+    setPosForm({
+      position_id: livePos?.position_id ?? "",
+      pay_rate: livePos?.pay_rate != null ? String(livePos.pay_rate) : "",
+      effective_date: new Date().toISOString().slice(0, 10),
+      is_salaried: livePos?.is_salaried ?? false,
+    });
+    setPosFormDirty(false);
     setDialogOpen(true);
   };
 
@@ -352,8 +366,38 @@ const EmployeeContacts = () => {
 
     if (editing) {
       const { error } = await supabase.from("employee_contacts").update(payload).eq("id", editing.id);
-      if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
-      else {
+      if (error) {
+        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      } else {
+        // Optionally save the position assignment (admin only, contact must have a login)
+        if (canConvert && editing.converted_user_id && posFormDirty && posForm.position_id) {
+          const rate = parseFloat(posForm.pay_rate);
+          if (isNaN(rate)) {
+            toast({ title: "Pay rate required", description: "Enter a numeric pay rate to assign a position.", variant: "destructive" });
+            setSaving(false);
+            return;
+          }
+          const dayBefore = new Date(posForm.effective_date + "T00:00:00");
+          dayBefore.setDate(dayBefore.getDate() - 1);
+          const dayBeforeStr = dayBefore.toISOString().slice(0, 10);
+          await supabase
+            .from("employee_positions")
+            .update({ end_date: dayBeforeStr })
+            .eq("user_id", editing.converted_user_id)
+            .is("end_date", null);
+          const { error: posErr } = await supabase.from("employee_positions").insert({
+            user_id: editing.converted_user_id,
+            position_id: posForm.position_id,
+            pay_rate: rate,
+            effective_date: posForm.effective_date,
+            is_salaried: posForm.is_salaried,
+          });
+          if (posErr) {
+            toast({ title: "Position not saved", description: posErr.message, variant: "destructive" });
+            setSaving(false);
+            return;
+          }
+        }
         toast({ title: "Contact updated" });
         setDialogOpen(false);
         load();
@@ -980,6 +1024,84 @@ const EmployeeContacts = () => {
               <Label htmlFor="ec-notes">Notes</Label>
               <Textarea id="ec-notes" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </div>
+            {canConvert && editing && (
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Position assignment</Label>
+                  {positions.get(editing.converted_user_id ?? "") && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Current: {positions.get(editing.converted_user_id!)!.title}
+                    </Badge>
+                  )}
+                </div>
+                {!editing.converted_user_id ? (
+                  <p className="text-xs text-muted-foreground">
+                    Convert this contact to a login first, then you can assign a position and pay rate.
+                  </p>
+                ) : (
+                  <div className="grid gap-2">
+                    <div>
+                      <Label htmlFor="ec-pos" className="text-xs">Position</Label>
+                      <Select
+                        value={posForm.position_id || "__none__"}
+                        onValueChange={(v) => {
+                          const sel = positionsList.find((p) => p.id === v);
+                          setPosForm({
+                            ...posForm,
+                            position_id: v === "__none__" ? "" : v,
+                            is_salaried: sel?.is_salaried ?? posForm.is_salaried,
+                            pay_rate: posForm.pay_rate || (sel ? String(sel.min_pay_rate) : ""),
+                          });
+                          setPosFormDirty(true);
+                        }}
+                      >
+                        <SelectTrigger id="ec-pos">
+                          <SelectValue placeholder="Select position" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— None —</SelectItem>
+                          {positionsList.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="ec-rate" className="text-xs">
+                          Pay rate {posForm.is_salaried ? "(annual)" : "(hourly)"}
+                        </Label>
+                        <Input
+                          id="ec-rate"
+                          type="number"
+                          step="0.01"
+                          value={posForm.pay_rate}
+                          onChange={(e) => {
+                            setPosForm({ ...posForm, pay_rate: e.target.value });
+                            setPosFormDirty(true);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="ec-eff" className="text-xs">Effective date</Label>
+                        <Input
+                          id="ec-eff"
+                          type="date"
+                          value={posForm.effective_date}
+                          onChange={(e) => {
+                            setPosForm({ ...posForm, effective_date: e.target.value });
+                            setPosFormDirty(true);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Saving creates a new assignment and ends any current one the day before.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             {reviewQueue.length > 0 ? (
