@@ -8,12 +8,13 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
 export const SafetyInspectionButton = ({ jobId }: { jobId: string }) => {
-  const { role } = useAuth();
+  const { role: realRole, effectiveRole } = useAuth();
+  const role = effectiveRole ?? realRole;
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (role !== "admin") return null;
+  if (role !== "office") return null;
 
   const submit = async () => {
     setBusy(true);
