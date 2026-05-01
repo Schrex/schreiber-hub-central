@@ -23,6 +23,7 @@ import MyPosition from "./pages/MyPosition.tsx";
 import Vendors from "./pages/Vendors.tsx";
 import EmployeeContacts from "./pages/EmployeeContacts.tsx";
 import Perks from "./pages/Perks.tsx";
+import OrgChart from "./pages/OrgChart.tsx";
 import AdminPositions from "./pages/AdminPositions.tsx";
 import HR from "./pages/HR.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
             <Route path="/employee-contacts" element={<ProtectedRoute><EmployeeContacts /></ProtectedRoute>} />
             <Route path="/perks" element={<ProtectedRoute><Perks /></ProtectedRoute>} />
+            <Route path="/org-chart" element={<ProtectedRoute><OrgChart /></ProtectedRoute>} />
             <Route
               path="/admin/positions"
               element={<ProtectedRoute requireRole="admin"><AdminPositions /></ProtectedRoute>}
