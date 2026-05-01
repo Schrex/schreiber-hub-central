@@ -1586,6 +1586,47 @@ export type Database = {
           },
         ]
       }
+      org_chart_nodes: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          id: string
+          name: string
+          parent_id: string | null
+          sort_order: number
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_chart_nodes_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "org_chart_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pay_audit_log: {
         Row: {
           action: string
