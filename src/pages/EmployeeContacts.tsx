@@ -213,7 +213,7 @@ const EmployeeContacts = () => {
   const { role: realRole, effectiveRole, user } = useAuth();
   const role = effectiveRole ?? realRole;
   const canEdit = role === "foreman" || role === "admin";
-  const canDelete = role === "office" || role === "admin";
+  const canDelete = role === "admin";
   const canConvert = role === "admin";
 
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
