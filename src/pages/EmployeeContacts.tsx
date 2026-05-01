@@ -329,6 +329,15 @@ const EmployeeContacts = () => {
       address: c.address ?? "",
       notes: c.notes ?? "",
     });
+    // Pre-fill position assignment from currently effective record (if any)
+    const livePos = c.converted_user_id ? positions.get(c.converted_user_id) : undefined;
+    setPosForm({
+      position_id: livePos?.position_id ?? "",
+      pay_rate: livePos?.pay_rate != null ? String(livePos.pay_rate) : "",
+      effective_date: new Date().toISOString().slice(0, 10),
+      is_salaried: livePos?.is_salaried ?? false,
+    });
+    setPosFormDirty(false);
     setDialogOpen(true);
   };
 
