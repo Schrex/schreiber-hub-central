@@ -53,6 +53,8 @@ const contactSchema = z
     department: z.string().trim().max(100).optional().or(z.literal("")),
     phone: z.string().trim().max(50).optional().or(z.literal("")),
     email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
+    work_email: z.string().trim().max(255).email("Invalid work email").optional().or(z.literal("")),
+    personal_email: z.string().trim().max(255).email("Invalid personal email").optional().or(z.literal("")),
     address: z.string().trim().max(500).optional().or(z.literal("")),
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
   });
