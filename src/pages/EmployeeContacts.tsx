@@ -36,6 +36,7 @@ type EmployeeContact = {
   notes: string | null;
   is_active: boolean;
   converted_user_id: string | null;
+  manager_contact_id: string | null;
 };
 
 const contactSchema = z
@@ -57,6 +58,7 @@ const contactSchema = z
     personal_email: z.string().trim().max(255).email("Invalid personal email").optional().or(z.literal("")),
     address: z.string().trim().max(500).optional().or(z.literal("")),
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
+    manager_contact_id: z.string().uuid().optional().or(z.literal("")),
   });
 
 const emptyForm = {
@@ -72,6 +74,7 @@ const emptyForm = {
   personal_email: "",
   address: "",
   notes: "",
+  manager_contact_id: "",
 };
 
 const HEADER_MAP: Record<string, keyof typeof emptyForm> = {
@@ -328,6 +331,7 @@ const EmployeeContacts = () => {
       personal_email: c.personal_email ?? "",
       address: c.address ?? "",
       notes: c.notes ?? "",
+      manager_contact_id: c.manager_contact_id ?? "",
     });
     // Pre-fill position assignment from currently effective record (if any)
     const livePos = c.converted_user_id ? positions.get(c.converted_user_id) : undefined;
@@ -362,6 +366,7 @@ const EmployeeContacts = () => {
       email: parsed.data.work_email || parsed.data.personal_email || parsed.data.email || null,
       address: parsed.data.address || null,
       notes: parsed.data.notes || null,
+      manager_contact_id: parsed.data.manager_contact_id || null,
     };
 
     if (editing) {
@@ -845,6 +850,14 @@ const EmployeeContacts = () => {
                         <p className="text-[11px] text-muted-foreground">{display}</p>
                       ) : null;
                     })()}
+                    {c.manager_contact_id && (() => {
+                      const mgr = contacts.find((x) => x.id === c.manager_contact_id);
+                      return mgr ? (
+                        <p className="text-[11px] text-muted-foreground">
+                          Reports to <span className="font-medium text-foreground">{mgr.name}</span>
+                        </p>
+                      ) : null;
+                    })()}
                     <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
                       {c.phone && (
                         <a href={`tel:${c.phone}`} className="flex items-center gap-1 text-foreground hover:text-primary">
@@ -989,6 +1002,29 @@ const EmployeeContacts = () => {
                   onChange={(e) => setForm({ ...form, department: e.target.value })}
                 />
               </div>
+            </div>
+            <div>
+              <Label htmlFor="ec-manager">Direct manager</Label>
+              <Select
+                value={form.manager_contact_id || "__none__"}
+                onValueChange={(v) => setForm({ ...form, manager_contact_id: v === "__none__" ? "" : v })}
+              >
+                <SelectTrigger id="ec-manager">
+                  <SelectValue placeholder="Select manager" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— None —</SelectItem>
+                  {contacts
+                    .filter((m) => m.is_active && m.id !== editing?.id)
+                    .slice()
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}{m.job_title ? ` — ${m.job_title}` : ""}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="ec-phone">Phone</Label>
