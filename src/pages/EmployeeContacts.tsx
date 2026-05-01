@@ -510,13 +510,18 @@ const EmployeeContacts = () => {
         toast({ title: "No contact selected", description: "Nothing was imported." });
         return;
       }
-      const queue = picked.map((p) => ({
-        ...emptyForm,
-        name: p.name,
-        phone: p.phone,
-        email: p.email,
-        address: p.address,
-      }));
+      const queue = picked.map((p) => {
+        const { first, last } = splitName(p.name);
+        return {
+          ...emptyForm,
+          name: p.name,
+          first_name: first,
+          last_name: last,
+          phone: p.phone,
+          email: p.email,
+          address: p.address,
+        };
+      });
       setReviewQueue(queue);
       setReviewIndex(0);
       setEditing(null);
