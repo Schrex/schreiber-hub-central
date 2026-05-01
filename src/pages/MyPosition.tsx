@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Briefcase, DollarSign, TrendingUp, Lock } from "lucide-react";
+import { ArrowLeft, Briefcase, DollarSign, TrendingUp, Lock, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+
+interface PromotionTarget {
+  id: string;
+  title: string;
+  description: string | null;
+  min_pay_rate: number;
+  max_pay_rate: number;
+  is_salaried: boolean;
+  heldBy: string[];
+}
 
 interface AssignmentRow {
   id: string;
@@ -34,6 +44,7 @@ const MyPosition = () => {
   const { user } = useAuth();
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [promotions, setPromotions] = useState<PromotionTarget[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -45,6 +56,58 @@ const MyPosition = () => {
         .order("effective_date", { ascending: false });
       if (!error && data) setRows(data as unknown as AssignmentRow[]);
       setLoading(false);
+    })();
+  }, [user]);
+
+  // Load possible promotions based on org chart hierarchy
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("contact_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const contactId = profile?.contact_id;
+      if (!contactId) return;
+
+      const { data: allNodes } = await supabase
+        .from("org_chart_nodes")
+        .select("id, name, title, parent_id, contact_id");
+      if (!allNodes) return;
+
+      const myNode = allNodes.find((n) => n.contact_id === contactId);
+      if (!myNode || !myNode.parent_id) return;
+
+      const parentNode = allNodes.find((n) => n.id === myNode.parent_id);
+      if (!parentNode) return;
+
+      // Promotion candidates: my manager's title + my manager's peers (uncles/aunts)
+      const candidates = allNodes.filter(
+        (n) => n.id === parentNode.id || (parentNode.parent_id && n.parent_id === parentNode.parent_id),
+      );
+
+      const titleToHolders = new Map<string, string[]>();
+      candidates.forEach((n) => {
+        if (!n.title) return;
+        const arr = titleToHolders.get(n.title) ?? [];
+        arr.push(n.name);
+        titleToHolders.set(n.title, arr);
+      });
+
+      const titles = Array.from(titleToHolders.keys());
+      if (titles.length === 0) return;
+
+      const { data: positions } = await supabase
+        .from("positions")
+        .select("id, title, description, min_pay_rate, max_pay_rate, is_salaried")
+        .in("title", titles);
+
+      const promos: PromotionTarget[] = (positions ?? []).map((p) => ({
+        ...p,
+        heldBy: titleToHolders.get(p.title) ?? [],
+      }));
+      setPromotions(promos);
     })();
   }, [user]);
 
@@ -142,6 +205,45 @@ const MyPosition = () => {
               </div>
             )}
           </Card>
+        )}
+
+        {!loading && promotions.length > 0 && (
+          <section>
+            <h3 className="mb-2 flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-primary" /> Possible Promotions
+            </h3>
+            <p className="mb-2 px-1 text-[11px] text-muted-foreground">
+              Next-step roles based on your spot in the org chart.
+            </p>
+            <div className="space-y-2">
+              {promotions.map((p) => (
+                <Card key={p.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold">{p.title}</div>
+                      {p.description && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">{p.description}</p>
+                      )}
+                      {p.heldBy.length > 0 && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Currently held by {p.heldBy.join(", ")}
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Range</div>
+                      <div className="text-sm font-semibold">
+                        {fmtMoney(p.min_pay_rate)} – {fmtMoney(p.max_pay_rate)}
+                        <span className="ml-0.5 text-[10px] font-normal text-muted-foreground">
+                          {p.is_salaried ? "/yr" : "/hr"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </section>
         )}
 
         {history.length > 0 && (
