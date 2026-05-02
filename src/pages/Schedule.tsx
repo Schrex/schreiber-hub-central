@@ -72,6 +72,7 @@ const Schedule = () => {
   const { user, role, displayName } = useAuth();
   const navigate = useNavigate();
   const canEdit = role === "office" || role === "admin";
+  const canEditNotes = canEdit || role === "foreman";
 
   const [selectedDate, setSelectedDate] = useState<string>(todayStr());
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -325,6 +326,21 @@ const Schedule = () => {
       return;
     }
     loadAll();
+  };
+
+  const updateAssignmentNotes = async (id: string, notes: string) => {
+    const value = notes.trim() ? notes.trim() : null;
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .update({ notes: value })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Could not save note", description: error.message, variant: "destructive" });
+      return false;
+    }
+    setAssignments((prev) => prev.map((a) => (a.id === id ? { ...a, notes: value } : a)));
+    toast({ title: "Note saved" });
+    return true;
   };
 
   const today = startOfDay(new Date());
@@ -716,40 +732,48 @@ const Schedule = () => {
                         <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
                           Foreman
                         </div>
-                        <ul className="space-y-1">
+                         <ul className="space-y-2">
                           {foremen.map((a) => (
                             <li
                               key={a.id}
-                              className="flex items-center justify-between gap-2 text-sm"
+                              className="rounded border border-amber-500/20 bg-background/40 p-2"
                             >
-                              <div className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                                {a.contact_id ? (
-                                  <button
-                                    onClick={() => navigate(`/employee-contacts?focus=${a.contact_id}`)}
-                                    className="font-semibold hover:text-primary hover:underline"
+                              <div className="flex items-center justify-between gap-2 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                  {a.contact_id ? (
+                                    <button
+                                      onClick={() => navigate(`/employee-contacts?focus=${a.contact_id}`)}
+                                      className="font-semibold hover:text-primary hover:underline"
+                                    >
+                                      {a.profile_name}
+                                    </button>
+                                  ) : (
+                                    <span className="font-semibold">{a.profile_name}</span>
+                                  )}
+                                  {a.start_time && (
+                                    <span className="text-xs text-muted-foreground">
+                                      · {a.start_time.slice(0, 5)}
+                                    </span>
+                                  )}
+                                </div>
+                                {canEdit && !isPastDay && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    onClick={() => removeAssignment(a.id)}
                                   >
-                                    {a.profile_name}
-                                  </button>
-                                ) : (
-                                  <span className="font-semibold">{a.profile_name}</span>
-                                )}
-                                {a.start_time && (
-                                  <span className="text-xs text-muted-foreground">
-                                    · {a.start_time.slice(0, 5)}
-                                  </span>
+                                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                  </Button>
                                 )}
                               </div>
-                              {canEdit && !isPastDay && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7"
-                                  onClick={() => removeAssignment(a.id)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                </Button>
-                              )}
+                              <DayNoteEditor
+                                assignmentId={a.id}
+                                initialNote={a.notes}
+                                canEdit={canEditNotes && !isPastDay}
+                                onSave={updateAssignmentNotes}
+                              />
                             </li>
                           ))}
                         </ul>
@@ -760,35 +784,40 @@ const Schedule = () => {
                     {crew.length > 0 && (
                       <ul className="divide-y">
                         {crew.map((a) => (
-                          <li
-                            key={a.id}
-                            className="flex items-center justify-between px-4 py-2 text-sm"
-                          >
-                            <div>
-                              {a.contact_id ? (
-                                <button
-                                  onClick={() => navigate(`/employee-contacts?focus=${a.contact_id}`)}
-                                  className="font-medium hover:text-primary hover:underline"
-                                >
-                                  {a.profile_name}
-                                </button>
-                              ) : (
-                                <div className="font-medium">{a.profile_name}</div>
-                              )}
-                              <div className="text-xs text-muted-foreground">
-                                {a.start_time && <>{a.start_time.slice(0, 5)} · </>}
-                                {positionsByUser.get(a.user_id)?.title ?? "—"}
+                          <li key={a.id} className="px-4 py-2 text-sm">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                {a.contact_id ? (
+                                  <button
+                                    onClick={() => navigate(`/employee-contacts?focus=${a.contact_id}`)}
+                                    className="font-medium hover:text-primary hover:underline"
+                                  >
+                                    {a.profile_name}
+                                  </button>
+                                ) : (
+                                  <div className="font-medium">{a.profile_name}</div>
+                                )}
+                                <div className="text-xs text-muted-foreground">
+                                  {a.start_time && <>{a.start_time.slice(0, 5)} · </>}
+                                  {positionsByUser.get(a.user_id)?.title ?? "—"}
+                                </div>
                               </div>
+                              {canEdit && !isPastDay && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => removeAssignment(a.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              )}
                             </div>
-                            {canEdit && !isPastDay && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => removeAssignment(a.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                            )}
+                            <DayNoteEditor
+                              assignmentId={a.id}
+                              initialNote={a.notes}
+                              canEdit={canEditNotes && !isPastDay}
+                              onSave={updateAssignmentNotes}
+                            />
                           </li>
                         ))}
                       </ul>
@@ -913,5 +942,92 @@ const Schedule = () => {
     </div>
   );
 };
+
+function DayNoteEditor({
+  assignmentId,
+  initialNote,
+  canEdit,
+  onSave,
+}: {
+  assignmentId: string;
+  initialNote: string | null;
+  canEdit: boolean;
+  onSave: (id: string, notes: string) => Promise<boolean>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(initialNote ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setValue(initialNote ?? "");
+  }, [initialNote, assignmentId]);
+
+  if (!editing) {
+    return (
+      <div className="mt-1 flex items-start gap-2">
+        {initialNote ? (
+          <p className="flex-1 whitespace-pre-wrap rounded bg-muted/40 px-2 py-1 text-xs text-foreground/80">
+            {initialNote}
+          </p>
+        ) : (
+          <p className="flex-1 text-xs italic text-muted-foreground">No note for this day</p>
+        )}
+        {canEdit && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-[10px] uppercase tracking-wider"
+            onClick={() => setEditing(true)}
+          >
+            {initialNote ? "Edit" : "Add note"}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-1 space-y-1">
+      <Textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Today's note for this person…"
+        rows={2}
+        className="text-xs"
+        autoFocus
+      />
+      <div className="flex justify-end gap-1">
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2"
+          disabled={saving}
+          onClick={() => {
+            setValue(initialNote ?? "");
+            setEditing(false);
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          className="h-7 px-3"
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true);
+            const ok = await onSave(assignmentId, value);
+            setSaving(false);
+            if (ok) setEditing(false);
+          }}
+        >
+          {saving ? "Saving…" : "Save"}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default Schedule;
