@@ -279,7 +279,17 @@ const Schedule = () => {
     }
     const dates = buildDateRange(formStartDate, formEndDate, formSkipWeekends);
     if (dates.length === 0) {
-      toast({ title: "Date range is empty", variant: "destructive" });
+      const startD = parseISO(formStartDate);
+      const endD = parseISO(formEndDate);
+      const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
+      const allWeekend = isWeekend(startD) && isWeekend(endD) && formSkipWeekends;
+      toast({
+        title: allWeekend ? "Range is weekend-only" : "Date range is empty",
+        description: allWeekend
+          ? "Your start and end dates fall on weekends. Uncheck 'Skip weekends' or pick weekday dates."
+          : "End date must be on or after start date.",
+        variant: "destructive",
+      });
       return;
     }
     const rows = dates.flatMap((dt) =>
@@ -360,14 +370,21 @@ const Schedule = () => {
             </div>
           )}
           {canEdit && !isPastDay && (
-            <Dialog
+          <Dialog
               open={dialogOpen}
               onOpenChange={(o) => {
                 setDialogOpen(o);
                 if (o) {
-                  const base = isBefore(parseISO(selectedDate), today) ? todayIso : selectedDate;
-                  setFormStartDate(base);
-                  setFormEndDate(base);
+                  let base = isBefore(parseISO(selectedDate), today) ? today : parseISO(selectedDate);
+                  // If skip-weekends is on and base lands on a weekend, advance to Monday
+                  if (formSkipWeekends) {
+                    while (base.getDay() === 0 || base.getDay() === 6) {
+                      base = addDays(base, 1);
+                    }
+                  }
+                  const baseIso = format(base, "yyyy-MM-dd");
+                  setFormStartDate(baseIso);
+                  setFormEndDate(baseIso);
                 }
               }}
             >
