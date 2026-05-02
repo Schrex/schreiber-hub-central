@@ -5,8 +5,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// "Brian" — warm, mature American male, fits the caring-foreman tone.
-const FOREMAN_VOICE_ID = 'nPczCjzI2devNBz1zQrb'
+// Default: "Brian" — warm, mature American male, fits the caring-foreman tone.
+// Can be overridden per-project via the `safety_talk_voice_id` row in app_settings.
+const DEFAULT_VOICE_ID = 'nPczCjzI2devNBz1zQrb'
+
+async function resolveVoiceId(supabase: any): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'safety_talk_voice_id')
+      .maybeSingle()
+    const v = data?.value
+    const id = typeof v === 'string' ? v : (v?.voice_id ?? '')
+    return (id && id.trim()) || DEFAULT_VOICE_ID
+  } catch {
+    return DEFAULT_VOICE_ID
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
