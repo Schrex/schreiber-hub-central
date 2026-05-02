@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Briefcase, DollarSign, TrendingUp, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, Briefcase, DollarSign, TrendingUp, Lock, Sparkles, CalendarClock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
