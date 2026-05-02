@@ -259,11 +259,29 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
 };
 
 /* -------------------- Sessions (Foreman flow) -------------------- */
+interface ScheduledCrew { user_id: string; display_name: string; role_on_job: string | null; }
+
+const todayIso = () => {
+  const d = new Date();
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${dd}`;
+};
+
 const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foremanName: string; isAdmin: boolean }) => {
   const [talks, setTalks] = useState<ToolboxTalk[]>([]);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [activeSession, setActiveSession] = useState<SessionRow | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // start-flow state
+  const [todaysJobs, setTodaysJobs] = useState<{ id: string; name: string }[]>([]);
+  const [pickedJobId, setPickedJobId] = useState<string>("");
+  const [crew, setCrew] = useState<ScheduledCrew[]>([]);
+  const [includeIds, setIncludeIds] = useState<Set<string>>(new Set());
+  const [selectedTalkId, setSelectedTalkId] = useState<string>("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiHint, setAiHint] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -277,13 +295,110 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
   };
   useEffect(() => { load(); }, []);
 
-  const startSession = async (talkId: string) => {
-    const { data, error } = await supabase.from("toolbox_talk_sessions").insert({
-      talk_id: talkId, foreman_id: userId, foreman_name: foremanName, status: "in_progress",
-    }).select("*").single();
-    if (error) { toast.error(error.message); return; }
-    setActiveSession(data as SessionRow);
-    load();
+  // Load today's scheduled jobs for this foreman
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const today = todayIso();
+      const { data } = await supabase
+        .from("schedule_assignments")
+        .select("job_id, jobs:jobs(id, name)")
+        .eq("user_id", userId)
+        .eq("assignment_date", today);
+      const seen = new Set<string>();
+      const list: { id: string; name: string }[] = [];
+      (data ?? []).forEach((r: any) => {
+        const j = r.jobs;
+        if (j && !seen.has(j.id)) { seen.add(j.id); list.push({ id: j.id, name: j.name }); }
+      });
+      setTodaysJobs(list);
+      if (list.length === 1) setPickedJobId(list[0].id);
+    })();
+  }, [userId]);
+
+  // When job picked, load crew on schedule for that job today (excluding foreman themself)
+  useEffect(() => {
+    if (!pickedJobId) { setCrew([]); setIncludeIds(new Set()); return; }
+    (async () => {
+      const today = todayIso();
+      const { data: rows } = await supabase
+        .from("schedule_assignments")
+        .select("user_id, role_on_job")
+        .eq("job_id", pickedJobId)
+        .eq("assignment_date", today);
+      const userIds = Array.from(new Set((rows ?? []).map((r: any) => r.user_id))).filter((u) => u !== userId);
+      if (userIds.length === 0) { setCrew([]); setIncludeIds(new Set()); return; }
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, display_name")
+        .in("user_id", userIds);
+      const nameMap = new Map<string, string>();
+      (profs ?? []).forEach((p: any) => nameMap.set(p.user_id, p.display_name ?? "Crew member"));
+      const out: ScheduledCrew[] = (rows ?? [])
+        .filter((r: any) => r.user_id !== userId)
+        .reduce((acc: ScheduledCrew[], r: any) => {
+          if (acc.find(a => a.user_id === r.user_id)) return acc;
+          acc.push({ user_id: r.user_id, display_name: nameMap.get(r.user_id) ?? "Crew member", role_on_job: r.role_on_job });
+          return acc;
+        }, []);
+      setCrew(out);
+      setIncludeIds(new Set(out.map(o => o.user_id)));
+    })();
+  }, [pickedJobId, userId]);
+
+  const suggestTopic = async () => {
+    if (!pickedJobId) return;
+    setAiBusy(true);
+    setAiHint(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("suggest-safety-topic", {
+        body: { jobId: pickedJobId, date: todayIso() },
+      });
+      if (error) throw error;
+      if (data?.match_talk_id && talks.find(t => t.id === data.match_talk_id)) {
+        setSelectedTalkId(data.match_talk_id);
+        setAiHint(`AI matched: "${talks.find(t => t.id === data.match_talk_id)?.title}" — ${data.reasoning ?? ""}`);
+      } else if (data?.suggested_topic) {
+        setAiHint(`AI suggests: "${data.suggested_topic}" — ${data.reasoning ?? ""}. No close match in library — pick the closest or generate a new talk in the Talks tab.`);
+      } else {
+        setAiHint("No suggestion available.");
+      }
+    } catch (e: any) {
+      toast.error(e.message ?? "Suggestion failed");
+    } finally { setAiBusy(false); }
+  };
+
+  const startSession = async () => {
+    if (!selectedTalkId || !pickedJobId) { toast.error("Pick a job and a talk first"); return; }
+    setStarting(true);
+    try {
+      const { data: sess, error: sErr } = await supabase.from("toolbox_talk_sessions").insert({
+        talk_id: selectedTalkId, foreman_id: userId, foreman_name: foremanName, status: "in_progress",
+        job_id: pickedJobId, topic_source: "ai_schedule", delivery_mode: "remote",
+      }).select("*").single();
+      if (sErr) throw sErr;
+
+      const includes = crew.filter(c => includeIds.has(c.user_id));
+      if (includes.length > 0) {
+        const rows = includes.map(c => ({
+          session_id: sess.id, user_id: c.user_id, attendee_name: c.display_name, source: "schedule",
+        }));
+        const { error: aErr } = await supabase.from("toolbox_talk_attendees").insert(rows);
+        if (aErr) throw aErr;
+      }
+
+      // Notify
+      const { error: nErr } = await supabase.functions.invoke("notify-talk-attendees", {
+        body: { sessionId: sess.id },
+      });
+      if (nErr) console.warn("notify failed", nErr);
+      else toast.success(`Notified ${includes.length} crew member${includes.length === 1 ? "" : "s"}`);
+
+      setActiveSession(sess as SessionRow);
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not start session");
+    } finally { setStarting(false); }
   };
 
   if (activeSession) {
@@ -292,27 +407,68 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground mb-2">Start a talk</h2>
-        {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        <div className="space-y-2">
-          {talks.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => startSession(t.id)}
-              className="w-full text-left rounded-xl border border-border bg-surface p-3 hover:border-primary/40 transition-colors"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  {t.category && <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t.category}</p>}
-                  <p className="font-display text-sm uppercase tracking-wide">{t.title}</p>
-                </div>
-                <Play className="h-4 w-4 text-primary" />
-              </div>
-            </button>
-          ))}
-          {!loading && talks.length === 0 && <p className="text-sm text-muted-foreground">No talks in library yet.</p>}
+      <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">Start today's talk</h2>
+
+        <div className="space-y-1">
+          <Label className="text-xs">Job</Label>
+          {todaysJobs.length === 0 ? (
+            <p className="text-xs text-muted-foreground">You're not on the schedule today. Pick a talk manually below.</p>
+          ) : (
+            <Select value={pickedJobId} onValueChange={setPickedJobId}>
+              <SelectTrigger><SelectValue placeholder="Today's job" /></SelectTrigger>
+              <SelectContent>
+                {todaysJobs.map(j => <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
         </div>
+
+        {pickedJobId && (
+          <div className="space-y-1">
+            <Label className="text-xs">Crew on schedule today ({crew.length})</Label>
+            {crew.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nobody else scheduled with you today.</p>
+            ) : (
+              <div className="space-y-1 rounded-lg border border-border p-2">
+                {crew.map(c => (
+                  <label key={c.user_id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={includeIds.has(c.user_id)}
+                      onChange={(e) => {
+                        const next = new Set(includeIds);
+                        if (e.target.checked) next.add(c.user_id); else next.delete(c.user_id);
+                        setIncludeIds(next);
+                      }}
+                    />
+                    <span className="truncate">{c.display_name}{c.role_on_job ? <span className="text-muted-foreground"> · {c.role_on_job}</span> : null}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">Talk</Label>
+            <Button size="sm" variant="ghost" onClick={suggestTopic} disabled={!pickedJobId || aiBusy}>
+              <Sparkles className="mr-1 h-3 w-3" />{aiBusy ? "Thinking…" : "Suggest from schedule"}
+            </Button>
+          </div>
+          <Select value={selectedTalkId} onValueChange={setSelectedTalkId}>
+            <SelectTrigger><SelectValue placeholder="Pick a talk" /></SelectTrigger>
+            <SelectContent>
+              {talks.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {aiHint && <p className="text-[11px] text-muted-foreground">{aiHint}</p>}
+        </div>
+
+        <Button className="w-full" onClick={startSession} disabled={!selectedTalkId || starting}>
+          <Play className="mr-2 h-4 w-4" />{starting ? "Starting…" : `Start talk & notify ${includeIds.size} crew`}
+        </Button>
       </div>
 
       <div>

@@ -1449,6 +1449,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          link_url: string | null
+          metadata: Json
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link_url?: string | null
+          metadata?: Json
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link_url?: string | null
+          metadata?: Json
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       onboarding_document_templates: {
         Row: {
           category: string | null
@@ -2129,42 +2165,66 @@ export type Database = {
       }
       toolbox_talk_attendees: {
         Row: {
+          access_token: string | null
           attendee_name: string
           created_at: string
           id: string
+          initial_quiz_score: number | null
+          initial_quiz_total: number | null
+          notified_at: string | null
+          notify_channel: string | null
+          phone_snapshot: string | null
           quiz_answers: Json | null
+          quiz_attempts: number
           quiz_completed_at: string | null
           quiz_score: number | null
           quiz_total: number | null
           session_id: string
           signature_data: string | null
           signed_at: string | null
+          source: string
           user_id: string | null
         }
         Insert: {
+          access_token?: string | null
           attendee_name: string
           created_at?: string
           id?: string
+          initial_quiz_score?: number | null
+          initial_quiz_total?: number | null
+          notified_at?: string | null
+          notify_channel?: string | null
+          phone_snapshot?: string | null
           quiz_answers?: Json | null
+          quiz_attempts?: number
           quiz_completed_at?: string | null
           quiz_score?: number | null
           quiz_total?: number | null
           session_id: string
           signature_data?: string | null
           signed_at?: string | null
+          source?: string
           user_id?: string | null
         }
         Update: {
+          access_token?: string | null
           attendee_name?: string
           created_at?: string
           id?: string
+          initial_quiz_score?: number | null
+          initial_quiz_total?: number | null
+          notified_at?: string | null
+          notify_channel?: string | null
+          phone_snapshot?: string | null
           quiz_answers?: Json | null
+          quiz_attempts?: number
           quiz_completed_at?: string | null
           quiz_score?: number | null
           quiz_total?: number | null
           session_id?: string
           signature_data?: string | null
           signed_at?: string | null
+          source?: string
           user_id?: string | null
         }
         Relationships: [
@@ -2182,6 +2242,7 @@ export type Database = {
           audio_path: string | null
           completed_at: string | null
           created_at: string
+          delivery_mode: string
           foreman_id: string
           foreman_name: string | null
           id: string
@@ -2191,6 +2252,7 @@ export type Database = {
           started_at: string
           status: string
           talk_id: string
+          topic_source: string | null
           transcript: string | null
           updated_at: string
         }
@@ -2198,6 +2260,7 @@ export type Database = {
           audio_path?: string | null
           completed_at?: string | null
           created_at?: string
+          delivery_mode?: string
           foreman_id: string
           foreman_name?: string | null
           id?: string
@@ -2207,6 +2270,7 @@ export type Database = {
           started_at?: string
           status?: string
           talk_id: string
+          topic_source?: string | null
           transcript?: string | null
           updated_at?: string
         }
@@ -2214,6 +2278,7 @@ export type Database = {
           audio_path?: string | null
           completed_at?: string | null
           created_at?: string
+          delivery_mode?: string
           foreman_id?: string
           foreman_name?: string | null
           id?: string
@@ -2223,6 +2288,7 @@ export type Database = {
           started_at?: string
           status?: string
           talk_id?: string
+          topic_source?: string | null
           transcript?: string | null
           updated_at?: string
         }
