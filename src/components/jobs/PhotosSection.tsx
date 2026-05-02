@@ -261,18 +261,20 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
 
     setUploading(true);
     setUploadPct(0);
-    const today = toLocalDate();
     let done = 0;
     try {
       for (const original of files) {
+        const exifDate = await readExifDate(original);
+        const captured = exifDate ?? new Date(original.lastModified || Date.now());
+        const takenOn = toLocalDate(captured);
         const file = original.type.startsWith("image/")
-          ? await stampImage(original, { jobLabel, address, uploader: displayName }).catch((err) => {
+          ? await stampImage(original, { jobLabel, address, uploader: displayName }, captured).catch((err) => {
               console.warn("Stamp failed, uploading original", err);
               return original;
             })
           : original;
         const ext = file.name.split(".").pop() || "jpg";
-        const path = `${jobId}/${today}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const path = `${jobId}/${takenOn}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
         if (file.size > RESUMABLE_THRESHOLD) {
           await resumableUpload("job-photos", path, file, (pct) => setUploadPct(pct));
         } else {
@@ -289,7 +291,7 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
           file_path: path,
           mime_type: file.type,
           file_size: file.size,
-          taken_on: today,
+          taken_on: takenOn,
           uploaded_by_name: displayName,
         });
         if (insErr) throw insErr;
