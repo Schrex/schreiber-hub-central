@@ -113,7 +113,7 @@ const Schedule = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }] = await Promise.all([
+    const [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }, { data: rolesData }] = await Promise.all([
       supabase
         .from("schedule_assignments")
         .select("*, jobs(id,name,address,job_number)")
@@ -137,7 +137,23 @@ const Schedule = () => {
         .eq("status", "approved")
         .lte("start_date", selectedDate)
         .gte("end_date", selectedDate),
+      supabase.from("user_roles").select("user_id, role"),
     ]);
+
+    // Build a per-user role set; "office staff" = office or admin AND not foreman/employee
+    const rolesByUser = new Map<string, Set<string>>();
+    (rolesData ?? []).forEach((r: { user_id: string; role: string }) => {
+      const set = rolesByUser.get(r.user_id) ?? new Set<string>();
+      set.add(r.role);
+      rolesByUser.set(r.user_id, set);
+    });
+    const isOffice = (uid: string | null) => {
+      if (!uid) return false;
+      const s = rolesByUser.get(uid);
+      if (!s) return false;
+      const fieldRole = s.has("foreman") || s.has("employee");
+      return (s.has("office") || s.has("admin")) && !fieldRole;
+    };
 
     // Build a unified employee list: every active contact + any active profile not already linked
     const linkedUserIds = new Set(
@@ -148,6 +164,7 @@ const Schedule = () => {
       user_id: row.converted_user_id ?? null,
       display_name: row.name,
       has_login: !!row.converted_user_id,
+      is_office: isOffice(row.converted_user_id ?? null),
     }));
     const orphanProfiles: Profile[] = (pr ?? [])
       .filter((p) => !p.contact_id && !linkedUserIds.has(p.user_id))
@@ -156,6 +173,7 @@ const Schedule = () => {
         user_id: p.user_id,
         display_name: p.display_name,
         has_login: true,
+        is_office: isOffice(p.user_id),
       }));
     const unified = [...fromContacts, ...orphanProfiles].sort((x, y) =>
       (x.display_name ?? "").localeCompare(y.display_name ?? ""),
