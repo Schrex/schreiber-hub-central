@@ -15,6 +15,7 @@ import { JobInfoSection } from "@/components/jobs/JobInfoSection";
 import { JobLookahead } from "@/components/jobs/JobLookahead";
 import { SafetyInspectionButton } from "@/components/jobs/SafetyInspectionButton";
 import { RequestTruckButton } from "@/components/jobs/RequestTruckButton";
+import { ForemanPicker } from "@/components/jobs/ForemanPicker";
 
 interface Job {
   id: string;
@@ -31,6 +32,7 @@ interface Job {
   start_date: string | null;
   end_date: string | null;
   notes: string | null;
+  foreman_id: string | null;
 }
 
 const JobDetail = () => {
@@ -134,6 +136,11 @@ const JobDetail = () => {
             </h2>
             {job.customer && <Row label="Customer" value={job.customer} />}
             {job.gc && <Row label="GC" value={job.gc} />}
+            <ForemanPicker
+              jobId={job.id}
+              foremanId={job.foreman_id}
+              onChange={(newId) => setJob((j) => (j ? { ...j, foreman_id: newId } : j))}
+            />
             {job.on_site_contact_name && (
               <Row icon={<User className="h-3.5 w-3.5" />} label="On-site" value={job.on_site_contact_name} />
             )}
