@@ -244,6 +244,12 @@ const Schedule = () => {
     }));
   }, [assignments]);
 
+  // Hide office staff from schedule lists unless toggle is on
+  const visibleProfiles = useMemo(
+    () => (showOffice ? profiles : profiles.filter((p) => !p.is_office)),
+    [profiles, showOffice],
+  );
+
   // Per-employee roster: assigned (with jobs), off (approved time-off), unassigned, or no-login
   const roster = useMemo(() => {
     const offMap = new Map<string, TimeOff>();
@@ -254,7 +260,7 @@ const Schedule = () => {
       arr.push(a);
       asgMap.set(a.user_id, arr);
     });
-    return profiles.map((p) => {
+    return visibleProfiles.map((p) => {
       const off = p.user_id ? offMap.get(p.user_id) : undefined;
       const asg = p.user_id ? asgMap.get(p.user_id) ?? [] : [];
       let status: "assigned" | "off" | "unassigned" | "no_login";
