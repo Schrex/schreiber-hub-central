@@ -18,6 +18,8 @@ interface Body {
   address?: string | null
   department?: string | null
   notes?: string | null
+  date_of_birth?: string | null
+  hire_date?: string | null
   // Optional login
   createLogin?: boolean
   loginEmail?: string
