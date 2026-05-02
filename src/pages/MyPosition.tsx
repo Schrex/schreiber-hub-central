@@ -45,6 +45,7 @@ const MyPosition = () => {
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [promotions, setPromotions] = useState<PromotionTarget[]>([]);
+  const [hireDate, setHireDate] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -56,6 +57,22 @@ const MyPosition = () => {
         .order("effective_date", { ascending: false });
       if (!error && data) setRows(data as unknown as AssignmentRow[]);
       setLoading(false);
+
+      // Hire date from linked employee_contact
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("contact_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const cid = (prof as { contact_id?: string | null } | null)?.contact_id;
+      if (cid) {
+        const { data: contact } = await supabase
+          .from("employee_contacts")
+          .select("hire_date")
+          .eq("id", cid)
+          .maybeSingle();
+        setHireDate((contact?.hire_date as string | null) ?? null);
+      }
     })();
   }, [user]);
 
