@@ -820,8 +820,6 @@ const Schedule = () => {
                             />
                           </li>
                         ))}
-                          </li>
-                        ))}
                       </ul>
                     )}
                   </Card>
