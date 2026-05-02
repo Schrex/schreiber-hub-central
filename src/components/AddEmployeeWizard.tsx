@@ -36,6 +36,8 @@ const schema = z.object({
   address: z.string().trim().max(500).optional().or(z.literal("")),
   department: z.string().trim().max(100).optional().or(z.literal("")),
   notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  date_of_birth: z.string().trim().optional().or(z.literal("")),
+  hire_date: z.string().trim().optional().or(z.literal("")),
 });
 
 const emptyForm = {
@@ -47,6 +49,8 @@ const emptyForm = {
   address: "",
   department: "",
   notes: "",
+  date_of_birth: "",
+  hire_date: "",
 };
 
 interface Props {
@@ -140,6 +144,8 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
       address: parsed.data.address || null,
       department: parsed.data.department || null,
       notes: parsed.data.notes || null,
+      date_of_birth: parsed.data.date_of_birth || null,
+      hire_date: parsed.data.hire_date || null,
     };
     if (createLogin) {
       payload.createLogin = true;
@@ -235,6 +241,26 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
             <div>
               <Label htmlFor="ae-dept">Department</Label>
               <Input id="ae-dept" placeholder="Field, Office…" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="ae-dob">Birthday</Label>
+                <Input
+                  id="ae-dob"
+                  type="date"
+                  value={form.date_of_birth}
+                  onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ae-hire">Hire date</Label>
+                <Input
+                  id="ae-hire"
+                  type="date"
+                  value={form.hire_date}
+                  onChange={(e) => setForm({ ...form, hire_date: e.target.value })}
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="ae-notes">Notes</Label>
