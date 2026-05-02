@@ -4,6 +4,7 @@ import { template as timeOffApproved } from './time-off-approved.tsx'
 import { template as safetyInspectionRequest } from './safety-inspection-request.tsx'
 import { template as truckRequestSubmitted } from './truck-request-submitted.tsx'
 import { template as truckRequestDecision } from './truck-request-decision.tsx'
+import { template as safetyTalkSummary } from './safety-talk-summary.tsx'
 
 export interface TemplateEntry {
   component: React.ComponentType<any>
@@ -19,4 +20,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'safety-inspection-request': safetyInspectionRequest,
   'truck-request-submitted': truckRequestSubmitted,
   'truck-request-decision': truckRequestDecision,
+  'safety-talk-summary': safetyTalkSummary,
 }
