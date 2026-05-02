@@ -5,9 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Default: "Brian" — warm, mature American male, fits the caring-foreman tone.
+// Default: "George" — mature, grounded British-American male. Warmer and
+// more natural-sounding than Brian for the foreman tone.
 // Can be overridden per-project via the `safety_talk_voice_id` row in app_settings.
-const DEFAULT_VOICE_ID = 'nPczCjzI2devNBz1zQrb'
+const DEFAULT_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'
 
 async function resolveVoiceId(supabase: any): Promise<string> {
   try {
