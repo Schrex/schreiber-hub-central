@@ -144,6 +144,8 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
       address: parsed.data.address || null,
       department: parsed.data.department || null,
       notes: parsed.data.notes || null,
+      date_of_birth: parsed.data.date_of_birth || null,
+      hire_date: parsed.data.hire_date || null,
     };
     if (createLogin) {
       payload.createLogin = true;
