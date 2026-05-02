@@ -466,9 +466,12 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
           {aiHint && <p className="text-[11px] text-muted-foreground">{aiHint}</p>}
         </div>
 
-        <Button className="w-full" onClick={startSession} disabled={!selectedTalkId || starting}>
-          <Play className="mr-2 h-4 w-4" />{starting ? "Starting…" : `Start talk & notify ${includeIds.size} crew`}
+        <Button className="w-full" size="lg" onClick={startSession} disabled={!selectedTalkId || starting}>
+          <Play className="mr-2 h-4 w-4" />{starting ? "Starting…" : `Confirm & start — notify ${includeIds.size} crew`}
         </Button>
+        <p className="text-[11px] text-muted-foreground text-center">
+          Crew gets a notification on their phones to join, take the quiz, and sign.
+        </p>
       </div>
 
       <div>
