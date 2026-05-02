@@ -36,6 +36,8 @@ const schema = z.object({
   address: z.string().trim().max(500).optional().or(z.literal("")),
   department: z.string().trim().max(100).optional().or(z.literal("")),
   notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  date_of_birth: z.string().trim().optional().or(z.literal("")),
+  hire_date: z.string().trim().optional().or(z.literal("")),
 });
 
 const emptyForm = {
@@ -47,6 +49,8 @@ const emptyForm = {
   address: "",
   department: "",
   notes: "",
+  date_of_birth: "",
+  hire_date: "",
 };
 
 interface Props {
