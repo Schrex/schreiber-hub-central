@@ -112,6 +112,44 @@ const AdminUsers = () => {
     toast.success(value ? "Tagged as driver" : "Driver tag removed");
   };
 
+  const updateContactDate = async (
+    row: UserRow,
+    field: "date_of_birth" | "hire_date",
+    value: string,
+  ) => {
+    const v = value || null;
+    let cid = row.contact_id;
+    // Auto-create a contact if none is linked yet
+    if (!cid) {
+      const { data: created, error: createErr } = await supabase
+        .from("employee_contacts")
+        .insert({
+          name: row.display_name ?? row.email ?? "Employee",
+          email: row.email,
+          converted_user_id: row.user_id,
+          is_active: row.is_active,
+          [field]: v,
+        })
+        .select("id")
+        .single();
+      if (createErr) return toast.error(createErr.message);
+      cid = created.id as string;
+      await supabase.from("profiles").update({ contact_id: cid }).eq("user_id", row.user_id);
+    } else {
+      const { error } = await supabase
+        .from("employee_contacts")
+        .update({ [field]: v })
+        .eq("id", cid);
+      if (error) return toast.error(error.message);
+    }
+    setRows((rs) =>
+      rs.map((x) =>
+        x.user_id === row.user_id ? { ...x, contact_id: cid, [field]: v } : x,
+      ),
+    );
+    toast.success(field === "date_of_birth" ? "Birthday saved" : "Hire date saved");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-3xl px-4 py-6">
