@@ -17,6 +17,7 @@ import { SafetyInspectionButton } from "@/components/jobs/SafetyInspectionButton
 import { RequestTruckButton } from "@/components/jobs/RequestTruckButton";
 import { ForemanPicker } from "@/components/jobs/ForemanPicker";
 import { JobContactsSection } from "@/components/jobs/JobContactsSection";
+import { AccidentReportButton } from "@/components/safety/AccidentReportDialog";
 
 interface Job {
   id: string;
@@ -186,6 +187,8 @@ const JobDetail = () => {
         )}
 
         <SafetyInspectionButton jobId={job.id} />
+
+        <AccidentReportButton presetJob={{ id: job.id, name: job.name, job_number: job.job_number }} variant="outline" />
 
         {mapsUrl && (
           <Button asChild variant="outline" className="w-full">
