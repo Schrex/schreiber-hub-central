@@ -19,7 +19,10 @@ interface Props {
   presetJob?: { id: string; name: string; job_number: string | null } | null;
 }
 
-const incidentTypes = [
+type IncidentType = "injury" | "near_miss" | "property_damage" | "vehicle" | "other";
+type Severity = "none" | "first_aid" | "medical_treatment" | "lost_time" | "fatality";
+
+const incidentTypes: { value: IncidentType; label: string }[] = [
   { value: "injury", label: "Injury" },
   { value: "near_miss", label: "Near miss" },
   { value: "property_damage", label: "Property damage" },
@@ -27,7 +30,7 @@ const incidentTypes = [
   { value: "other", label: "Other" },
 ];
 
-const severities = [
+const severities: { value: Severity; label: string }[] = [
   { value: "none", label: "No injury" },
   { value: "first_aid", label: "First aid only" },
   { value: "medical_treatment", label: "Medical treatment needed" },
@@ -49,8 +52,8 @@ export const AccidentReportDialog = ({ open, onOpenChange, presetJob }: Props) =
   const [jobId, setJobId] = useState<string>(presetJob?.id ?? "");
   const [incidentAt, setIncidentAt] = useState(nowLocalISO());
   const [location, setLocation] = useState("");
-  const [incidentType, setIncidentType] = useState("injury");
-  const [severity, setSeverity] = useState("none");
+  const [incidentType, setIncidentType] = useState<IncidentType>("injury");
+  const [severity, setSeverity] = useState<Severity>("none");
   const [description, setDescription] = useState("");
   const [injuredName, setInjuredName] = useState("");
   const [bodyPart, setBodyPart] = useState("");
