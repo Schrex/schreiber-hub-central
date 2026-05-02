@@ -14,6 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
+      accident_reports: {
+        Row: {
+          body_part: string | null
+          contributing_factors: string | null
+          created_at: string
+          description: string
+          id: string
+          immediate_action: string | null
+          incident_at: string
+          incident_type: Database["public"]["Enums"]["accident_incident_type"]
+          injured_person_name: string | null
+          job_id: string | null
+          job_name_snapshot: string | null
+          job_number_snapshot: string | null
+          location: string | null
+          office_notes: string | null
+          photo_paths: string[]
+          reported_by: string
+          reported_by_email: string | null
+          reported_by_name: string
+          severity: Database["public"]["Enums"]["accident_severity"]
+          signature_data: string | null
+          status: Database["public"]["Enums"]["accident_status"]
+          updated_at: string
+          witnesses: string | null
+        }
+        Insert: {
+          body_part?: string | null
+          contributing_factors?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          immediate_action?: string | null
+          incident_at: string
+          incident_type?: Database["public"]["Enums"]["accident_incident_type"]
+          injured_person_name?: string | null
+          job_id?: string | null
+          job_name_snapshot?: string | null
+          job_number_snapshot?: string | null
+          location?: string | null
+          office_notes?: string | null
+          photo_paths?: string[]
+          reported_by: string
+          reported_by_email?: string | null
+          reported_by_name: string
+          severity?: Database["public"]["Enums"]["accident_severity"]
+          signature_data?: string | null
+          status?: Database["public"]["Enums"]["accident_status"]
+          updated_at?: string
+          witnesses?: string | null
+        }
+        Update: {
+          body_part?: string | null
+          contributing_factors?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          immediate_action?: string | null
+          incident_at?: string
+          incident_type?: Database["public"]["Enums"]["accident_incident_type"]
+          injured_person_name?: string | null
+          job_id?: string | null
+          job_name_snapshot?: string | null
+          job_number_snapshot?: string | null
+          location?: string | null
+          office_notes?: string | null
+          photo_paths?: string[]
+          reported_by?: string
+          reported_by_email?: string | null
+          reported_by_name?: string
+          severity?: Database["public"]["Enums"]["accident_severity"]
+          signature_data?: string | null
+          status?: Database["public"]["Enums"]["accident_status"]
+          updated_at?: string
+          witnesses?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accident_reports_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           key: string
@@ -2693,6 +2779,19 @@ export type Database = {
       }
     }
     Enums: {
+      accident_incident_type:
+        | "injury"
+        | "near_miss"
+        | "property_damage"
+        | "vehicle"
+        | "other"
+      accident_severity:
+        | "none"
+        | "first_aid"
+        | "medical_treatment"
+        | "lost_time"
+        | "fatality"
+      accident_status: "submitted" | "in_review" | "closed"
       app_role: "employee" | "foreman" | "office" | "admin"
       clothing_order_status:
         | "requested"
@@ -2882,6 +2981,21 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      accident_incident_type: [
+        "injury",
+        "near_miss",
+        "property_damage",
+        "vehicle",
+        "other",
+      ],
+      accident_severity: [
+        "none",
+        "first_aid",
+        "medical_treatment",
+        "lost_time",
+        "fatality",
+      ],
+      accident_status: ["submitted", "in_review", "closed"],
       app_role: ["employee", "foreman", "office", "admin"],
       clothing_order_status: [
         "requested",
