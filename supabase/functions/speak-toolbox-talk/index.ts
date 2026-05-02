@@ -7,7 +7,7 @@ const corsHeaders = {
 
 // Deepgram Aura voice. "aura-orion-en" = deep, mature male — best foreman fit.
 // Alternatives: aura-arcas-en (warm male), aura-perseus-en (authoritative male).
-const DEFAULT_DEEPGRAM_VOICE = 'aura-orion-en'
+const DEFAULT_DEEPGRAM_VOICE = 'aura-2-zeus-en'
 const DEFAULT_ELEVEN_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'
 
 async function resolveVoice(supabase: any): Promise<{ deepgram: string; eleven: string }> {
