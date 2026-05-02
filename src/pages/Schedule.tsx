@@ -47,6 +47,7 @@ type Profile = {
   display_name: string | null;
   contact_id: string | null;
   has_login: boolean;
+  is_office: boolean;
 };
 type Assignment = {
   id: string;
@@ -85,6 +86,15 @@ const Schedule = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"day" | "week">("day");
+  const [showOffice, setShowOffice] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("schedule.showOffice") === "1";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("schedule.showOffice", showOffice ? "1" : "0");
+    }
+  }, [showOffice]);
 
   // form
   const [formJob, setFormJob] = useState<string>("");
@@ -103,7 +113,7 @@ const Schedule = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }] = await Promise.all([
+    const [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }, { data: rolesData }] = await Promise.all([
       supabase
         .from("schedule_assignments")
         .select("*, jobs(id,name,address,job_number)")
@@ -127,7 +137,23 @@ const Schedule = () => {
         .eq("status", "approved")
         .lte("start_date", selectedDate)
         .gte("end_date", selectedDate),
+      supabase.from("user_roles").select("user_id, role"),
     ]);
+
+    // Build a per-user role set; "office staff" = office or admin AND not foreman/employee
+    const rolesByUser = new Map<string, Set<string>>();
+    (rolesData ?? []).forEach((r: { user_id: string; role: string }) => {
+      const set = rolesByUser.get(r.user_id) ?? new Set<string>();
+      set.add(r.role);
+      rolesByUser.set(r.user_id, set);
+    });
+    const isOffice = (uid: string | null) => {
+      if (!uid) return false;
+      const s = rolesByUser.get(uid);
+      if (!s) return false;
+      const fieldRole = s.has("foreman") || s.has("employee");
+      return (s.has("office") || s.has("admin")) && !fieldRole;
+    };
 
     // Build a unified employee list: every active contact + any active profile not already linked
     const linkedUserIds = new Set(
@@ -138,6 +164,7 @@ const Schedule = () => {
       user_id: row.converted_user_id ?? null,
       display_name: row.name,
       has_login: !!row.converted_user_id,
+      is_office: isOffice(row.converted_user_id ?? null),
     }));
     const orphanProfiles: Profile[] = (pr ?? [])
       .filter((p) => !p.contact_id && !linkedUserIds.has(p.user_id))
@@ -146,6 +173,7 @@ const Schedule = () => {
         user_id: p.user_id,
         display_name: p.display_name,
         has_login: true,
+        is_office: isOffice(p.user_id),
       }));
     const unified = [...fromContacts, ...orphanProfiles].sort((x, y) =>
       (x.display_name ?? "").localeCompare(y.display_name ?? ""),
@@ -216,6 +244,12 @@ const Schedule = () => {
     }));
   }, [assignments]);
 
+  // Hide office staff from schedule lists unless toggle is on
+  const visibleProfiles = useMemo(
+    () => (showOffice ? profiles : profiles.filter((p) => !p.is_office)),
+    [profiles, showOffice],
+  );
+
   // Per-employee roster: assigned (with jobs), off (approved time-off), unassigned, or no-login
   const roster = useMemo(() => {
     const offMap = new Map<string, TimeOff>();
@@ -226,7 +260,7 @@ const Schedule = () => {
       arr.push(a);
       asgMap.set(a.user_id, arr);
     });
-    return profiles.map((p) => {
+    return visibleProfiles.map((p) => {
       const off = p.user_id ? offMap.get(p.user_id) : undefined;
       const asg = p.user_id ? asgMap.get(p.user_id) ?? [] : [];
       let status: "assigned" | "off" | "unassigned" | "no_login";
@@ -236,7 +270,7 @@ const Schedule = () => {
       else status = "unassigned";
       return { profile: p, off, assignments: asg, status };
     });
-  }, [profiles, assignments, timeOff]);
+  }, [visibleProfiles, assignments, timeOff]);
 
   const counts = useMemo(() => {
     return roster.reduce(
@@ -468,7 +502,7 @@ const Schedule = () => {
                         type="button"
                         className="text-xs text-primary hover:underline"
                         onClick={() => {
-                          const assignableIds = profiles
+                          const assignableIds = visibleProfiles
                             .filter((p) => p.has_login && p.user_id)
                             .map((p) => p.user_id as string);
                           setFormUserIds(
@@ -477,13 +511,20 @@ const Schedule = () => {
                         }}
                       >
                         {formUserIds.length ===
-                        profiles.filter((p) => p.has_login).length
+                        visibleProfiles.filter((p) => p.has_login).length
                           ? "Clear all"
                           : "Select all"}
                       </button>
                     </div>
+                    <label className="mb-1 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox
+                        checked={showOffice}
+                        onCheckedChange={(v) => setShowOffice(v === true)}
+                      />
+                      Include office staff
+                    </label>
                     <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border p-2">
-                      {profiles.map((p) => {
+                      {visibleProfiles.map((p) => {
                         const disabled = !p.has_login || !p.user_id;
                         const checked = !disabled && formUserIds.includes(p.user_id as string);
                         return (
@@ -593,7 +634,7 @@ const Schedule = () => {
         {viewMode === "week" && canEdit && (
           <WeekGrid
             weekDays={weekDays}
-            profiles={profiles
+            profiles={visibleProfiles
               .filter((p) => p.has_login && p.user_id)
               .map((p) => ({ user_id: p.user_id as string, display_name: p.display_name }))}
             assignments={weekAssignments}
@@ -853,6 +894,13 @@ const Schedule = () => {
                 )}
               </div>
             </div>
+            <label className="mb-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={showOffice}
+                onCheckedChange={(v) => setShowOffice(v === true)}
+              />
+              Include office staff in schedule
+            </label>
             <Card className="divide-y">
               {roster.length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">
