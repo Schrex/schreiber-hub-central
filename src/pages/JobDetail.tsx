@@ -16,6 +16,7 @@ import { JobLookahead } from "@/components/jobs/JobLookahead";
 import { SafetyInspectionButton } from "@/components/jobs/SafetyInspectionButton";
 import { RequestTruckButton } from "@/components/jobs/RequestTruckButton";
 import { ForemanPicker } from "@/components/jobs/ForemanPicker";
+import { JobContactsSection } from "@/components/jobs/JobContactsSection";
 
 interface Job {
   id: string;
@@ -163,6 +164,10 @@ const JobDetail = () => {
               </div>
             )}
           </section>
+        )}
+
+        {canSeePrivate && (
+          <JobContactsSection jobId={job.id} jobName={job.name} foremanId={job.foreman_id} />
         )}
 
         {canSeeJobReport && <JobInfoSection jobNumber={job.job_number} />}
