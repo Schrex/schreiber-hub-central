@@ -105,6 +105,65 @@ const Schedule = () => {
   const [formStartDate, setFormStartDate] = useState<string>(todayStr());
   const [formEndDate, setFormEndDate] = useState<string>(todayStr());
   const [formSkipWeekends, setFormSkipWeekends] = useState<boolean>(true);
+  const [crewSuggestions, setCrewSuggestions] = useState<
+    { user_ids: string[]; days: number; source: "this-job" | "recent" }[]
+  >([]);
+
+  // Suggest crews recently scheduled together (last 30 days). Prefer same job.
+  useEffect(() => {
+    if (!dialogOpen) return;
+    let cancelled = false;
+    (async () => {
+      const since = format(addDays(new Date(), -30), "yyyy-MM-dd");
+      const baseQuery = supabase
+        .from("schedule_assignments")
+        .select("job_id, assignment_date, user_id")
+        .gte("assignment_date", since);
+      const { data: rows } = formJob
+        ? await baseQuery.eq("job_id", formJob)
+        : await baseQuery;
+      if (cancelled) return;
+
+      // Group user_ids by (job_id|date)
+      const byKey = new Map<string, Set<string>>();
+      (rows ?? []).forEach((r: { job_id: string; assignment_date: string; user_id: string }) => {
+        const key = `${r.job_id}|${r.assignment_date}`;
+        const set = byKey.get(key) ?? new Set<string>();
+        set.add(r.user_id);
+        byKey.set(key, set);
+      });
+
+      // Count crew signatures (sorted user_ids joined)
+      const counts = new Map<string, { user_ids: string[]; days: number }>();
+      byKey.forEach((set) => {
+        if (set.size < 2) return; // singletons aren't a "crew"
+        const ids = Array.from(set).sort();
+        const sig = ids.join(",");
+        const cur = counts.get(sig);
+        if (cur) cur.days += 1;
+        else counts.set(sig, { user_ids: ids, days: 1 });
+      });
+
+      // Filter active known users with logins (so apply works)
+      const validIds = new Set(
+        profiles.filter((p) => p.has_login && p.user_id).map((p) => p.user_id as string),
+      );
+      const suggestions = Array.from(counts.values())
+        .map((c) => ({
+          ...c,
+          user_ids: c.user_ids.filter((id) => validIds.has(id)),
+        }))
+        .filter((c) => c.user_ids.length >= 2 && c.days >= 3)
+        .sort((a, b) => b.days - a.days || b.user_ids.length - a.user_ids.length)
+        .slice(0, 3)
+        .map((c) => ({ ...c, source: formJob ? ("this-job" as const) : ("recent" as const) }));
+
+      setCrewSuggestions(suggestions);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [dialogOpen, formJob, profiles]);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(parseISO(selectedDate), { weekStartsOn: 1 });
@@ -494,6 +553,46 @@ const Schedule = () => {
                     />
                     Skip weekends
                   </label>
+
+                  {crewSuggestions.length > 0 && (
+                    <div className="rounded-md border border-primary/30 bg-primary/5 p-2">
+                      <div className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+                        <Users className="h-3 w-3" /> Suggested crews
+                      </div>
+                      <ul className="space-y-1">
+                        {crewSuggestions.map((s, i) => {
+                          const names = s.user_ids
+                            .map((id) => profiles.find((p) => p.user_id === id)?.display_name ?? "?")
+                            .join(", ");
+                          return (
+                            <li key={i} className="flex items-start justify-between gap-2 text-xs">
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate">{names}</div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  {s.user_ids.length} people · {s.days} day{s.days === 1 ? "" : "s"} together
+                                  {s.source === "this-job" ? " on this job" : " recently"}
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-7 shrink-0 px-2 text-[10px]"
+                                onClick={() => {
+                                  setFormUserIds((prev) =>
+                                    Array.from(new Set([...prev, ...s.user_ids])),
+                                  );
+                                  toast({ title: "Crew added" });
+                                }}
+                              >
+                                Use crew
+                              </Button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
 
                   <div>
                     <div className="mb-1 flex items-center justify-between">
