@@ -497,8 +497,17 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
   );
 };
 
-/* -------------------- Active session -------------------- */
+/* -------------------- Active session (Stepper) -------------------- */
+type StepKey = "read" | "crew" | "complete";
+
+const STEPS: { key: StepKey; label: string; short: string }[] = [
+  { key: "read", label: "Read the talk", short: "Read" },
+  { key: "crew", label: "Crew quiz & sign-off", short: "Crew" },
+  { key: "complete", label: "Complete & email", short: "Send" },
+];
+
 const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; talk: ToolboxTalk | null; onExit: () => void; }) => {
+  const [step, setStep] = useState<StepKey>("read");
   const [recording, setRecording] = useState(false);
   const [recBusy, setRecBusy] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
@@ -508,6 +517,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   const [signature, setSignature] = useState<string | null>(null);
   const [quizFor, setQuizFor] = useState<Attendee | null>(null);
   const [transcript, setTranscript] = useState<string | null>(session.transcript);
+  const [completing, setCompleting] = useState(false);
+  const [extraEmails, setExtraEmails] = useState<string>("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -518,6 +529,21 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
     setAttendees((data as Attendee[]) ?? []);
   };
   useEffect(() => { loadAttendees(); }, [session.id]);
+
+  // Live updates so foreman sees crew sign-offs/quizzes from their own devices
+  useEffect(() => {
+    const channel = supabase
+      .channel(`talk-attendees-${session.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "toolbox_talk_attendees",
+        filter: `session_id=eq.${session.id}`,
+      }, () => loadAttendees())
+      .subscribe();
+    const t = setInterval(loadAttendees, 15000);
+    return () => { supabase.removeChannel(channel); clearInterval(t); };
+  }, [session.id]);
 
   useEffect(() => {
     supabase.from("profiles").select("user_id, display_name").eq("is_active", true).order("display_name").then(({ data }) => {
@@ -537,6 +563,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
     if (error) { toast.error(error.message); return; }
     setPickUserId("");
     loadAttendees();
+    // Notify the newly added attendee
+    supabase.functions.invoke("notify-talk-attendees", { body: { sessionId: session.id } }).catch(() => {});
   };
 
   const startRec = async () => {
@@ -587,137 +615,267 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
     } finally { setRecBusy(false); }
   };
 
+  const hasQuiz = !!talk && Array.isArray(talk.quiz_questions) && (talk.quiz_questions as any[]).length > 0;
+  const totalAttendees = attendees.length;
+  const signedCount = attendees.filter(a => !!a.signed_at).length;
+  const quizDoneCount = attendees.filter(a => !!a.quiz_completed_at).length;
+  const everyoneDone = totalAttendees > 0 && attendees.every(a => !!a.signed_at && (!hasQuiz || !!a.quiz_completed_at));
+
   const completeSession = async () => {
-    await supabase.from("toolbox_talk_sessions").update({ status: "complete", completed_at: new Date().toISOString() }).eq("id", session.id);
-    toast.success("Session complete");
-    onExit();
+    setCompleting(true);
+    try {
+      const extras = extraEmails
+        .split(/[\s,;]+/)
+        .map(s => s.trim())
+        .filter(s => s.includes("@"));
+      const { data, error } = await supabase.functions.invoke("complete-safety-talk", {
+        body: { sessionId: session.id, extraRecipients: extras },
+      });
+      if (error) {
+        const ctx = (error as any)?.context;
+        const body = ctx ? await ctx.json?.().catch(() => null) : null;
+        if (body?.error === "incomplete_attendees") {
+          toast.error(`Still waiting on: ${(body.missing ?? []).join(", ")}`);
+          return;
+        }
+        throw error;
+      }
+      toast.success(`Talk completed — emailed ${data?.recipientCount ?? 0} recipient(s)`);
+      onExit();
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not complete talk");
+    } finally { setCompleting(false); }
   };
 
   return (
     <div className="space-y-4">
-      <button onClick={onExit} className="text-sm text-muted-foreground inline-flex items-center gap-1"><ArrowLeft className="h-4 w-4" /> Back</button>
-      <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{talk?.category ?? ""}</p>
-        <h2 className="font-display text-lg uppercase tracking-wide">{talk?.title ?? "Toolbox talk"}</h2>
-        {talk?.image_url && (
-          <img src={talk.image_url} alt={talk.title} loading="lazy" className="w-full rounded-lg border border-border object-cover max-h-72" />
-        )}
-        {talk?.video_url && (
-          <video src={talk.video_url} controls className="w-full rounded-lg border border-border" />
-        )}
-        {(talk?.voice_script || talk?.content) && (
-          <ReadAloudButton text={talk?.voice_script || talk?.content || ""} label="Read to the crew" />
-        )}
-        <details><summary className="cursor-pointer text-xs text-primary">Show talk content</summary>
-          <p className="mt-2 whitespace-pre-wrap text-sm">{talk?.content}</p>
-        </details>
+      <button onClick={onExit} className="text-sm text-muted-foreground inline-flex items-center gap-1">
+        <ArrowLeft className="h-4 w-4" /> Back to sessions
+      </button>
+
+      {/* Talk header */}
+      <div className="rounded-xl border border-border bg-surface p-3">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{talk?.category ?? "Toolbox talk"}</p>
+        <h2 className="font-display text-base uppercase tracking-wide">{talk?.title ?? "Toolbox talk"}</h2>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground"><Mic className="inline h-3 w-3 mr-1" />Recording</h3>
-          {recording && <span className="text-xs text-destructive animate-pulse">● REC</span>}
+      {/* Stepper */}
+      <div className="flex items-center gap-1">
+        {STEPS.map((s, i) => {
+          const idx = STEPS.findIndex(x => x.key === step);
+          const active = i === idx;
+          const done = i < idx;
+          return (
+            <button
+              key={s.key}
+              onClick={() => setStep(s.key)}
+              className={`flex-1 rounded-lg border px-2 py-2 text-[11px] uppercase tracking-wider transition-colors ${
+                active ? "border-primary bg-primary/10 text-foreground" :
+                done ? "border-primary/40 bg-surface text-muted-foreground" :
+                "border-border bg-surface text-muted-foreground"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5">
+                <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${
+                  active ? "bg-primary text-primary-foreground" :
+                  done ? "bg-primary/30 text-foreground" :
+                  "bg-muted text-muted-foreground"
+                }`}>{done ? "✓" : i + 1}</span>
+                <span className="hidden sm:inline">{s.label}</span>
+                <span className="sm:hidden">{s.short}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Step 1 — Read the talk */}
+      {step === "read" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Step 1 · Read & discuss with the crew</p>
+            {talk?.image_url && (
+              <img src={talk.image_url} alt={talk.title} loading="lazy" className="w-full rounded-lg border border-border object-cover max-h-72" />
+            )}
+            {talk?.video_url && <video src={talk.video_url} controls className="w-full rounded-lg border border-border" />}
+            {(talk?.voice_script || talk?.content) && (
+              <ReadAloudButton text={talk?.voice_script || talk?.content || ""} label="Read to the crew" />
+            )}
+            <details><summary className="cursor-pointer text-xs text-primary">Show talk content</summary>
+              <p className="mt-2 whitespace-pre-wrap text-sm">{talk?.content}</p>
+            </details>
+          </div>
+
+          <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                <Mic className="inline h-3 w-3 mr-1" />Optional recording
+              </h3>
+              {recording && <span className="text-xs text-destructive animate-pulse">● REC</span>}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Capture Q&amp;A for the record. You can skip this and move to the next step.</p>
+            {!recording ? (
+              <Button className="w-full" variant="outline" onClick={startRec} disabled={recBusy || !!session.audio_path}>
+                <Play className="mr-2 h-4 w-4" />{session.audio_path ? "Already recorded" : "Start recording"}
+              </Button>
+            ) : (
+              <Button className="w-full" variant="destructive" onClick={stopRec} disabled={recBusy}>
+                <Square className="mr-2 h-4 w-4" />Stop recording
+              </Button>
+            )}
+            {transcript && (
+              <details className="rounded-lg border border-border p-2">
+                <summary className="cursor-pointer text-xs uppercase tracking-wider text-muted-foreground">Transcript</summary>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/80">{transcript}</p>
+              </details>
+            )}
+          </div>
+
+          <Button className="w-full" size="lg" onClick={() => setStep("crew")}>
+            Done reading — go to crew sign-off →
+          </Button>
         </div>
-        {!recording ? (
-          <Button className="w-full" onClick={startRec} disabled={recBusy || !!session.audio_path}>
-            <Play className="mr-2 h-4 w-4" />{session.audio_path ? "Already recorded" : "Start safety talk"}
-          </Button>
-        ) : (
-          <Button className="w-full" variant="destructive" onClick={stopRec} disabled={recBusy}>
-            <Square className="mr-2 h-4 w-4" />Stop safety talk
-          </Button>
-        )}
-        {transcript && (
-          <details open className="rounded-lg border border-border p-2">
-            <summary className="cursor-pointer text-xs uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-              <span>Transcript</span>
-              <button
-                type="button"
-                className="text-primary text-[10px] hover:underline"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigator.clipboard.writeText(transcript);
-                  toast.success("Transcript copied");
-                }}
-              >Copy</button>
-            </summary>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/80">{transcript}</p>
-          </details>
-        )}
-        {!transcript && session.audio_path && (
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Transcript not available yet.</p>
+      )}
+
+      {/* Step 2 — Crew quiz & sign on their devices */}
+      {step === "crew" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Step 2 · Crew completes quiz &amp; signs</p>
+            <p className="text-sm">
+              Each crew member got a notification. They open it on their phone, take the quiz, and sign.
+              You'll see the live count below.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg border border-border bg-background p-2">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Attendees</p>
+                <p className="font-display text-xl">{totalAttendees}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-background p-2">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Signed</p>
+                <p className={`font-display text-xl ${signedCount === totalAttendees && totalAttendees > 0 ? "text-primary" : ""}`}>{signedCount}/{totalAttendees}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-background p-2">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{hasQuiz ? "Quiz" : "No quiz"}</p>
+                <p className={`font-display text-xl ${hasQuiz && quizDoneCount === totalAttendees && totalAttendees > 0 ? "text-primary" : ""}`}>
+                  {hasQuiz ? `${quizDoneCount}/${totalAttendees}` : "—"}
+                </p>
+              </div>
+            </div>
+
             <Button
               size="sm"
               variant="outline"
-              disabled={recBusy}
+              className="w-full"
               onClick={async () => {
-                try {
-                  setRecBusy(true);
-                  toast.message("Transcribing…");
-                  const { data, error } = await supabase.functions.invoke("transcribe-toolbox-talk", {
-                    body: { sessionId: session.id, audioPath: session.audio_path },
-                  });
-                  if (error) throw error;
-                  if (data?.transcript) {
-                    setTranscript(data.transcript);
-                    toast.success("Transcript ready");
-                  } else {
-                    toast.error(data?.message ?? "Transcription unavailable");
-                  }
-                } catch (e: any) {
-                  toast.error(e.message ?? "Retry failed");
-                } finally {
-                  setRecBusy(false);
-                }
+                const { error } = await supabase.functions.invoke("notify-talk-attendees", { body: { sessionId: session.id } });
+                if (error) toast.error(error.message); else toast.success("Reminder sent");
               }}
             >
-              Retry transcription
+              Send reminder to anyone not done
             </Button>
           </div>
-        )}
-      </div>
 
-      <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
-        <h3 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground"><Users className="inline h-3 w-3 mr-1" />Attendees</h3>
-        <div className="flex gap-2">
-          <Select value={pickUserId} onValueChange={setPickUserId}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Select employee…" />
-            </SelectTrigger>
-            <SelectContent>
-              {employees
-                .filter((e) => !attendees.some((a) => a.user_id === e.user_id))
-                .map((e) => (
-                  <SelectItem key={e.user_id} value={e.user_id}>{e.display_name ?? "—"}</SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={addAttendee} disabled={!pickUserId}><Plus className="h-4 w-4" /></Button>
-        </div>
-        <div className="space-y-2">
-          {attendees.map((a) => (
-            <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg border border-border p-2">
-              <div className="min-w-0">
-                <p className="text-sm truncate">{a.attendee_name}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {a.signed_at ? <><CheckCircle2 className="inline h-3 w-3 text-primary" /> signed</> : "unsigned"}
-                  {a.quiz_score !== null && a.quiz_total !== null && ` · quiz ${a.quiz_score}/${a.quiz_total}`}
-                </p>
-              </div>
-              <div className="flex gap-1">
-                {!a.signed_at && <Button size="sm" variant="outline" onClick={() => { setSignFor(a); setSignature(null); }}>Sign</Button>}
-                {talk && Array.isArray(talk.quiz_questions) && talk.quiz_questions.length > 0 && a.quiz_completed_at == null && (
-                  <Button size="sm" variant="outline" onClick={() => setQuizFor(a)}>Quiz</Button>
-                )}
-              </div>
+          {/* Add or sign on foreman's device for stragglers */}
+          <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+            <h3 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
+              <Users className="inline h-3 w-3 mr-1" />Attendees
+            </h3>
+            <div className="flex gap-2">
+              <Select value={pickUserId} onValueChange={setPickUserId}>
+                <SelectTrigger className="flex-1"><SelectValue placeholder="Add someone…" /></SelectTrigger>
+                <SelectContent>
+                  {employees
+                    .filter((e) => !attendees.some((a) => a.user_id === e.user_id))
+                    .map((e) => <SelectItem key={e.user_id} value={e.user_id}>{e.display_name ?? "—"}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button onClick={addAttendee} disabled={!pickUserId}><Plus className="h-4 w-4" /></Button>
             </div>
-          ))}
-          {attendees.length === 0 && <p className="text-xs text-muted-foreground">No attendees yet.</p>}
-        </div>
-      </div>
+            <div className="space-y-2">
+              {attendees.map((a) => {
+                const quizOk = !hasQuiz || !!a.quiz_completed_at;
+                const allDone = !!a.signed_at && quizOk;
+                return (
+                  <div key={a.id} className={`flex items-center justify-between gap-2 rounded-lg border p-2 ${allDone ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+                    <div className="min-w-0">
+                      <p className="text-sm truncate">{a.attendee_name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {a.signed_at ? <><CheckCircle2 className="inline h-3 w-3 text-primary" /> signed</> : "not signed"}
+                        {hasQuiz && (a.quiz_score !== null && a.quiz_total !== null
+                          ? ` · quiz ${a.quiz_score}/${a.quiz_total}`
+                          : " · quiz pending")}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      {!a.signed_at && <Button size="sm" variant="outline" onClick={() => { setSignFor(a); setSignature(null); }}>Sign</Button>}
+                      {hasQuiz && a.quiz_completed_at == null && (
+                        <Button size="sm" variant="outline" onClick={() => setQuizFor(a)}>Quiz</Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {attendees.length === 0 && <p className="text-xs text-muted-foreground">No attendees yet — add the crew above.</p>}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Tip: crew should sign on <strong>their own</strong> phones. The Sign / Quiz buttons here are only for backup if a phone isn't working.
+            </p>
+          </div>
 
-      <Button className="w-full" onClick={completeSession}>Complete session</Button>
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={() => setStep("complete")}
+            disabled={!everyoneDone}
+          >
+            {everyoneDone ? "Everyone's done — finish up →" : `Waiting on ${totalAttendees - Math.min(signedCount, hasQuiz ? quizDoneCount : signedCount)}…`}
+          </Button>
+        </div>
+      )}
+
+      {/* Step 3 — Complete & email */}
+      {step === "complete" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Step 3 · Complete &amp; email</p>
+            <p className="text-sm">
+              When you complete the talk, a summary is emailed to the office team automatically.
+              Add the customer or anyone else below if you want them on it too.
+            </p>
+            <div>
+              <Label className="text-xs">Also email (optional)</Label>
+              <Input
+                value={extraEmails}
+                onChange={(e) => setExtraEmails(e.target.value)}
+                placeholder="customer@example.com, gc@example.com"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Comma-separated. Office staff are always included.</p>
+            </div>
+
+            <div className="rounded-lg border border-border bg-background p-3 text-sm">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Summary</p>
+              <p>{totalAttendees} attendee{totalAttendees === 1 ? "" : "s"}, {signedCount} signed{hasQuiz ? `, ${quizDoneCount} quizzed` : ""}.</p>
+            </div>
+          </div>
+
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={completeSession}
+            disabled={!everyoneDone || completing}
+          >
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            {completing ? "Sending…" : "Complete talk & send email"}
+          </Button>
+          {!everyoneDone && (
+            <p className="text-[11px] text-center text-muted-foreground">
+              Go back to step 2 — every attendee must sign{hasQuiz ? " and finish the quiz" : ""} first.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Signature dialog */}
       <Dialog open={!!signFor} onOpenChange={(v) => { if (!v) setSignFor(null); }}>
