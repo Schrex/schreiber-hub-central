@@ -895,16 +895,27 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
     }
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("speak-toolbox-talk", { body: { text } });
-      if (error) throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+      const resp = await fetch(
+        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/speak-toolbox-talk`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token ?? ""}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
+          },
+          body: JSON.stringify({ text }),
+        }
+      );
+      if (!resp.ok) throw new Error(`Voice request failed (${resp.status})`);
 
-      // If the edge function returned JSON with fallback:true (e.g. ElevenLabs unavailable),
-      // use the browser's built-in speech synthesis as a graceful fallback.
-      const isFallbackJson =
-        data && !(data instanceof Blob) && !(data instanceof ArrayBuffer) &&
-        typeof data === "object" && (data as any).fallback === true;
+      const ct = resp.headers.get("content-type") || "";
+      const isFallbackJson = ct.includes("application/json");
 
       if (isFallbackJson) {
+        const j = await resp.json().catch(() => ({}));
+        if (!j.fallback) throw new Error(j.error || "Voice unavailable");
         if (typeof window !== "undefined" && "speechSynthesis" in window) {
           window.speechSynthesis.cancel();
           const utter = new SpeechSynthesisUtterance(text);
@@ -924,7 +935,8 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
         return;
       }
 
-      const blob = data instanceof Blob ? data : new Blob([data as ArrayBuffer], { type: "audio/mpeg" });
+      const buf = await resp.arrayBuffer();
+      const blob = new Blob([buf], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
       urlRef.current = url;
       const audio = new Audio(url);
