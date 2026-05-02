@@ -5,12 +5,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Default OpenAI TTS voice via Lovable AI Gateway.
-// "onyx" = deep, mature male — best foreman fit. Alternatives: echo, alloy, ash, sage.
-const DEFAULT_OPENAI_VOICE = 'onyx'
-const DEFAULT_ELEVEN_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb' // George (fallback)
+// Deepgram Aura voice. "aura-orion-en" = deep, mature male — best foreman fit.
+// Alternatives: aura-arcas-en (warm male), aura-perseus-en (authoritative male).
+const DEFAULT_DEEPGRAM_VOICE = 'aura-orion-en'
+const DEFAULT_ELEVEN_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'
 
-async function resolveVoice(supabase: any): Promise<{ openai: string; eleven: string }> {
+async function resolveVoice(supabase: any): Promise<{ deepgram: string; eleven: string }> {
   try {
     const { data } = await supabase
       .from('app_settings')
@@ -20,43 +20,40 @@ async function resolveVoice(supabase: any): Promise<{ openai: string; eleven: st
     const v = data?.value
     const obj = typeof v === 'object' && v !== null ? v : {}
     return {
-      openai: (obj.openai_voice || DEFAULT_OPENAI_VOICE).trim(),
+      deepgram: (obj.deepgram_voice || DEFAULT_DEEPGRAM_VOICE).trim(),
       eleven: (obj.voice_id || DEFAULT_ELEVEN_VOICE_ID).trim(),
     }
   } catch {
-    return { openai: DEFAULT_OPENAI_VOICE, eleven: DEFAULT_ELEVEN_VOICE_ID }
+    return { deepgram: DEFAULT_DEEPGRAM_VOICE, eleven: DEFAULT_ELEVEN_VOICE_ID }
   }
 }
 
-async function tryLovableAITTS(text: string, voice: string): Promise<ArrayBuffer | null> {
-  const lovableKey = Deno.env.get('LOVABLE_API_KEY')
-  if (!lovableKey) {
-    console.log('LOVABLE_API_KEY not set, skipping Lovable AI TTS')
+async function tryDeepgram(text: string, voice: string): Promise<ArrayBuffer | null> {
+  const apiKey = Deno.env.get('DEEPGRAM_API_KEY')
+  if (!apiKey) {
+    console.log('DEEPGRAM_API_KEY not set, skipping Deepgram')
     return null
   }
   try {
-    const resp = await fetch('https://ai.gateway.lovable.dev/v1/audio/speech', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'openai/tts-1-hd',
-        voice,
-        input: text,
-        response_format: 'mp3',
-        speed: 0.96,
-      }),
-    })
+    const resp = await fetch(
+      `https://api.deepgram.com/v1/speak?model=${encodeURIComponent(voice)}&encoding=mp3`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Token ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      }
+    )
     if (!resp.ok) {
       const errText = await resp.text()
-      console.error('lovable ai tts failed', resp.status, errText.slice(0, 300))
+      console.error('deepgram tts failed', resp.status, errText.slice(0, 300))
       return null
     }
     return await resp.arrayBuffer()
   } catch (e) {
-    console.error('lovable ai tts threw', e)
+    console.error('deepgram threw', e)
     return null
   }
 }
@@ -121,8 +118,8 @@ Deno.serve(async (req) => {
 
     const voices = await resolveVoice(supabase)
 
-    // 1) Try Lovable AI Gateway (OpenAI TTS) first — zero setup, high quality
-    let audio = await tryLovableAITTS(text, voices.openai)
+    // 1) Try Deepgram Aura first — natural foreman voice
+    let audio = await tryDeepgram(text, voices.deepgram)
 
     // 2) Fall back to ElevenLabs if available
     if (!audio) {
