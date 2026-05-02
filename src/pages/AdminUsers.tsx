@@ -48,16 +48,40 @@ const AdminUsers = () => {
       const next = r.role as Role;
       if (!existing || ROLE_RANK[next] < ROLE_RANK[existing]) roleByUser.set(r.user_id, next);
     });
+
+    const contactIds = (profiles ?? [])
+      .map((p) => (p as { contact_id?: string | null }).contact_id)
+      .filter((v): v is string => !!v);
+    const contactDates = new Map<string, { dob: string | null; hire: string | null }>();
+    if (contactIds.length) {
+      const { data: contacts } = await supabase
+        .from("employee_contacts")
+        .select("id, date_of_birth, hire_date")
+        .in("id", contactIds);
+      (contacts ?? []).forEach((c) =>
+        contactDates.set(c.id as string, {
+          dob: (c.date_of_birth as string | null) ?? null,
+          hire: (c.hire_date as string | null) ?? null,
+        }),
+      );
+    }
+
     setRows(
-      (profiles ?? []).map((p) => ({
-        user_id: p.user_id,
-        display_name: p.display_name,
-        email: p.email,
-        is_active: p.is_active,
-        is_driver: (p as { is_driver?: boolean }).is_driver ?? false,
-        contact_id: (p as { contact_id?: string | null }).contact_id ?? null,
-        role: roleByUser.get(p.user_id) ?? null,
-      })),
+      (profiles ?? []).map((p) => {
+        const cid = (p as { contact_id?: string | null }).contact_id ?? null;
+        const dates = cid ? contactDates.get(cid) : undefined;
+        return {
+          user_id: p.user_id,
+          display_name: p.display_name,
+          email: p.email,
+          is_active: p.is_active,
+          is_driver: (p as { is_driver?: boolean }).is_driver ?? false,
+          contact_id: cid,
+          role: roleByUser.get(p.user_id) ?? null,
+          date_of_birth: dates?.dob ?? null,
+          hire_date: dates?.hire ?? null,
+        };
+      }),
     );
     setLoading(false);
   };
