@@ -5,12 +5,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Default: "George" — mature, grounded British-American male. Warmer and
-// more natural-sounding than Brian for the foreman tone.
-// Can be overridden per-project via the `safety_talk_voice_id` row in app_settings.
-const DEFAULT_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'
+// Default OpenAI TTS voice via Lovable AI Gateway.
+// "onyx" = deep, mature male — best foreman fit. Alternatives: echo, alloy, ash, sage.
+const DEFAULT_OPENAI_VOICE = 'onyx'
+const DEFAULT_ELEVEN_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb' // George (fallback)
 
-async function resolveVoiceId(supabase: any): Promise<string> {
+async function resolveVoice(supabase: any): Promise<{ openai: string; eleven: string }> {
   try {
     const { data } = await supabase
       .from('app_settings')
@@ -18,10 +18,80 @@ async function resolveVoiceId(supabase: any): Promise<string> {
       .eq('key', 'safety_talk_voice_id')
       .maybeSingle()
     const v = data?.value
-    const id = typeof v === 'string' ? v : (v?.voice_id ?? '')
-    return (id && id.trim()) || DEFAULT_VOICE_ID
+    const obj = typeof v === 'object' && v !== null ? v : {}
+    return {
+      openai: (obj.openai_voice || DEFAULT_OPENAI_VOICE).trim(),
+      eleven: (obj.voice_id || DEFAULT_ELEVEN_VOICE_ID).trim(),
+    }
   } catch {
-    return DEFAULT_VOICE_ID
+    return { openai: DEFAULT_OPENAI_VOICE, eleven: DEFAULT_ELEVEN_VOICE_ID }
+  }
+}
+
+async function tryLovableAITTS(text: string, voice: string): Promise<ArrayBuffer | null> {
+  const lovableKey = Deno.env.get('LOVABLE_API_KEY')
+  if (!lovableKey) {
+    console.log('LOVABLE_API_KEY not set, skipping Lovable AI TTS')
+    return null
+  }
+  try {
+    const resp = await fetch('https://ai.gateway.lovable.dev/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'openai/tts-1-hd',
+        voice,
+        input: text,
+        response_format: 'mp3',
+        speed: 0.96,
+      }),
+    })
+    if (!resp.ok) {
+      const errText = await resp.text()
+      console.error('lovable ai tts failed', resp.status, errText.slice(0, 300))
+      return null
+    }
+    return await resp.arrayBuffer()
+  } catch (e) {
+    console.error('lovable ai tts threw', e)
+    return null
+  }
+}
+
+async function tryElevenLabs(text: string, voiceId: string): Promise<ArrayBuffer | null> {
+  const apiKey = Deno.env.get('ELEVENLABS_API_KEY')
+  if (!apiKey) return null
+  try {
+    const resp = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_192`,
+      {
+        method: 'POST',
+        headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          model_id: 'eleven_turbo_v2_5',
+          voice_settings: {
+            stability: 0.4,
+            similarity_boost: 0.85,
+            style: 0.15,
+            use_speaker_boost: true,
+            speed: 0.96,
+          },
+        }),
+      }
+    )
+    if (!resp.ok) {
+      const errText = await resp.text()
+      console.error('elevenlabs fallback failed', resp.status, errText.slice(0, 300))
+      return null
+    }
+    return await resp.arrayBuffer()
+  } catch (e) {
+    console.error('elevenlabs threw', e)
+    return null
   }
 }
 
@@ -49,43 +119,25 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'text too long (max 5000 chars)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const apiKey = Deno.env.get('ELEVENLABS_API_KEY')
-    if (!apiKey) throw new Error('ELEVENLABS_API_KEY not set')
+    const voices = await resolveVoice(supabase)
 
-    const voiceId = await resolveVoiceId(supabase)
-    const ttsResp = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_192`,
-      {
-        method: 'POST',
-        headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          // Turbo v2.5 is the highest quality natural-conversation model and
-          // produces noticeably less "robotic" prosody than multilingual_v2.
-          model_id: 'eleven_turbo_v2_5',
-          voice_settings: {
-            stability: 0.4,         // lower = more expressive, less monotone
-            similarity_boost: 0.85, // keep voice identity consistent
-            style: 0.15,            // small amount of stylistic warmth, not exaggerated
-            use_speaker_boost: true,
-            speed: 0.96,            // a hair slower for clearer delivery
-          },
-        }),
-      }
-    )
+    // 1) Try Lovable AI Gateway (OpenAI TTS) first — zero setup, high quality
+    let audio = await tryLovableAITTS(text, voices.openai)
 
-    if (!ttsResp.ok) {
-      const errText = await ttsResp.text()
-      console.error('elevenlabs tts failed', ttsResp.status, errText)
-      // Return 200 with a fallback signal so the client can use the browser's
-      // built-in speech synthesis instead of crashing.
+    // 2) Fall back to ElevenLabs if available
+    if (!audio) {
+      console.log('Falling back to ElevenLabs')
+      audio = await tryElevenLabs(text, voices.eleven)
+    }
+
+    // 3) If both failed, signal browser fallback
+    if (!audio) {
       return new Response(
-        JSON.stringify({ fallback: true, reason: 'voice_unavailable', detail: errText.slice(0, 300) }),
+        JSON.stringify({ fallback: true, reason: 'voice_unavailable' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const audio = await ttsResp.arrayBuffer()
     return new Response(audio, {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store' },
