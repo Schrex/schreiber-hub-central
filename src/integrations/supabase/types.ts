@@ -2602,6 +2602,28 @@ export type Database = {
         }
         Returns: number
       }
+      notify_role: {
+        Args: {
+          _body: string
+          _kind: string
+          _link: string
+          _metadata?: Json
+          _role: Database["public"]["Enums"]["app_role"]
+          _title: string
+        }
+        Returns: undefined
+      }
+      notify_user: {
+        Args: {
+          _body: string
+          _kind: string
+          _link: string
+          _metadata?: Json
+          _title: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
