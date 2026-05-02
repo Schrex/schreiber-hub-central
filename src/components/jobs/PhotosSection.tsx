@@ -97,7 +97,7 @@ interface StampInfo {
   uploader?: string | null;
 }
 
-const stampImage = async (file: File, info: StampInfo): Promise<File> => {
+const stampImage = async (file: File, info: StampInfo, capturedAt: Date): Promise<File> => {
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(r.result as string);
@@ -110,6 +110,21 @@ const stampImage = async (file: File, info: StampInfo): Promise<File> => {
     i.onerror = reject;
     i.src = dataUrl;
   });
+
+  // Cap longest edge to 2400px to keep uploads sane
+  const MAX = 2400;
+  const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return file;
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const now = capturedAt;
 
   // Cap longest edge to 2400px to keep uploads sane
   const MAX = 2400;
