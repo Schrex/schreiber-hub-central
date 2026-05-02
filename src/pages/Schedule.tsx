@@ -502,7 +502,7 @@ const Schedule = () => {
                         type="button"
                         className="text-xs text-primary hover:underline"
                         onClick={() => {
-                          const assignableIds = profiles
+                          const assignableIds = visibleProfiles
                             .filter((p) => p.has_login && p.user_id)
                             .map((p) => p.user_id as string);
                           setFormUserIds(
@@ -511,13 +511,20 @@ const Schedule = () => {
                         }}
                       >
                         {formUserIds.length ===
-                        profiles.filter((p) => p.has_login).length
+                        visibleProfiles.filter((p) => p.has_login).length
                           ? "Clear all"
                           : "Select all"}
                       </button>
                     </div>
+                    <label className="mb-1 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox
+                        checked={showOffice}
+                        onCheckedChange={(v) => setShowOffice(v === true)}
+                      />
+                      Include office staff
+                    </label>
                     <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border p-2">
-                      {profiles.map((p) => {
+                      {visibleProfiles.map((p) => {
                         const disabled = !p.has_login || !p.user_id;
                         const checked = !disabled && formUserIds.includes(p.user_id as string);
                         return (
