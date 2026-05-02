@@ -602,13 +602,42 @@ const Dispatch = () => {
                         </div>
                         <p className="mt-1 font-medium">{o.job_name ?? "—"}</p>
                         <p className="text-xs text-muted-foreground">
-                          {[o.gc, o.customer].filter(Boolean).join(" · ")}
+                          {[o.job_number ? `Job #${o.job_number}` : null, o.gc, o.customer].filter(Boolean).join(" · ")}
                         </p>
                         <div className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
                           {o.material && <div><span className="text-muted-foreground">Material:</span> {o.material}{o.load_quantity ? ` · ${o.load_quantity}` : ""}</div>}
-                          {o.pickup_location && <div><span className="text-muted-foreground">Pickup:</span> {o.pickup_location}</div>}
-                          {o.dump_location && <div><span className="text-muted-foreground">Dump:</span> {o.dump_location}</div>}
+                          {o.pickup_location && (
+                            <div>
+                              <span className="text-muted-foreground">Pickup:</span>{" "}
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.pickup_location)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline underline-offset-2"
+                              >
+                                {o.pickup_location}
+                              </a>
+                            </div>
+                          )}
+                          {o.dump_location && (
+                            <div>
+                              <span className="text-muted-foreground">Dump:</span>{" "}
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.dump_location)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline underline-offset-2"
+                              >
+                                {o.dump_location}
+                              </a>
+                            </div>
+                          )}
                         </div>
+                        {o.pickup_location && o.job_number && (
+                          <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs">
+                            <span className="font-semibold">⚠ Important:</span> Provide the quarry with Job # <span className="font-mono font-semibold">{o.job_number}</span> when picking up material.
+                          </div>
+                        )}
                         {o.notes && <p className="mt-2 text-sm text-muted-foreground">{o.notes}</p>}
                         {(o.bill_to || o.po_number || o.rate_amount || o.billing_total || o.invoice_status !== "not_billed" || o.billing_notes) && (
                           <div className="mt-3 rounded-md border border-border/60 bg-muted/30 p-2 text-xs">
