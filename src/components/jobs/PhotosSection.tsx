@@ -7,6 +7,23 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
+import exifr from "exifr";
+
+const readExifDate = async (file: File): Promise<Date | null> => {
+  if (!file.type.startsWith("image/")) return null;
+  try {
+    const tags = await exifr.parse(file, ["DateTimeOriginal", "CreateDate", "ModifyDate"]);
+    const d = tags?.DateTimeOriginal || tags?.CreateDate || tags?.ModifyDate;
+    if (d instanceof Date && !isNaN(d.getTime())) return d;
+    if (typeof d === "string") {
+      const parsed = new Date(d);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+  } catch (err) {
+    console.warn("EXIF read failed", err);
+  }
+  return null;
+};
 
 const SUPABASE_URL = "https://bitogpfplcquovpdjprk.supabase.co";
 const RESUMABLE_THRESHOLD = 6 * 1024 * 1024;
@@ -80,7 +97,7 @@ interface StampInfo {
   uploader?: string | null;
 }
 
-const stampImage = async (file: File, info: StampInfo): Promise<File> => {
+const stampImage = async (file: File, info: StampInfo, capturedAt: Date): Promise<File> => {
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(r.result as string);
@@ -107,7 +124,7 @@ const stampImage = async (file: File, info: StampInfo): Promise<File> => {
   if (!ctx) return file;
   ctx.drawImage(img, 0, 0, w, h);
 
-  const now = new Date();
+  const now = capturedAt;
   const dateStr = now.toLocaleDateString(undefined, {
     weekday: "short",
     month: "short",
@@ -244,18 +261,20 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
 
     setUploading(true);
     setUploadPct(0);
-    const today = toLocalDate();
     let done = 0;
     try {
       for (const original of files) {
+        const exifDate = await readExifDate(original);
+        const captured = exifDate ?? new Date(original.lastModified || Date.now());
+        const takenOn = toLocalDate(captured);
         const file = original.type.startsWith("image/")
-          ? await stampImage(original, { jobLabel, address, uploader: displayName }).catch((err) => {
+          ? await stampImage(original, { jobLabel, address, uploader: displayName }, captured).catch((err) => {
               console.warn("Stamp failed, uploading original", err);
               return original;
             })
           : original;
         const ext = file.name.split(".").pop() || "jpg";
-        const path = `${jobId}/${today}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const path = `${jobId}/${takenOn}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
         if (file.size > RESUMABLE_THRESHOLD) {
           await resumableUpload("job-photos", path, file, (pct) => setUploadPct(pct));
         } else {
@@ -272,7 +291,7 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
           file_path: path,
           mime_type: file.type,
           file_size: file.size,
-          taken_on: today,
+          taken_on: takenOn,
           uploaded_by_name: displayName,
         });
         if (insErr) throw insErr;
