@@ -45,13 +45,7 @@ export const HeaderBar = ({ name, role, positionTitle }: Props) => (
           <span className={`h-1.5 w-1.5 rounded-full ${roleColor[role]}`} />
           {roleLabel[role]}
         </span>
-        <button
-          aria-label="Notifications"
-          className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface text-foreground transition-colors hover:bg-surface-elevated"
-        >
-          <Bell className="h-5 w-5" strokeWidth={2.25} />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent ring-2 ring-background" />
-        </button>
+        <NotificationsBell />
       </div>
     </div>
 
