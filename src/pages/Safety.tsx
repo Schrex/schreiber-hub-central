@@ -807,21 +807,29 @@ const QuizDialog = ({ attendee, questions, onClose, onSaved }: { attendee: Atten
 const AdminSettings = () => {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [voiceId, setVoiceId] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    supabase.from("app_settings").select("value").eq("key", "york_safety_email").maybeSingle().then(({ data }) => {
-      const v = data?.value as any;
-      if (typeof v === "string") setEmail(v);
-      else if (v?.email) setEmail(v.email);
+    supabase.from("app_settings").select("key,value").in("key", ["york_safety_email", "safety_talk_voice_id"]).then(({ data }) => {
+      for (const row of data ?? []) {
+        const v = (row as any).value;
+        const str = typeof v === "string" ? v : (v?.email ?? v?.voice_id ?? "");
+        if (row.key === "york_safety_email") setEmail(str);
+        if (row.key === "safety_talk_voice_id") setVoiceId(str);
+      }
     });
   }, [open]);
 
   const save = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase.from("app_settings").upsert({ key: "york_safety_email", value: email });
+      const rows = [
+        { key: "york_safety_email", value: email },
+        { key: "safety_talk_voice_id", value: voiceId.trim() },
+      ];
+      const { error } = await supabase.from("app_settings").upsert(rows);
       if (error) throw error;
       toast.success("Saved");
       setOpen(false);
@@ -837,10 +845,19 @@ const AdminSettings = () => {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Safety settings</DialogTitle></DialogHeader>
-          <div className="space-y-2">
-            <Label>York Safety Solutions email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@yorksafetysolutions.com" />
-            <p className="text-[10px] text-muted-foreground">Inspection requests are sent here.</p>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>York Safety Solutions email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@yorksafetysolutions.com" />
+              <p className="text-[10px] text-muted-foreground">Inspection requests are sent here.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Safety talk voice (ElevenLabs Voice ID)</Label>
+              <Input value={voiceId} onChange={(e) => setVoiceId(e.target.value)} placeholder="e.g. nPczCjzI2devNBz1zQrb" />
+              <p className="text-[10px] text-muted-foreground">
+                Paste your cloned Voice ID from ElevenLabs → Voices → your voice → ID. Leave blank to use the default Brian voice.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
