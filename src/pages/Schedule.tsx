@@ -930,4 +930,91 @@ const Schedule = () => {
   );
 };
 
+function DayNoteEditor({
+  assignmentId,
+  initialNote,
+  canEdit,
+  onSave,
+}: {
+  assignmentId: string;
+  initialNote: string | null;
+  canEdit: boolean;
+  onSave: (id: string, notes: string) => Promise<boolean>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(initialNote ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setValue(initialNote ?? "");
+  }, [initialNote, assignmentId]);
+
+  if (!editing) {
+    return (
+      <div className="mt-1 flex items-start gap-2">
+        {initialNote ? (
+          <p className="flex-1 whitespace-pre-wrap rounded bg-muted/40 px-2 py-1 text-xs text-foreground/80">
+            {initialNote}
+          </p>
+        ) : (
+          <p className="flex-1 text-xs italic text-muted-foreground">No note for this day</p>
+        )}
+        {canEdit && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-[10px] uppercase tracking-wider"
+            onClick={() => setEditing(true)}
+          >
+            {initialNote ? "Edit" : "Add note"}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-1 space-y-1">
+      <Textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Today's note for this person…"
+        rows={2}
+        className="text-xs"
+        autoFocus
+      />
+      <div className="flex justify-end gap-1">
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2"
+          disabled={saving}
+          onClick={() => {
+            setValue(initialNote ?? "");
+            setEditing(false);
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          className="h-7 px-3"
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true);
+            const ok = await onSave(assignmentId, value);
+            setSaving(false);
+            if (ok) setEditing(false);
+          }}
+        >
+          {saving ? "Saving…" : "Save"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default Schedule;
