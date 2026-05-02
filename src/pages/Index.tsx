@@ -95,6 +95,7 @@ const Index = () => {
 
       <main className="mx-auto max-w-2xl space-y-5 px-4 pb-12">
         <WeatherStrip />
+        <CelebrationsBanner />
 
         {role === "admin" && (
           <RoleSwitcher value={effectiveRole} onChange={setPreviewRole} />
