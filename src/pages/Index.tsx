@@ -25,6 +25,7 @@ import { HeaderBar } from "@/components/home/HeaderBar";
 import { WeatherStrip } from "@/components/home/WeatherStrip";
 import { AppTile } from "@/components/home/AppTile";
 import { RoleSwitcher } from "@/components/home/RoleSwitcher";
+import { CelebrationsBanner } from "@/components/home/CelebrationsBanner";
 import { useAuth, type Role } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
@@ -94,6 +95,7 @@ const Index = () => {
 
       <main className="mx-auto max-w-2xl space-y-5 px-4 pb-12">
         <WeatherStrip />
+        <CelebrationsBanner />
 
         {role === "admin" && (
           <RoleSwitcher value={effectiveRole} onChange={setPreviewRole} />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Briefcase, DollarSign, TrendingUp, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, Briefcase, DollarSign, TrendingUp, Lock, Sparkles, CalendarClock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ const MyPosition = () => {
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [promotions, setPromotions] = useState<PromotionTarget[]>([]);
+  const [hireDate, setHireDate] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -56,6 +57,22 @@ const MyPosition = () => {
         .order("effective_date", { ascending: false });
       if (!error && data) setRows(data as unknown as AssignmentRow[]);
       setLoading(false);
+
+      // Hire date from linked employee_contact
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("contact_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const cid = (prof as { contact_id?: string | null } | null)?.contact_id;
+      if (cid) {
+        const { data: contact } = await supabase
+          .from("employee_contacts")
+          .select("hire_date")
+          .eq("id", cid)
+          .maybeSingle();
+        setHireDate((contact?.hire_date as string | null) ?? null);
+      }
     })();
   }, [user]);
 
@@ -206,6 +223,35 @@ const MyPosition = () => {
             )}
           </Card>
         )}
+
+        {hireDate && (() => {
+          const f = new Date(hireDate + "T00:00:00");
+          const now = new Date();
+          let years = now.getFullYear() - f.getFullYear();
+          const before =
+            now.getMonth() < f.getMonth() ||
+            (now.getMonth() === f.getMonth() && now.getDate() < f.getDate());
+          if (before) years -= 1;
+          return (
+            <Card className="flex items-center justify-between gap-3 p-4">
+              <div className="flex items-center gap-2">
+                <CalendarClock className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Hire date
+                  </div>
+                  <div className="font-medium">{fmtDate(hireDate)}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  Years of service
+                </div>
+                <div className="font-display text-xl">{Math.max(0, years)}</div>
+              </div>
+            </Card>
+          );
+        })()}
 
         {!loading && promotions.length > 0 && (
           <section>

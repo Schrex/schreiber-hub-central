@@ -12,6 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface UserRow {
@@ -22,6 +24,8 @@ interface UserRow {
   is_driver: boolean;
   role: Role | null;
   contact_id: string | null;
+  date_of_birth: string | null;
+  hire_date: string | null;
 }
 
 const ROLES: Role[] = ["employee", "foreman", "office", "admin"];
@@ -44,16 +48,40 @@ const AdminUsers = () => {
       const next = r.role as Role;
       if (!existing || ROLE_RANK[next] < ROLE_RANK[existing]) roleByUser.set(r.user_id, next);
     });
+
+    const contactIds = (profiles ?? [])
+      .map((p) => (p as { contact_id?: string | null }).contact_id)
+      .filter((v): v is string => !!v);
+    const contactDates = new Map<string, { dob: string | null; hire: string | null }>();
+    if (contactIds.length) {
+      const { data: contacts } = await supabase
+        .from("employee_contacts")
+        .select("id, date_of_birth, hire_date")
+        .in("id", contactIds);
+      (contacts ?? []).forEach((c) =>
+        contactDates.set(c.id as string, {
+          dob: (c.date_of_birth as string | null) ?? null,
+          hire: (c.hire_date as string | null) ?? null,
+        }),
+      );
+    }
+
     setRows(
-      (profiles ?? []).map((p) => ({
-        user_id: p.user_id,
-        display_name: p.display_name,
-        email: p.email,
-        is_active: p.is_active,
-        is_driver: (p as { is_driver?: boolean }).is_driver ?? false,
-        contact_id: (p as { contact_id?: string | null }).contact_id ?? null,
-        role: roleByUser.get(p.user_id) ?? null,
-      })),
+      (profiles ?? []).map((p) => {
+        const cid = (p as { contact_id?: string | null }).contact_id ?? null;
+        const dates = cid ? contactDates.get(cid) : undefined;
+        return {
+          user_id: p.user_id,
+          display_name: p.display_name,
+          email: p.email,
+          is_active: p.is_active,
+          is_driver: (p as { is_driver?: boolean }).is_driver ?? false,
+          contact_id: cid,
+          role: roleByUser.get(p.user_id) ?? null,
+          date_of_birth: dates?.dob ?? null,
+          hire_date: dates?.hire ?? null,
+        };
+      }),
     );
     setLoading(false);
   };
@@ -82,6 +110,47 @@ const AdminUsers = () => {
     if (error) return toast.error(error.message);
     setRows((rs) => rs.map((r) => (r.user_id === userId ? { ...r, is_driver: value } : r)));
     toast.success(value ? "Tagged as driver" : "Driver tag removed");
+  };
+
+  const updateContactDate = async (
+    row: UserRow,
+    field: "date_of_birth" | "hire_date",
+    value: string,
+  ) => {
+    const v = value || null;
+    let cid = row.contact_id;
+    // Auto-create a contact if none is linked yet
+    if (!cid) {
+      const insertPayload: Record<string, unknown> = {
+        name: row.display_name ?? row.email ?? "Employee",
+        email: row.email,
+        converted_user_id: row.user_id,
+        is_active: row.is_active,
+      };
+      insertPayload[field] = v;
+      const { data: created, error: createErr } = await supabase
+        .from("employee_contacts")
+        .insert(insertPayload as never)
+        .select("id")
+        .single();
+      if (createErr) return toast.error(createErr.message);
+      cid = created.id as string;
+      await supabase.from("profiles").update({ contact_id: cid }).eq("user_id", row.user_id);
+    } else {
+      const updatePayload: Record<string, unknown> = {};
+      updatePayload[field] = v;
+      const { error } = await supabase
+        .from("employee_contacts")
+        .update(updatePayload as never)
+        .eq("id", cid);
+      if (error) return toast.error(error.message);
+    }
+    setRows((rs) =>
+      rs.map((x) =>
+        x.user_id === row.user_id ? { ...x, contact_id: cid, [field]: v } : x,
+      ),
+    );
+    toast.success(field === "date_of_birth" ? "Birthday saved" : "Hire date saved");
   };
 
   return (
@@ -135,6 +204,49 @@ const AdminUsers = () => {
                     disabled={me?.id === r.user_id}
                   />
                   <span className="text-xs text-muted-foreground">{r.is_active ? "Active" : "Off"}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-end gap-3 sm:basis-full">
+                <div>
+                  <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Birthday</Label>
+                  <Input
+                    type="date"
+                    className="h-8 w-[150px] text-xs"
+                    value={r.date_of_birth ?? ""}
+                    onChange={(e) =>
+                      setRows((rs) =>
+                        rs.map((x) =>
+                          x.user_id === r.user_id ? { ...x, date_of_birth: e.target.value || null } : x,
+                        ),
+                      )
+                    }
+                    onBlur={(e) => {
+                      if ((e.target.value || null) !== (r.date_of_birth ?? null)) {
+                        updateContactDate(r, "date_of_birth", e.target.value);
+                      }
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Hire date</Label>
+                  <Input
+                    type="date"
+                    className="h-8 w-[150px] text-xs"
+                    value={r.hire_date ?? ""}
+                    onChange={(e) =>
+                      setRows((rs) =>
+                        rs.map((x) =>
+                          x.user_id === r.user_id ? { ...x, hire_date: e.target.value || null } : x,
+                        ),
+                      )
+                    }
+                    onBlur={(e) => {
+                      if ((e.target.value || null) !== (r.hire_date ?? null)) {
+                        updateContactDate(r, "hire_date", e.target.value);
+                      }
+                    }}
+                  />
                 </div>
               </div>
             </div>
