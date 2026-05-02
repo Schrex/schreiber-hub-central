@@ -12,6 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface UserRow {
@@ -22,6 +24,8 @@ interface UserRow {
   is_driver: boolean;
   role: Role | null;
   contact_id: string | null;
+  date_of_birth: string | null;
+  hire_date: string | null;
 }
 
 const ROLES: Role[] = ["employee", "foreman", "office", "admin"];
