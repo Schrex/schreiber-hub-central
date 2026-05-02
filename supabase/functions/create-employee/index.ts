@@ -97,6 +97,8 @@ Deno.serve(async (req) => {
         address: body.address?.trim() || null,
         department: body.department?.trim() || null,
         notes: body.notes?.trim() || null,
+        date_of_birth: body.date_of_birth || null,
+        hire_date: body.hire_date || null,
         created_by: callerId,
         is_active: true,
       })
