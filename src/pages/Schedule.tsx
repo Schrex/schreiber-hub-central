@@ -270,7 +270,7 @@ const Schedule = () => {
       else status = "unassigned";
       return { profile: p, off, assignments: asg, status };
     });
-  }, [profiles, assignments, timeOff]);
+  }, [visibleProfiles, assignments, timeOff]);
 
   const counts = useMemo(() => {
     return roster.reduce(
