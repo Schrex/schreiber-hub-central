@@ -554,6 +554,46 @@ const Schedule = () => {
                     Skip weekends
                   </label>
 
+                  {crewSuggestions.length > 0 && (
+                    <div className="rounded-md border border-primary/30 bg-primary/5 p-2">
+                      <div className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+                        <Users className="h-3 w-3" /> Suggested crews
+                      </div>
+                      <ul className="space-y-1">
+                        {crewSuggestions.map((s, i) => {
+                          const names = s.user_ids
+                            .map((id) => profiles.find((p) => p.user_id === id)?.display_name ?? "?")
+                            .join(", ");
+                          return (
+                            <li key={i} className="flex items-start justify-between gap-2 text-xs">
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate">{names}</div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  {s.user_ids.length} people · {s.days} day{s.days === 1 ? "" : "s"} together
+                                  {s.source === "this-job" ? " on this job" : " recently"}
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-7 shrink-0 px-2 text-[10px]"
+                                onClick={() => {
+                                  setFormUserIds((prev) =>
+                                    Array.from(new Set([...prev, ...s.user_ids])),
+                                  );
+                                  toast({ title: "Crew added" });
+                                }}
+                              >
+                                Use crew
+                              </Button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+
                   <div>
                     <div className="mb-1 flex items-center justify-between">
                       <Label>Crew members</Label>
