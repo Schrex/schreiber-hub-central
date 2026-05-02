@@ -121,24 +121,27 @@ const AdminUsers = () => {
     let cid = row.contact_id;
     // Auto-create a contact if none is linked yet
     if (!cid) {
+      const insertPayload: Record<string, unknown> = {
+        name: row.display_name ?? row.email ?? "Employee",
+        email: row.email,
+        converted_user_id: row.user_id,
+        is_active: row.is_active,
+      };
+      insertPayload[field] = v;
       const { data: created, error: createErr } = await supabase
         .from("employee_contacts")
-        .insert({
-          name: row.display_name ?? row.email ?? "Employee",
-          email: row.email,
-          converted_user_id: row.user_id,
-          is_active: row.is_active,
-          [field]: v,
-        })
+        .insert(insertPayload as never)
         .select("id")
         .single();
       if (createErr) return toast.error(createErr.message);
       cid = created.id as string;
       await supabase.from("profiles").update({ contact_id: cid }).eq("user_id", row.user_id);
     } else {
+      const updatePayload: Record<string, unknown> = {};
+      updatePayload[field] = v;
       const { error } = await supabase
         .from("employee_contacts")
-        .update({ [field]: v })
+        .update(updatePayload as never)
         .eq("id", cid);
       if (error) return toast.error(error.message);
     }
