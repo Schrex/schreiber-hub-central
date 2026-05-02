@@ -1,6 +1,6 @@
-import { Bell } from "lucide-react";
 import type { Role } from "./RoleSwitcher";
 import logo from "@/assets/schreiber-logo.png";
+import { NotificationsBell } from "@/components/notifications/NotificationsBell";
 
 const roleLabel: Record<Role, string> = {
   employee: "Employee",
