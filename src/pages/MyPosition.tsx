@@ -224,6 +224,35 @@ const MyPosition = () => {
           </Card>
         )}
 
+        {hireDate && (() => {
+          const f = new Date(hireDate + "T00:00:00");
+          const now = new Date();
+          let years = now.getFullYear() - f.getFullYear();
+          const before =
+            now.getMonth() < f.getMonth() ||
+            (now.getMonth() === f.getMonth() && now.getDate() < f.getDate());
+          if (before) years -= 1;
+          return (
+            <Card className="flex items-center justify-between gap-3 p-4">
+              <div className="flex items-center gap-2">
+                <CalendarClock className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Hire date
+                  </div>
+                  <div className="font-medium">{fmtDate(hireDate)}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  Years of service
+                </div>
+                <div className="font-display text-xl">{Math.max(0, years)}</div>
+              </div>
+            </Card>
+          );
+        })()}
+
         {!loading && promotions.length > 0 && (
           <section>
             <h3 className="mb-2 flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
