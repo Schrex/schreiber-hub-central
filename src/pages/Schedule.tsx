@@ -47,6 +47,7 @@ type Profile = {
   display_name: string | null;
   contact_id: string | null;
   has_login: boolean;
+  is_office: boolean;
 };
 type Assignment = {
   id: string;
