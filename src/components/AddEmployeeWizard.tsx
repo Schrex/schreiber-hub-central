@@ -242,6 +242,26 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
               <Label htmlFor="ae-dept">Department</Label>
               <Input id="ae-dept" placeholder="Field, Office…" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
             </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="ae-dob">Birthday</Label>
+                <Input
+                  id="ae-dob"
+                  type="date"
+                  value={form.date_of_birth}
+                  onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ae-hire">Hire date</Label>
+                <Input
+                  id="ae-hire"
+                  type="date"
+                  value={form.hire_date}
+                  onChange={(e) => setForm({ ...form, hire_date: e.target.value })}
+                />
+              </div>
+            </div>
             <div>
               <Label htmlFor="ae-notes">Notes</Label>
               <Textarea id="ae-notes" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
