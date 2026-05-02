@@ -732,40 +732,48 @@ const Schedule = () => {
                         <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
                           Foreman
                         </div>
-                        <ul className="space-y-1">
+                         <ul className="space-y-2">
                           {foremen.map((a) => (
                             <li
                               key={a.id}
-                              className="flex items-center justify-between gap-2 text-sm"
+                              className="rounded border border-amber-500/20 bg-background/40 p-2"
                             >
-                              <div className="flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                                {a.contact_id ? (
-                                  <button
-                                    onClick={() => navigate(`/employee-contacts?focus=${a.contact_id}`)}
-                                    className="font-semibold hover:text-primary hover:underline"
+                              <div className="flex items-center justify-between gap-2 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                  {a.contact_id ? (
+                                    <button
+                                      onClick={() => navigate(`/employee-contacts?focus=${a.contact_id}`)}
+                                      className="font-semibold hover:text-primary hover:underline"
+                                    >
+                                      {a.profile_name}
+                                    </button>
+                                  ) : (
+                                    <span className="font-semibold">{a.profile_name}</span>
+                                  )}
+                                  {a.start_time && (
+                                    <span className="text-xs text-muted-foreground">
+                                      · {a.start_time.slice(0, 5)}
+                                    </span>
+                                  )}
+                                </div>
+                                {canEdit && !isPastDay && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    onClick={() => removeAssignment(a.id)}
                                   >
-                                    {a.profile_name}
-                                  </button>
-                                ) : (
-                                  <span className="font-semibold">{a.profile_name}</span>
-                                )}
-                                {a.start_time && (
-                                  <span className="text-xs text-muted-foreground">
-                                    · {a.start_time.slice(0, 5)}
-                                  </span>
+                                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                  </Button>
                                 )}
                               </div>
-                              {canEdit && !isPastDay && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7"
-                                  onClick={() => removeAssignment(a.id)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                </Button>
-                              )}
+                              <DayNoteEditor
+                                assignmentId={a.id}
+                                initialNote={a.notes}
+                                canEdit={canEditNotes && !isPastDay}
+                                onSave={updateAssignmentNotes}
+                              />
                             </li>
                           ))}
                         </ul>
