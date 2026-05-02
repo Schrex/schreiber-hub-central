@@ -206,6 +206,49 @@ const AdminUsers = () => {
                   <span className="text-xs text-muted-foreground">{r.is_active ? "Active" : "Off"}</span>
                 </div>
               </div>
+
+              <div className="flex flex-wrap items-end gap-3 sm:basis-full">
+                <div>
+                  <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Birthday</Label>
+                  <Input
+                    type="date"
+                    className="h-8 w-[150px] text-xs"
+                    value={r.date_of_birth ?? ""}
+                    onChange={(e) =>
+                      setRows((rs) =>
+                        rs.map((x) =>
+                          x.user_id === r.user_id ? { ...x, date_of_birth: e.target.value || null } : x,
+                        ),
+                      )
+                    }
+                    onBlur={(e) => {
+                      if ((e.target.value || null) !== (r.date_of_birth ?? null)) {
+                        updateContactDate(r, "date_of_birth", e.target.value);
+                      }
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Hire date</Label>
+                  <Input
+                    type="date"
+                    className="h-8 w-[150px] text-xs"
+                    value={r.hire_date ?? ""}
+                    onChange={(e) =>
+                      setRows((rs) =>
+                        rs.map((x) =>
+                          x.user_id === r.user_id ? { ...x, hire_date: e.target.value || null } : x,
+                        ),
+                      )
+                    }
+                    onBlur={(e) => {
+                      if ((e.target.value || null) !== (r.hire_date ?? null)) {
+                        updateContactDate(r, "hire_date", e.target.value);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           ))}
         </div>
