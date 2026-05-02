@@ -900,6 +900,7 @@ const Schedule = () => {
                 onCheckedChange={(v) => setShowOffice(v === true)}
               />
               Include office staff in schedule
+            </label>
             <Card className="divide-y">
               {roster.length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">
