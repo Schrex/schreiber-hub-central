@@ -72,6 +72,7 @@ const Schedule = () => {
   const { user, role, displayName } = useAuth();
   const navigate = useNavigate();
   const canEdit = role === "office" || role === "admin";
+  const canEditNotes = canEdit || role === "foreman";
 
   const [selectedDate, setSelectedDate] = useState<string>(todayStr());
   const [assignments, setAssignments] = useState<Assignment[]>([]);
