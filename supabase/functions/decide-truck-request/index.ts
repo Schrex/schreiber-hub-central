@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
         driver_name: driverName,
         job_id: job?.id ?? null,
         job_name: job?.name ?? null,
+        job_number: job?.job_number ?? null,
         customer: job?.customer ?? null,
         gc: job?.gc ?? null,
         material: request.material,

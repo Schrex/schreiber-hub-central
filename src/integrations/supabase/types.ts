@@ -485,6 +485,7 @@ export type Database = {
           invoice_status: Database["public"]["Enums"]["dispatch_invoice_status"]
           job_id: string | null
           job_name: string | null
+          job_number: string | null
           load_quantity: number | null
           material: string | null
           notes: string | null
@@ -515,6 +516,7 @@ export type Database = {
           invoice_status?: Database["public"]["Enums"]["dispatch_invoice_status"]
           job_id?: string | null
           job_name?: string | null
+          job_number?: string | null
           load_quantity?: number | null
           material?: string | null
           notes?: string | null
@@ -545,6 +547,7 @@ export type Database = {
           invoice_status?: Database["public"]["Enums"]["dispatch_invoice_status"]
           job_id?: string | null
           job_name?: string | null
+          job_number?: string | null
           load_quantity?: number | null
           material?: string | null
           notes?: string | null
