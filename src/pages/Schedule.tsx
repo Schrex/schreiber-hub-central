@@ -328,6 +328,21 @@ const Schedule = () => {
     loadAll();
   };
 
+  const updateAssignmentNotes = async (id: string, notes: string) => {
+    const value = notes.trim() ? notes.trim() : null;
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .update({ notes: value })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Could not save note", description: error.message, variant: "destructive" });
+      return false;
+    }
+    setAssignments((prev) => prev.map((a) => (a.id === id ? { ...a, notes: value } : a)));
+    toast({ title: "Note saved" });
+    return true;
+  };
+
   const today = startOfDay(new Date());
   const todayIso = format(today, "yyyy-MM-dd");
   const isPastDay = isBefore(parseISO(selectedDate), today);
