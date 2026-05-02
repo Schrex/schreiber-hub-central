@@ -86,6 +86,15 @@ const Schedule = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"day" | "week">("day");
+  const [showOffice, setShowOffice] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("schedule.showOffice") === "1";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("schedule.showOffice", showOffice ? "1" : "0");
+    }
+  }, [showOffice]);
 
   // form
   const [formJob, setFormJob] = useState<string>("");
