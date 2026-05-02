@@ -191,14 +191,14 @@ export const AccidentReportDialog = ({ open, onOpenChange, presetJob }: Props) =
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Incident type *</Label>
-              <Select value={incidentType} onValueChange={setIncidentType}>
+              <Select value={incidentType} onValueChange={(v) => setIncidentType(v as IncidentType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{incidentTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <Label className="text-xs">Severity *</Label>
-              <Select value={severity} onValueChange={setSeverity}>
+              <Select value={severity} onValueChange={(v) => setSeverity(v as Severity)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{severities.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
@@ -264,7 +264,7 @@ export const AccidentReportDialog = ({ open, onOpenChange, presetJob }: Props) =
 
           <div>
             <Label className="text-xs">Your signature</Label>
-            <SignaturePad value={signature ?? undefined} onChange={setSignature} />
+            <SignaturePad onChange={setSignature} />
           </div>
         </div>
 
