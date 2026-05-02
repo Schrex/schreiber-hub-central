@@ -5,9 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Default: "Brian" — warm, mature American male, fits the caring-foreman tone.
+// Default: "George" — mature, grounded British-American male. Warmer and
+// more natural-sounding than Brian for the foreman tone.
 // Can be overridden per-project via the `safety_talk_voice_id` row in app_settings.
-const DEFAULT_VOICE_ID = 'nPczCjzI2devNBz1zQrb'
+const DEFAULT_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'
 
 async function resolveVoiceId(supabase: any): Promise<string> {
   try {
@@ -53,14 +54,22 @@ Deno.serve(async (req) => {
 
     const voiceId = await resolveVoiceId(supabase)
     const ttsResp = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_192`,
       {
         method: 'POST',
         headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: { stability: 0.55, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true, speed: 0.95 },
+          // Turbo v2.5 is the highest quality natural-conversation model and
+          // produces noticeably less "robotic" prosody than multilingual_v2.
+          model_id: 'eleven_turbo_v2_5',
+          voice_settings: {
+            stability: 0.4,         // lower = more expressive, less monotone
+            similarity_boost: 0.85, // keep voice identity consistent
+            style: 0.15,            // small amount of stylistic warmth, not exaggerated
+            use_speaker_boost: true,
+            speed: 0.96,            // a hair slower for clearer delivery
+          },
         }),
       }
     )
