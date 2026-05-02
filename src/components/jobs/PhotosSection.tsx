@@ -7,6 +7,23 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
+import exifr from "exifr";
+
+const readExifDate = async (file: File): Promise<Date | null> => {
+  if (!file.type.startsWith("image/")) return null;
+  try {
+    const tags = await exifr.parse(file, ["DateTimeOriginal", "CreateDate", "ModifyDate"]);
+    const d = tags?.DateTimeOriginal || tags?.CreateDate || tags?.ModifyDate;
+    if (d instanceof Date && !isNaN(d.getTime())) return d;
+    if (typeof d === "string") {
+      const parsed = new Date(d);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+  } catch (err) {
+    console.warn("EXIF read failed", err);
+  }
+  return null;
+};
 
 const SUPABASE_URL = "https://bitogpfplcquovpdjprk.supabase.co";
 const RESUMABLE_THRESHOLD = 6 * 1024 * 1024;
