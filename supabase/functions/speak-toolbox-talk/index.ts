@@ -51,8 +51,9 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get('ELEVENLABS_API_KEY')
     if (!apiKey) throw new Error('ELEVENLABS_API_KEY not set')
 
+    const voiceId = await resolveVoiceId(supabase)
     const ttsResp = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${FOREMAN_VOICE_ID}?output_format=mp3_44100_128`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
       {
         method: 'POST',
         headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
