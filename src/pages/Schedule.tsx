@@ -894,6 +894,12 @@ const Schedule = () => {
                 )}
               </div>
             </div>
+            <label className="mb-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={showOffice}
+                onCheckedChange={(v) => setShowOffice(v === true)}
+              />
+              Include office staff in schedule
             <Card className="divide-y">
               {roster.length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">
