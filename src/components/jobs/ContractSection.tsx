@@ -65,7 +65,8 @@ export const ContractSection = ({ jobId }: Props) => {
       toast.success("Contract uploaded");
       await load();
     } catch (err: any) {
-      toast.error(err.message ?? "Upload failed");
+      console.error("Contract upload failed", err);
+      toast.error(err?.message ?? "Upload failed");
     } finally {
       setBusy(false);
       e.target.value = "";
