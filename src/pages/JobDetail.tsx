@@ -21,6 +21,7 @@ import { ContractSection } from "@/components/jobs/ContractSection";
 import { ScopeOfWorkSection } from "@/components/jobs/ScopeOfWorkSection";
 import { SubmittalsSection } from "@/components/jobs/SubmittalsSection";
 import { AccidentReportButton } from "@/components/safety/AccidentReportDialog";
+import { SafetyViolationButton } from "@/components/safety/SafetyViolationDialog";
 
 interface Job {
   id: string;
@@ -196,6 +197,10 @@ const JobDetail = () => {
         <SafetyInspectionButton jobId={job.id} />
 
         <AccidentReportButton presetJob={{ id: job.id, name: job.name, job_number: job.job_number }} variant="outline" />
+
+        {canSeePrivate && (
+          <SafetyViolationButton presetJob={{ id: job.id, name: job.name, job_number: job.job_number }} variant="outline" />
+        )}
 
         {mapsUrl && (
           <Button asChild variant="outline" className="w-full">
