@@ -1517,6 +1517,33 @@ export type Database = {
           },
         ]
       }
+      job_scope_items: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          job_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          job_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_unit_pricing: {
         Row: {
           code: string
@@ -1564,6 +1591,10 @@ export type Database = {
       jobs: {
         Row: {
           address: string | null
+          contract_file_name: string | null
+          contract_file_path: string | null
+          contract_uploaded_at: string | null
+          contract_uploaded_by: string | null
           created_at: string
           created_by: string | null
           customer: string | null
@@ -1584,6 +1615,10 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          contract_file_name?: string | null
+          contract_file_path?: string | null
+          contract_uploaded_at?: string | null
+          contract_uploaded_by?: string | null
           created_at?: string
           created_by?: string | null
           customer?: string | null
@@ -1604,6 +1639,10 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          contract_file_name?: string | null
+          contract_file_path?: string | null
+          contract_uploaded_at?: string | null
+          contract_uploaded_by?: string | null
           created_at?: string
           created_by?: string | null
           customer?: string | null

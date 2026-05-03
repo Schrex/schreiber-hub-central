@@ -17,6 +17,8 @@ import { SafetyInspectionButton } from "@/components/jobs/SafetyInspectionButton
 import { RequestTruckButton } from "@/components/jobs/RequestTruckButton";
 import { ForemanPicker } from "@/components/jobs/ForemanPicker";
 import { JobContactsSection } from "@/components/jobs/JobContactsSection";
+import { ContractSection } from "@/components/jobs/ContractSection";
+import { ScopeOfWorkSection } from "@/components/jobs/ScopeOfWorkSection";
 import { AccidentReportButton } from "@/components/safety/AccidentReportDialog";
 
 interface Job {
@@ -170,6 +172,9 @@ const JobDetail = () => {
         {canSeePrivate && (
           <JobContactsSection jobId={job.id} jobName={job.name} foremanId={job.foreman_id} />
         )}
+
+        <ContractSection jobId={job.id} />
+        <ScopeOfWorkSection jobId={job.id} />
 
         {canSeeJobReport && <JobInfoSection jobNumber={job.job_number} />}
         <JobLookahead jobId={job.id} />
