@@ -226,7 +226,7 @@ const Schedule = () => {
       is_office: isOffice(row.converted_user_id ?? null),
     }));
     const orphanProfiles: Profile[] = (pr ?? [])
-      .filter((p) => !p.contact_id && !linkedUserIds.has(p.user_id))
+      .filter((p) => !linkedUserIds.has(p.user_id))
       .map((p) => ({
         contact_id: null,
         user_id: p.user_id,
