@@ -2458,6 +2458,69 @@ export type Database = {
         }
         Relationships: []
       }
+      swpppp_reports: {
+        Row: {
+          created_at: string
+          email_from: string | null
+          email_received_at: string | null
+          email_subject: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          job_id: string
+          mime_type: string | null
+          notes: string | null
+          report_date: string | null
+          source: string
+          title: string | null
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+          week_of: string
+        }
+        Insert: {
+          created_at?: string
+          email_from?: string | null
+          email_received_at?: string | null
+          email_subject?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          job_id: string
+          mime_type?: string | null
+          notes?: string | null
+          report_date?: string | null
+          source?: string
+          title?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          week_of: string
+        }
+        Update: {
+          created_at?: string
+          email_from?: string | null
+          email_received_at?: string | null
+          email_subject?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          job_id?: string
+          mime_type?: string | null
+          notes?: string | null
+          report_date?: string | null
+          source?: string
+          title?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          week_of?: string
+        }
+        Relationships: []
+      }
       time_off_requests: {
         Row: {
           created_at: string
