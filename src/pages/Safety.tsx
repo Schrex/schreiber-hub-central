@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { SignaturePad } from "@/components/safety/SignaturePad";
 import { AccidentReportButton } from "@/components/safety/AccidentReportDialog";
+import { SafetyViolationButton } from "@/components/safety/SafetyViolationDialog";
 
 interface SafetyRule { id: string; title: string; body: string; category: string | null; sort_order: number; is_active: boolean; }
 interface ToolboxTalk { id: string; title: string; category: string | null; content: string; quiz_questions: any; created_with_ai: boolean; is_active: boolean; image_url?: string | null; video_url?: string | null; voice_script?: string | null; }
@@ -37,8 +38,9 @@ const Safety = () => {
           <p className="text-sm text-muted-foreground">Rules, toolbox talks & sign-offs</p>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 space-y-2">
           <AccidentReportButton />
+          {(role === "foreman" || role === "office" || isAdmin) && <SafetyViolationButton />}
         </div>
 
         <Tabs defaultValue="rules" className="mt-5">
