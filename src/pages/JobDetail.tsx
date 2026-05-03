@@ -198,6 +198,10 @@ const JobDetail = () => {
 
         <AccidentReportButton presetJob={{ id: job.id, name: job.name, job_number: job.job_number }} variant="outline" />
 
+        {canSeePrivate && (
+          <SafetyViolationButton presetJob={{ id: job.id, name: job.name, job_number: job.job_number }} variant="outline" />
+        )}
+
         {mapsUrl && (
           <Button asChild variant="outline" className="w-full">
             <a href={mapsUrl} target="_blank" rel="noreferrer">Open in Maps</a>
