@@ -162,19 +162,6 @@ export const SwpppSection = ({ jobId, jobNumber }: { jobId: string; jobNumber: s
         )}
       </div>
 
-      {canEdit && (
-        <div className="flex items-center justify-between rounded-md border border-dashed border-border bg-background/50 p-2 text-xs">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Mail className="h-3 w-3 shrink-0 text-muted-foreground" />
-            <span className="text-muted-foreground shrink-0">Forward SWPPP emails to:</span>
-            <code className="truncate font-mono text-[11px]">{inboundEmail}</code>
-          </div>
-          <Button size="sm" variant="ghost" className="h-6 px-2" onClick={copyEmailHelp}>
-            <Copy className="h-3 w-3" />
-          </Button>
-        </div>
-      )}
-
       {items.length === 0 ? (
         <p className="text-xs text-muted-foreground">No SWPPP reports yet.</p>
       ) : (
