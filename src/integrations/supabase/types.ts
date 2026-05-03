@@ -2276,6 +2276,84 @@ export type Database = {
         }
         Relationships: []
       }
+      safety_violations: {
+        Row: {
+          comments: string | null
+          created_at: string
+          department: string | null
+          disciplinary_action: Database["public"]["Enums"]["violation_disciplinary_action"]
+          employee_acknowledged: boolean
+          employee_contact_id: string | null
+          employee_name: string
+          employee_signature_path: string | null
+          filed_by: string
+          filed_by_name: string
+          id: string
+          job_id: string | null
+          job_name_snapshot: string | null
+          job_number_snapshot: string | null
+          office_notes: string | null
+          photo_paths: string[]
+          status: Database["public"]["Enums"]["violation_status"]
+          supervisor_signature_path: string | null
+          suspension_from: string | null
+          suspension_to: string | null
+          updated_at: string
+          violation_date: string
+          violations: Json
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          department?: string | null
+          disciplinary_action?: Database["public"]["Enums"]["violation_disciplinary_action"]
+          employee_acknowledged?: boolean
+          employee_contact_id?: string | null
+          employee_name: string
+          employee_signature_path?: string | null
+          filed_by: string
+          filed_by_name: string
+          id?: string
+          job_id?: string | null
+          job_name_snapshot?: string | null
+          job_number_snapshot?: string | null
+          office_notes?: string | null
+          photo_paths?: string[]
+          status?: Database["public"]["Enums"]["violation_status"]
+          supervisor_signature_path?: string | null
+          suspension_from?: string | null
+          suspension_to?: string | null
+          updated_at?: string
+          violation_date: string
+          violations?: Json
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          department?: string | null
+          disciplinary_action?: Database["public"]["Enums"]["violation_disciplinary_action"]
+          employee_acknowledged?: boolean
+          employee_contact_id?: string | null
+          employee_name?: string
+          employee_signature_path?: string | null
+          filed_by?: string
+          filed_by_name?: string
+          id?: string
+          job_id?: string | null
+          job_name_snapshot?: string | null
+          job_number_snapshot?: string | null
+          office_notes?: string | null
+          photo_paths?: string[]
+          status?: Database["public"]["Enums"]["violation_status"]
+          supervisor_signature_path?: string | null
+          suspension_from?: string | null
+          suspension_to?: string | null
+          updated_at?: string
+          violation_date?: string
+          violations?: Json
+        }
+        Relationships: []
+      }
       schedule_assignments: {
         Row: {
           assignment_date: string
@@ -2957,6 +3035,12 @@ export type Database = {
       time_off_status: "pending" | "approved" | "denied" | "cancelled"
       time_off_type: "vacation" | "sick" | "personal" | "other"
       truck_request_status: "pending" | "approved" | "declined" | "cancelled"
+      violation_disciplinary_action:
+        | "verbal"
+        | "written"
+        | "suspension"
+        | "termination"
+      violation_status: "open" | "acknowledged" | "resolved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3176,6 +3260,13 @@ export const Constants = {
       time_off_status: ["pending", "approved", "denied", "cancelled"],
       time_off_type: ["vacation", "sick", "personal", "other"],
       truck_request_status: ["pending", "approved", "declined", "cancelled"],
+      violation_disciplinary_action: [
+        "verbal",
+        "written",
+        "suspension",
+        "termination",
+      ],
+      violation_status: ["open", "acknowledged", "resolved"],
     },
   },
 } as const
