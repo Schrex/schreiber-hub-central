@@ -21,6 +21,7 @@ import { ContractSection } from "@/components/jobs/ContractSection";
 import { ScopeOfWorkSection } from "@/components/jobs/ScopeOfWorkSection";
 import { SubmittalsSection } from "@/components/jobs/SubmittalsSection";
 import { AccidentReportButton } from "@/components/safety/AccidentReportDialog";
+import { SafetyViolationButton } from "@/components/safety/SafetyViolationDialog";
 
 interface Job {
   id: string;
