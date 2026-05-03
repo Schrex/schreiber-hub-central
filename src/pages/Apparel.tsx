@@ -243,32 +243,30 @@ const Apparel = () => {
                   )}
                 </div>
 
-                {selectedItem && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Size</Label>
-                      <Select value={size} onValueChange={setSize}>
-                        <SelectTrigger><SelectValue placeholder="Size" /></SelectTrigger>
-                        <SelectContent>
-                          {selectedItem.sizes.map((s) => (
-                            <SelectItem key={s} value={s}>{s}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Color</Label>
-                      <Select value={color} onValueChange={setColor}>
-                        <SelectTrigger><SelectValue placeholder="Color" /></SelectTrigger>
-                        <SelectContent>
-                          {selectedItem.colors.map((c) => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <div className="grid grid-cols-2 gap-3" aria-hidden={!selectedItem} style={{ display: selectedItem ? "grid" : "none" }}>
+                  <div>
+                    <Label>Size</Label>
+                    <Select value={size} onValueChange={setSize} disabled={!selectedItem}>
+                      <SelectTrigger><SelectValue placeholder="Size" /></SelectTrigger>
+                      <SelectContent>
+                        {(selectedItem?.sizes ?? []).map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
+                  <div>
+                    <Label>Color</Label>
+                    <Select value={color} onValueChange={setColor} disabled={!selectedItem}>
+                      <SelectTrigger><SelectValue placeholder="Color" /></SelectTrigger>
+                      <SelectContent>
+                        {(selectedItem?.colors ?? []).map((c) => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
                 <div>
                   <Label>Quantity</Label>
