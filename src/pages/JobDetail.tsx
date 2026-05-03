@@ -20,6 +20,7 @@ import { JobContactsSection } from "@/components/jobs/JobContactsSection";
 import { ContractSection } from "@/components/jobs/ContractSection";
 import { ScopeOfWorkSection } from "@/components/jobs/ScopeOfWorkSection";
 import { SubmittalsSection } from "@/components/jobs/SubmittalsSection";
+import { SwpppSection } from "@/components/jobs/SwpppSection";
 import { AccidentReportButton } from "@/components/safety/AccidentReportDialog";
 import { SafetyViolationButton } from "@/components/safety/SafetyViolationDialog";
 
@@ -178,6 +179,7 @@ const JobDetail = () => {
         <ContractSection jobId={job.id} />
         <ScopeOfWorkSection jobId={job.id} />
         <SubmittalsSection jobId={job.id} />
+        <SwpppSection jobId={job.id} jobNumber={job.job_number} />
 
         {canSeeJobReport && <JobInfoSection jobNumber={job.job_number} />}
         <JobLookahead jobId={job.id} />
