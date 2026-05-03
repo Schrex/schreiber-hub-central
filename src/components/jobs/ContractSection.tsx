@@ -42,10 +42,15 @@ export const ContractSection = ({ jobId }: Props) => {
       if (meta?.contract_file_path) {
         await supabase.storage.from("job-contracts").remove([meta.contract_file_path]);
       }
-      const path = `${jobId}/${Date.now()}-${file.name}`;
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+      const path = `${jobId}/${Date.now()}-${safeName}`;
       const { error: upErr } = await supabase.storage
         .from("job-contracts")
-        .upload(path, file, { upsert: false, contentType: file.type });
+        .upload(path, file, {
+          upsert: false,
+          contentType: file.type || "application/octet-stream",
+          cacheControl: "3600",
+        });
       if (upErr) throw upErr;
       const { error: updErr } = await supabase
         .from("jobs")
@@ -60,7 +65,8 @@ export const ContractSection = ({ jobId }: Props) => {
       toast.success("Contract uploaded");
       await load();
     } catch (err: any) {
-      toast.error(err.message ?? "Upload failed");
+      console.error("Contract upload failed", err);
+      toast.error(err?.message ?? "Upload failed");
     } finally {
       setBusy(false);
       e.target.value = "";
