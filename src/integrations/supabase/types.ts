@@ -1544,6 +1544,63 @@ export type Database = {
         }
         Relationships: []
       }
+      job_submittals: {
+        Row: {
+          approved_at: string | null
+          created_at: string
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          job_id: string
+          mime_type: string | null
+          notes: string | null
+          sort_order: number
+          status: Database["public"]["Enums"]["submittal_status"]
+          submitted_at: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          job_id: string
+          mime_type?: string | null
+          notes?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["submittal_status"]
+          submitted_at?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          job_id?: string
+          mime_type?: string | null
+          notes?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["submittal_status"]
+          submitted_at?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Relationships: []
+      }
       job_unit_pricing: {
         Row: {
           code: string
@@ -2889,6 +2946,13 @@ export type Database = {
         | "denied"
         | "completed"
         | "cancelled"
+      submittal_status:
+        | "pending"
+        | "submitted"
+        | "under_review"
+        | "approved"
+        | "revise_resubmit"
+        | "rejected"
       time_off_half_day: "none" | "am" | "pm"
       time_off_status: "pending" | "approved" | "denied" | "cancelled"
       time_off_type: "vacation" | "sick" | "personal" | "other"
@@ -3099,6 +3163,14 @@ export const Constants = {
         "denied",
         "completed",
         "cancelled",
+      ],
+      submittal_status: [
+        "pending",
+        "submitted",
+        "under_review",
+        "approved",
+        "revise_resubmit",
+        "rejected",
       ],
       time_off_half_day: ["none", "am", "pm"],
       time_off_status: ["pending", "approved", "denied", "cancelled"],
