@@ -3,6 +3,7 @@ import { FileText, Upload, Trash2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { resumableUpload } from "@/lib/resumableUpload";
 
@@ -130,6 +131,15 @@ export const ContractSection = ({ jobId }: Props) => {
           </label>
         )}
       </div>
+
+      {busy && (
+        <div className="space-y-1">
+          <Progress value={progress || undefined} className="h-1.5" />
+          <p className="text-[10px] text-muted-foreground">
+            {progress > 0 ? `Uploading ${progress}%` : "Preparing upload…"}
+          </p>
+        </div>
+      )}
 
       {meta?.contract_file_path ? (
         <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-background p-3">
