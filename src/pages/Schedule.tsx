@@ -39,6 +39,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { WeekGrid } from "@/components/schedule/WeekGrid";
+import { DayBoard, type BoardAssignment, type BoardCrew, type BoardJob } from "@/components/schedule/DayBoard";
 import { fetchCurrentPositions, type CurrentPosition } from "@/lib/currentPositions";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
@@ -85,7 +86,8 @@ const Schedule = () => {
   const [positionsByUser, setPositionsByUser] = useState<Map<string, CurrentPosition>>(new Map());
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"day" | "week">("day");
+  const [viewMode, setViewMode] = useState<"day" | "week" | "board">("day");
+  const [boardExtraJobIds, setBoardExtraJobIds] = useState<string[]>([]);
   const [showOffice, setShowOffice] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("schedule.showOffice") === "1";
@@ -421,6 +423,47 @@ const Schedule = () => {
     loadAll();
   };
 
+  // --- Drag & drop board handlers ---
+  const boardAssign = async (jobId: string, userId: string) => {
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .upsert(
+        [
+          {
+            job_id: jobId,
+            user_id: userId,
+            assignment_date: selectedDate,
+            start_time: "07:00",
+            created_by: user?.id ?? null,
+          },
+        ],
+        { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: true },
+      );
+    if (error) {
+      toast({ title: "Could not assign", description: error.message, variant: "destructive" });
+      return;
+    }
+    loadAll();
+  };
+
+  const boardMove = async (assignmentId: string, newJobId: string) => {
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .update({ job_id: newJobId })
+      .eq("id", assignmentId);
+    if (error) {
+      // Likely unique conflict — they're already on that job
+      toast({ title: "Could not move", description: error.message, variant: "destructive" });
+      return;
+    }
+    loadAll();
+  };
+
+  const boardUnassign = async (assignmentId: string) => {
+    await removeAssignment(assignmentId);
+  };
+
+
   const updateAssignmentNotes = async (id: string, notes: string) => {
     const value = notes.trim() ? notes.trim() : null;
     const { error } = await supabase
@@ -475,6 +518,14 @@ const Schedule = () => {
                 }`}
               >
                 Week
+              </button>
+              <button
+                onClick={() => setViewMode("board")}
+                className={`rounded px-2.5 py-1 font-medium transition ${
+                  viewMode === "board" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                Board
               </button>
             </div>
           )}
@@ -729,7 +780,7 @@ const Schedule = () => {
         )}
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-5">
+      <main className={`mx-auto space-y-6 px-4 py-5 ${viewMode === "board" ? "max-w-6xl" : "max-w-3xl"}`}>
         {viewMode === "week" && canEdit && (
           <WeekGrid
             weekDays={weekDays}
@@ -744,6 +795,65 @@ const Schedule = () => {
             }}
           />
         )}
+
+        {viewMode === "board" && canEdit && (
+          <section className="space-y-3">
+            <div className="flex items-end justify-between">
+              <div>
+                <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                  Drag &amp; drop board · {dateLabel}
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Drag crew from <span className="font-medium">Available</span> onto a job. Drag between jobs to reassign, or back to Available to unassign.
+                </p>
+              </div>
+            </div>
+            {isPastDay ? (
+              <Card className="p-6 text-center text-sm text-muted-foreground">
+                <Lock className="mx-auto mb-2 h-5 w-5 opacity-50" />
+                Past days are locked.
+              </Card>
+            ) : (
+              <DayBoard
+                allActiveJobs={jobs as BoardJob[]}
+                jobs={(allByJob.map((g) => g.job).filter(Boolean) as BoardJob[])}
+                extraJobIds={boardExtraJobIds}
+                onAddJob={(id) =>
+                  setBoardExtraJobIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+                }
+                onRemoveJobFromBoard={(id) =>
+                  setBoardExtraJobIds((prev) => prev.filter((x) => x !== id))
+                }
+                crew={visibleProfiles
+                  .filter((p) => p.has_login && p.user_id)
+                  .map<BoardCrew>((p) => {
+                    const off = timeOff.find((t) => t.user_id === p.user_id);
+                    return {
+                      user_id: p.user_id as string,
+                      display_name: p.display_name ?? "Unnamed",
+                      position: positionsByUser.get(p.user_id as string)?.title ?? null,
+                      status: off ? "off" : "available",
+                      off_label: off
+                        ? `${off.type}${off.half_day !== "none" ? ` (${off.half_day.toUpperCase()})` : ""}`
+                        : null,
+                    };
+                  })}
+                assignments={assignments.map<BoardAssignment>((a) => ({
+                  id: a.id,
+                  job_id: a.job_id,
+                  user_id: a.user_id,
+                  display_name: a.profile_name ?? "Unknown",
+                  start_time: a.start_time,
+                  position: positionsByUser.get(a.user_id)?.title ?? null,
+                }))}
+                onAssign={boardAssign}
+                onMove={boardMove}
+                onUnassign={boardUnassign}
+              />
+            )}
+          </section>
+        )}
+
 
         {viewMode === "day" && (
         <>
