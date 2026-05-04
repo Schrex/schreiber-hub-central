@@ -86,7 +86,8 @@ const Schedule = () => {
   const [positionsByUser, setPositionsByUser] = useState<Map<string, CurrentPosition>>(new Map());
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"day" | "week">("day");
+  const [viewMode, setViewMode] = useState<"day" | "week" | "board">("day");
+  const [boardExtraJobIds, setBoardExtraJobIds] = useState<string[]>([]);
   const [showOffice, setShowOffice] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("schedule.showOffice") === "1";
