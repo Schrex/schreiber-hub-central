@@ -39,6 +39,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { WeekGrid } from "@/components/schedule/WeekGrid";
+import { DayBoard, type BoardAssignment, type BoardCrew, type BoardJob } from "@/components/schedule/DayBoard";
 import { fetchCurrentPositions, type CurrentPosition } from "@/lib/currentPositions";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
