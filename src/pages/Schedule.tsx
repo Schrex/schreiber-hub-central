@@ -801,10 +801,10 @@ const Schedule = () => {
             <div className="flex items-end justify-between">
               <div>
                 <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                  Drag &amp; drop board · {dateLabel}
+                  Scheduling board · {dateLabel}
                 </h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">Press &amp; hold</span> a name (≡), then drag onto a job. Drag between jobs to reassign, or back to Available to unassign.
+                  Tap a name, then tap Place here on a job. You can still press and drag names between jobs.
                 </p>
               </div>
             </div>
