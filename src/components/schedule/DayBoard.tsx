@@ -133,11 +133,13 @@ function AssignmentChip({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      style={{ touchAction: "none" }}
       className={cn(
-        "group flex touch-none select-none cursor-grab items-center justify-between gap-2 rounded-md border border-primary/20 bg-primary/5 px-2 py-1.5 text-xs active:cursor-grabbing",
+        "group flex select-none cursor-grab items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2 py-2 text-xs active:cursor-grabbing",
         (isDragging || dragging) && "opacity-40",
       )}
     >
+      <GripVertical className="h-3.5 w-3.5 shrink-0 text-primary/60" />
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium leading-tight">{a.display_name}</div>
         <div className="truncate text-[10px] leading-tight text-muted-foreground">
