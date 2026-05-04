@@ -87,19 +87,25 @@ function CrewChip({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      style={{ touchAction: "none" }}
       className={cn(
-        "touch-none select-none rounded-md border px-2 py-1.5 text-xs",
+        "flex select-none items-center gap-2 rounded-md border px-2 py-2 text-xs",
         crew.status === "off"
           ? "cursor-not-allowed border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
           : "cursor-grab border-border bg-background hover:border-primary/40 hover:bg-primary/5 active:cursor-grabbing",
         (isDragging || dragging) && "opacity-40",
       )}
     >
-      <div className="font-medium leading-tight">{crew.display_name}</div>
-      <div className="text-[10px] leading-tight text-muted-foreground">
-        {crew.status === "off"
-          ? `Off${crew.off_label ? ` · ${crew.off_label}` : ""}`
-          : crew.position ?? "—"}
+      {crew.status !== "off" && (
+        <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-medium leading-tight">{crew.display_name}</div>
+        <div className="truncate text-[10px] leading-tight text-muted-foreground">
+          {crew.status === "off"
+            ? `Off${crew.off_label ? ` · ${crew.off_label}` : ""}`
+            : crew.position ?? "—"}
+        </div>
       </div>
     </div>
   );
