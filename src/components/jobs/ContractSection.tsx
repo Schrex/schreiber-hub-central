@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { resumableUpload } from "@/lib/resumableUpload";
 
 interface Props {
   jobId: string;
@@ -21,6 +22,7 @@ export const ContractSection = ({ jobId }: Props) => {
   const canEdit = r === "office" || r === "admin";
   const [meta, setMeta] = useState<ContractMeta | null>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const load = async () => {
     const { data } = await supabase
@@ -37,6 +39,7 @@ export const ContractSection = ({ jobId }: Props) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     setBusy(true);
+    setProgress(0);
     try {
       // Remove old file if present
       if (meta?.contract_file_path) {
@@ -44,14 +47,13 @@ export const ContractSection = ({ jobId }: Props) => {
       }
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
       const path = `${jobId}/${Date.now()}-${safeName}`;
-      const { error: upErr } = await supabase.storage
-        .from("job-contracts")
-        .upload(path, file, {
-          upsert: false,
-          contentType: file.type || "application/octet-stream",
-          cacheControl: "3600",
-        });
-      if (upErr) throw upErr;
+      await resumableUpload({
+        bucket: "job-contracts",
+        path,
+        file,
+        contentType: file.type || "application/pdf",
+        onProgress: setProgress,
+      });
       const { error: updErr } = await supabase
         .from("jobs")
         .update({
@@ -69,6 +71,7 @@ export const ContractSection = ({ jobId }: Props) => {
       toast.error(err?.message ?? "Upload failed");
     } finally {
       setBusy(false);
+      setProgress(0);
       e.target.value = "";
     }
   };
@@ -119,7 +122,10 @@ export const ContractSection = ({ jobId }: Props) => {
               disabled={busy}
             />
             <span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:border-primary/40">
-              <Upload className="h-3 w-3" /> {meta?.contract_file_path ? "Replace" : "Upload"}
+              <Upload className="h-3 w-3" />
+              {busy
+                ? `Uploading ${progress}%`
+                : meta?.contract_file_path ? "Replace" : "Upload"}
             </span>
           </label>
         )}
