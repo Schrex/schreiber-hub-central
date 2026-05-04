@@ -379,11 +379,12 @@ export function DayBoard({
   onUnassign,
 }: Props) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 6 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
   );
 
   const [active, setActive] = useState<DraggedItem | null>(null);
+  const [selected, setSelected] = useState<DraggedItem | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const assignedUserIds = useMemo(
@@ -430,6 +431,22 @@ export function DayBoard({
     if (data) setActive(data);
   };
 
+  const placeSelected = async (jobId: string) => {
+    if (!selected) return;
+    if (selected.kind === "crew") {
+      await onAssign(jobId, selected.user_id);
+    } else if (selected.from_job_id !== jobId) {
+      await onMove(selected.id, jobId);
+    }
+    setSelected(null);
+  };
+
+  const unassignSelected = async () => {
+    if (selected?.kind !== "assignment") return;
+    await onUnassign(selected.id);
+    setSelected(null);
+  };
+
   const handleEnd = async (e: DragEndEvent) => {
     setActive(null);
     const item = e.active.data.current as DraggedItem | undefined;
@@ -449,6 +466,7 @@ export function DayBoard({
       } else if (item.kind === "assignment") {
         if (item.from_job_id !== jobId) await onMove(item.id, jobId);
       }
+      setSelected(null);
     }
   };
 
@@ -456,7 +474,20 @@ export function DayBoard({
     <DndContext sensors={sensors} onDragStart={handleStart} onDragEnd={handleEnd}>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[260px_1fr]">
         <div className="space-y-3 lg:sticky lg:top-[180px] lg:self-start">
-          <UnassignedZone available={available} off={off} />
+          <UnassignedZone
+            available={available}
+            off={off}
+            selected={selected}
+            onCrewSelect={(c) =>
+              setSelected({
+                kind: "crew",
+                user_id: c.user_id,
+                name: c.display_name,
+                position: c.position,
+              })
+            }
+            onUnassignSelected={unassignSelected}
+          />
         </div>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
