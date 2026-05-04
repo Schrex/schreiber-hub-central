@@ -72,7 +72,7 @@ function CrewChip({
   crew: BoardCrew;
   dragging?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setActivatorNodeRef, setNodeRef, isDragging } = useDraggable({
     id: `crew:${crew.user_id}`,
     data: {
       kind: "crew",
@@ -85,19 +85,26 @@ function CrewChip({
   return (
     <div
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      style={{ touchAction: "none" }}
       className={cn(
         "flex select-none items-center gap-2 rounded-md border px-2 py-2 text-xs",
         crew.status === "off"
           ? "cursor-not-allowed border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-          : "cursor-grab border-border bg-background hover:border-primary/40 hover:bg-primary/5 active:cursor-grabbing",
+          : "border-border bg-background hover:border-primary/40 hover:bg-primary/5",
         (isDragging || dragging) && "opacity-40",
       )}
     >
       {crew.status !== "off" && (
-        <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          {...attributes}
+          {...listeners}
+          style={{ touchAction: "none" }}
+          className="-my-1 -ml-1 flex h-9 w-9 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
+          aria-label={`Drag ${crew.display_name}`}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
       )}
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium leading-tight">{crew.display_name}</div>
@@ -118,7 +125,7 @@ function AssignmentChip({
   a: BoardAssignment;
   dragging?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setActivatorNodeRef, setNodeRef, isDragging } = useDraggable({
     id: `asg:${a.id}`,
     data: {
       kind: "assignment",
@@ -131,15 +138,22 @@ function AssignmentChip({
   return (
     <div
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      style={{ touchAction: "none" }}
       className={cn(
-        "group flex select-none cursor-grab items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2 py-2 text-xs active:cursor-grabbing",
+        "group flex select-none items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2 py-2 text-xs",
         (isDragging || dragging) && "opacity-40",
       )}
     >
-      <GripVertical className="h-3.5 w-3.5 shrink-0 text-primary/60" />
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        {...attributes}
+        {...listeners}
+        style={{ touchAction: "none" }}
+        className="-my-1 -ml-1 flex h-9 w-9 shrink-0 cursor-grab items-center justify-center rounded text-primary/70 hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
+        aria-label={`Drag ${a.display_name}`}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium leading-tight">{a.display_name}</div>
         <div className="truncate text-[10px] leading-tight text-muted-foreground">
