@@ -4,7 +4,7 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useDraggable,
   useDroppable,
@@ -68,11 +68,15 @@ type DraggedItem =
 function CrewChip({
   crew,
   dragging,
+  selected,
+  onSelect,
 }: {
   crew: BoardCrew;
   dragging?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
-  const { attributes, listeners, setActivatorNodeRef, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `crew:${crew.user_id}`,
     data: {
       kind: "crew",
@@ -82,29 +86,39 @@ function CrewChip({
     } satisfies DraggedItem,
     disabled: crew.status === "off",
   });
+  const canMove = crew.status !== "off";
   return (
     <div
       ref={setNodeRef}
+      {...(canMove ? attributes : {})}
+      {...(canMove ? listeners : {})}
+      role={canMove ? "button" : undefined}
+      tabIndex={canMove ? 0 : undefined}
+      onClick={canMove ? onSelect : undefined}
+      onKeyDown={
+        canMove
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect?.();
+              }
+            }
+          : undefined
+      }
+      style={canMove ? { touchAction: "none" } : undefined}
       className={cn(
-        "flex select-none items-center gap-2 rounded-md border px-2 py-2 text-xs",
+        "flex select-none items-center gap-2 rounded-md border px-2 py-2 text-xs outline-none transition-colors",
         crew.status === "off"
           ? "cursor-not-allowed border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-          : "border-border bg-background hover:border-primary/40 hover:bg-primary/5",
+          : "cursor-grab border-border bg-background hover:border-primary/40 hover:bg-primary/5 active:cursor-grabbing",
+        selected && "border-primary bg-primary/10 ring-2 ring-primary/30",
         (isDragging || dragging) && "opacity-40",
       )}
     >
       {crew.status !== "off" && (
-        <button
-          ref={setActivatorNodeRef}
-          type="button"
-          {...attributes}
-          {...listeners}
-          style={{ touchAction: "none" }}
-          className="-my-1 -ml-1 flex h-9 w-9 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
-          aria-label={`Drag ${crew.display_name}`}
-        >
+        <span className="-my-1 -ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded text-muted-foreground">
           <GripVertical className="h-4 w-4" />
-        </button>
+        </span>
       )}
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium leading-tight">{crew.display_name}</div>
@@ -121,11 +135,15 @@ function CrewChip({
 function AssignmentChip({
   a,
   dragging,
+  selected,
+  onSelect,
 }: {
   a: BoardAssignment;
   dragging?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
-  const { attributes, listeners, setActivatorNodeRef, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `asg:${a.id}`,
     data: {
       kind: "assignment",
@@ -138,22 +156,27 @@ function AssignmentChip({
   return (
     <div
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect?.();
+        }
+      }}
+      style={{ touchAction: "none" }}
       className={cn(
-        "group flex select-none items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2 py-2 text-xs",
+        "group flex cursor-grab select-none items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2 py-2 text-xs outline-none transition-colors active:cursor-grabbing",
+        selected && "border-primary bg-primary/10 ring-2 ring-primary/30",
         (isDragging || dragging) && "opacity-40",
       )}
     >
-      <button
-        ref={setActivatorNodeRef}
-        type="button"
-        {...attributes}
-        {...listeners}
-        style={{ touchAction: "none" }}
-        className="-my-1 -ml-1 flex h-9 w-9 shrink-0 cursor-grab items-center justify-center rounded text-primary/70 hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
-        aria-label={`Drag ${a.display_name}`}
-      >
+      <span className="-my-1 -ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded text-primary/70">
         <GripVertical className="h-4 w-4" />
-      </button>
+      </span>
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium leading-tight">{a.display_name}</div>
         <div className="truncate text-[10px] leading-tight text-muted-foreground">
@@ -170,13 +193,20 @@ function JobDropZone({
   assignments,
   onRemoveBoard,
   removable,
+  selected,
+  onAssignmentSelect,
+  onPlaceSelected,
 }: {
   job: BoardJob;
   assignments: BoardAssignment[];
   onRemoveBoard?: () => void;
   removable: boolean;
+  selected: DraggedItem | null;
+  onAssignmentSelect: (assignment: BoardAssignment) => void;
+  onPlaceSelected: (jobId: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `job:${job.id}` });
+  const canPlaceSelected = !!selected && (selected.kind === "crew" || selected.from_job_id !== job.id);
   return (
     <Card
       ref={setNodeRef}
@@ -207,6 +237,16 @@ function JobDropZone({
           <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
             {assignments.length}
           </Badge>
+          {canPlaceSelected && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => onPlaceSelected(job.id)}
+            >
+              Place here
+            </Button>
+          )}
           {removable && assignments.length === 0 && onRemoveBoard && (
             <Button
               size="icon"
@@ -231,7 +271,14 @@ function JobDropZone({
             Drop crew here
           </div>
         ) : (
-          assignments.map((a) => <AssignmentChip key={a.id} a={a} />)
+          assignments.map((a) => (
+            <AssignmentChip
+              key={a.id}
+              a={a}
+              selected={selected?.kind === "assignment" && selected.id === a.id}
+              onSelect={() => onAssignmentSelect(a)}
+            />
+          ))
         )}
       </div>
     </Card>
@@ -241,9 +288,15 @@ function JobDropZone({
 function UnassignedZone({
   available,
   off,
+  selected,
+  onCrewSelect,
+  onUnassignSelected,
 }: {
   available: BoardCrew[];
   off: BoardCrew[];
+  selected: DraggedItem | null;
+  onCrewSelect: (crew: BoardCrew) => void;
+  onUnassignSelected: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: UNASSIGNED_ID });
   return (
@@ -264,6 +317,17 @@ function UnassignedZone({
         <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
           {available.length}
         </Badge>
+        {selected?.kind === "assignment" && (
+          <Button
+            size="sm"
+            variant="destructive"
+            className="h-6 px-2 text-[10px]"
+            onClick={onUnassignSelected}
+          >
+            <Trash2 className="mr-1 h-3 w-3" />
+            Unassign
+          </Button>
+        )}
       </div>
       <div className="space-y-1 p-2">
         {available.length === 0 ? (
@@ -278,7 +342,14 @@ function UnassignedZone({
             {isOver ? "Drop to unassign" : "Everyone's assigned"}
           </div>
         ) : (
-          available.map((c) => <CrewChip key={c.user_id} crew={c} />)
+          available.map((c) => (
+            <CrewChip
+              key={c.user_id}
+              crew={c}
+              selected={selected?.kind === "crew" && selected.user_id === c.user_id}
+              onSelect={() => onCrewSelect(c)}
+            />
+          ))
         )}
         {off.length > 0 && (
           <>
@@ -308,11 +379,12 @@ export function DayBoard({
   onUnassign,
 }: Props) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 6 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
   );
 
   const [active, setActive] = useState<DraggedItem | null>(null);
+  const [selected, setSelected] = useState<DraggedItem | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const assignedUserIds = useMemo(
@@ -359,6 +431,22 @@ export function DayBoard({
     if (data) setActive(data);
   };
 
+  const placeSelected = async (jobId: string) => {
+    if (!selected) return;
+    if (selected.kind === "crew") {
+      await onAssign(jobId, selected.user_id);
+    } else if (selected.from_job_id !== jobId) {
+      await onMove(selected.id, jobId);
+    }
+    setSelected(null);
+  };
+
+  const unassignSelected = async () => {
+    if (selected?.kind !== "assignment") return;
+    await onUnassign(selected.id);
+    setSelected(null);
+  };
+
   const handleEnd = async (e: DragEndEvent) => {
     setActive(null);
     const item = e.active.data.current as DraggedItem | undefined;
@@ -378,6 +466,7 @@ export function DayBoard({
       } else if (item.kind === "assignment") {
         if (item.from_job_id !== jobId) await onMove(item.id, jobId);
       }
+      setSelected(null);
     }
   };
 
@@ -385,7 +474,20 @@ export function DayBoard({
     <DndContext sensors={sensors} onDragStart={handleStart} onDragEnd={handleEnd}>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[260px_1fr]">
         <div className="space-y-3 lg:sticky lg:top-[180px] lg:self-start">
-          <UnassignedZone available={available} off={off} />
+          <UnassignedZone
+            available={available}
+            off={off}
+            selected={selected}
+            onCrewSelect={(c) =>
+              setSelected({
+                kind: "crew",
+                user_id: c.user_id,
+                name: c.display_name,
+                position: c.position,
+              })
+            }
+            onUnassignSelected={unassignSelected}
+          />
         </div>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
@@ -429,6 +531,17 @@ export function DayBoard({
                   assignments={asgByJob.get(j.id) ?? []}
                   removable={extraJobIds.includes(j.id)}
                   onRemoveBoard={() => onRemoveJobFromBoard(j.id)}
+                  selected={selected}
+                  onAssignmentSelect={(a) =>
+                    setSelected({
+                      kind: "assignment",
+                      id: a.id,
+                      user_id: a.user_id,
+                      name: a.display_name,
+                      from_job_id: a.job_id,
+                    })
+                  }
+                  onPlaceSelected={placeSelected}
                 />
               ))}
             </div>
