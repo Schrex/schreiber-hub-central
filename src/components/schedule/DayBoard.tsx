@@ -531,6 +531,17 @@ export function DayBoard({
                   assignments={asgByJob.get(j.id) ?? []}
                   removable={extraJobIds.includes(j.id)}
                   onRemoveBoard={() => onRemoveJobFromBoard(j.id)}
+                  selected={selected}
+                  onAssignmentSelect={(a) =>
+                    setSelected({
+                      kind: "assignment",
+                      id: a.id,
+                      user_id: a.user_id,
+                      name: a.display_name,
+                      from_job_id: a.job_id,
+                    })
+                  }
+                  onPlaceSelected={placeSelected}
                 />
               ))}
             </div>
