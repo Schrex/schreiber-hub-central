@@ -132,6 +132,15 @@ export const ContractSection = ({ jobId }: Props) => {
         )}
       </div>
 
+      {busy && (
+        <div className="space-y-1">
+          <Progress value={progress || undefined} className="h-1.5" />
+          <p className="text-[10px] text-muted-foreground">
+            {progress > 0 ? `Uploading ${progress}%` : "Preparing upload…"}
+          </p>
+        </div>
+      )}
+
       {meta?.contract_file_path ? (
         <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-background p-3">
           <button
