@@ -193,13 +193,20 @@ function JobDropZone({
   assignments,
   onRemoveBoard,
   removable,
+  selected,
+  onAssignmentSelect,
+  onPlaceSelected,
 }: {
   job: BoardJob;
   assignments: BoardAssignment[];
   onRemoveBoard?: () => void;
   removable: boolean;
+  selected: DraggedItem | null;
+  onAssignmentSelect: (assignment: BoardAssignment) => void;
+  onPlaceSelected: (jobId: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `job:${job.id}` });
+  const canPlaceSelected = !!selected && (selected.kind === "crew" || selected.from_job_id !== job.id);
   return (
     <Card
       ref={setNodeRef}
@@ -230,6 +237,16 @@ function JobDropZone({
           <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
             {assignments.length}
           </Badge>
+          {canPlaceSelected && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => onPlaceSelected(job.id)}
+            >
+              Place here
+            </Button>
+          )}
           {removable && assignments.length === 0 && onRemoveBoard && (
             <Button
               size="icon"
@@ -254,7 +271,14 @@ function JobDropZone({
             Drop crew here
           </div>
         ) : (
-          assignments.map((a) => <AssignmentChip key={a.id} a={a} />)
+          assignments.map((a) => (
+            <AssignmentChip
+              key={a.id}
+              a={a}
+              selected={selected?.kind === "assignment" && selected.id === a.id}
+              onSelect={() => onAssignmentSelect(a)}
+            />
+          ))
         )}
       </div>
     </Card>
