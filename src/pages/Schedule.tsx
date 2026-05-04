@@ -804,7 +804,7 @@ const Schedule = () => {
                   Drag &amp; drop board · {dateLabel}
                 </h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Drag crew from <span className="font-medium">Available</span> onto a job. Drag between jobs to reassign, or back to Available to unassign.
+                  <span className="font-semibold text-foreground">Press &amp; hold</span> a name (≡), then drag onto a job. Drag between jobs to reassign, or back to Available to unassign.
                 </p>
               </div>
             </div>
