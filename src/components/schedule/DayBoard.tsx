@@ -4,7 +4,7 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useDraggable,
   useDroppable,
@@ -68,11 +68,15 @@ type DraggedItem =
 function CrewChip({
   crew,
   dragging,
+  selected,
+  onSelect,
 }: {
   crew: BoardCrew;
   dragging?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
-  const { attributes, listeners, setActivatorNodeRef, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `crew:${crew.user_id}`,
     data: {
       kind: "crew",
@@ -82,29 +86,39 @@ function CrewChip({
     } satisfies DraggedItem,
     disabled: crew.status === "off",
   });
+  const canMove = crew.status !== "off";
   return (
     <div
       ref={setNodeRef}
+      {...(canMove ? attributes : {})}
+      {...(canMove ? listeners : {})}
+      role={canMove ? "button" : undefined}
+      tabIndex={canMove ? 0 : undefined}
+      onClick={canMove ? onSelect : undefined}
+      onKeyDown={
+        canMove
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect?.();
+              }
+            }
+          : undefined
+      }
+      style={canMove ? { touchAction: "none" } : undefined}
       className={cn(
-        "flex select-none items-center gap-2 rounded-md border px-2 py-2 text-xs",
+        "flex select-none items-center gap-2 rounded-md border px-2 py-2 text-xs outline-none transition-colors",
         crew.status === "off"
           ? "cursor-not-allowed border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-          : "border-border bg-background hover:border-primary/40 hover:bg-primary/5",
+          : "cursor-grab border-border bg-background hover:border-primary/40 hover:bg-primary/5 active:cursor-grabbing",
+        selected && "border-primary bg-primary/10 ring-2 ring-primary/30",
         (isDragging || dragging) && "opacity-40",
       )}
     >
       {crew.status !== "off" && (
-        <button
-          ref={setActivatorNodeRef}
-          type="button"
-          {...attributes}
-          {...listeners}
-          style={{ touchAction: "none" }}
-          className="-my-1 -ml-1 flex h-9 w-9 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
-          aria-label={`Drag ${crew.display_name}`}
-        >
+        <span className="-my-1 -ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded text-muted-foreground">
           <GripVertical className="h-4 w-4" />
-        </button>
+        </span>
       )}
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium leading-tight">{crew.display_name}</div>
@@ -121,11 +135,15 @@ function CrewChip({
 function AssignmentChip({
   a,
   dragging,
+  selected,
+  onSelect,
 }: {
   a: BoardAssignment;
   dragging?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
-  const { attributes, listeners, setActivatorNodeRef, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `asg:${a.id}`,
     data: {
       kind: "assignment",
@@ -138,22 +156,27 @@ function AssignmentChip({
   return (
     <div
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect?.();
+        }
+      }}
+      style={{ touchAction: "none" }}
       className={cn(
-        "group flex select-none items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2 py-2 text-xs",
+        "group flex cursor-grab select-none items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2 py-2 text-xs outline-none transition-colors active:cursor-grabbing",
+        selected && "border-primary bg-primary/10 ring-2 ring-primary/30",
         (isDragging || dragging) && "opacity-40",
       )}
     >
-      <button
-        ref={setActivatorNodeRef}
-        type="button"
-        {...attributes}
-        {...listeners}
-        style={{ touchAction: "none" }}
-        className="-my-1 -ml-1 flex h-9 w-9 shrink-0 cursor-grab items-center justify-center rounded text-primary/70 hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
-        aria-label={`Drag ${a.display_name}`}
-      >
+      <span className="-my-1 -ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded text-primary/70">
         <GripVertical className="h-4 w-4" />
-      </button>
+      </span>
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium leading-tight">{a.display_name}</div>
         <div className="truncate text-[10px] leading-tight text-muted-foreground">
