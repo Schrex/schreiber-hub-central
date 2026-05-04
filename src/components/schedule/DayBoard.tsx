@@ -288,9 +288,15 @@ function JobDropZone({
 function UnassignedZone({
   available,
   off,
+  selected,
+  onCrewSelect,
+  onUnassignSelected,
 }: {
   available: BoardCrew[];
   off: BoardCrew[];
+  selected: DraggedItem | null;
+  onCrewSelect: (crew: BoardCrew) => void;
+  onUnassignSelected: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: UNASSIGNED_ID });
   return (
@@ -311,6 +317,17 @@ function UnassignedZone({
         <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
           {available.length}
         </Badge>
+        {selected?.kind === "assignment" && (
+          <Button
+            size="sm"
+            variant="destructive"
+            className="h-6 px-2 text-[10px]"
+            onClick={onUnassignSelected}
+          >
+            <Trash2 className="mr-1 h-3 w-3" />
+            Unassign
+          </Button>
+        )}
       </div>
       <div className="space-y-1 p-2">
         {available.length === 0 ? (
@@ -325,7 +342,14 @@ function UnassignedZone({
             {isOver ? "Drop to unassign" : "Everyone's assigned"}
           </div>
         ) : (
-          available.map((c) => <CrewChip key={c.user_id} crew={c} />)
+          available.map((c) => (
+            <CrewChip
+              key={c.user_id}
+              crew={c}
+              selected={selected?.kind === "crew" && selected.user_id === c.user_id}
+              onSelect={() => onCrewSelect(c)}
+            />
+          ))
         )}
         {off.length > 0 && (
           <>
