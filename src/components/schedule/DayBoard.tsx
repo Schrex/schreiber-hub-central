@@ -308,8 +308,8 @@ export function DayBoard({
   onUnassign,
 }: Props) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 6 } }),
   );
 
   const [active, setActive] = useState<DraggedItem | null>(null);
