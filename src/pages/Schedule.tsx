@@ -519,6 +519,14 @@ const Schedule = () => {
               >
                 Week
               </button>
+              <button
+                onClick={() => setViewMode("board")}
+                className={`rounded px-2.5 py-1 font-medium transition ${
+                  viewMode === "board" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                Board
+              </button>
             </div>
           )}
           {canEdit && !isPastDay && (
