@@ -780,7 +780,7 @@ const Schedule = () => {
         )}
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-5">
+      <main className={`mx-auto space-y-6 px-4 py-5 ${viewMode === "board" ? "max-w-6xl" : "max-w-3xl"}`}>
         {viewMode === "week" && canEdit && (
           <WeekGrid
             weekDays={weekDays}
@@ -795,6 +795,65 @@ const Schedule = () => {
             }}
           />
         )}
+
+        {viewMode === "board" && canEdit && (
+          <section className="space-y-3">
+            <div className="flex items-end justify-between">
+              <div>
+                <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                  Drag &amp; drop board · {dateLabel}
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Drag crew from <span className="font-medium">Available</span> onto a job. Drag between jobs to reassign, or back to Available to unassign.
+                </p>
+              </div>
+            </div>
+            {isPastDay ? (
+              <Card className="p-6 text-center text-sm text-muted-foreground">
+                <Lock className="mx-auto mb-2 h-5 w-5 opacity-50" />
+                Past days are locked.
+              </Card>
+            ) : (
+              <DayBoard
+                allActiveJobs={jobs as BoardJob[]}
+                jobs={(allByJob.map((g) => g.job).filter(Boolean) as BoardJob[])}
+                extraJobIds={boardExtraJobIds}
+                onAddJob={(id) =>
+                  setBoardExtraJobIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+                }
+                onRemoveJobFromBoard={(id) =>
+                  setBoardExtraJobIds((prev) => prev.filter((x) => x !== id))
+                }
+                crew={visibleProfiles
+                  .filter((p) => p.has_login && p.user_id)
+                  .map<BoardCrew>((p) => {
+                    const off = timeOff.find((t) => t.user_id === p.user_id);
+                    return {
+                      user_id: p.user_id as string,
+                      display_name: p.display_name ?? "Unnamed",
+                      position: positionsByUser.get(p.user_id as string)?.title ?? null,
+                      status: off ? "off" : "available",
+                      off_label: off
+                        ? `${off.type}${off.half_day !== "none" ? ` (${off.half_day.toUpperCase()})` : ""}`
+                        : null,
+                    };
+                  })}
+                assignments={assignments.map<BoardAssignment>((a) => ({
+                  id: a.id,
+                  job_id: a.job_id,
+                  user_id: a.user_id,
+                  display_name: a.profile_name ?? "Unknown",
+                  start_time: a.start_time,
+                  position: positionsByUser.get(a.user_id)?.title ?? null,
+                }))}
+                onAssign={boardAssign}
+                onMove={boardMove}
+                onUnassign={boardUnassign}
+              />
+            )}
+          </section>
+        )}
+
 
         {viewMode === "day" && (
         <>
