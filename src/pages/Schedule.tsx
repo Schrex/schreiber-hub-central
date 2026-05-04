@@ -423,6 +423,47 @@ const Schedule = () => {
     loadAll();
   };
 
+  // --- Drag & drop board handlers ---
+  const boardAssign = async (jobId: string, userId: string) => {
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .upsert(
+        [
+          {
+            job_id: jobId,
+            user_id: userId,
+            assignment_date: selectedDate,
+            start_time: "07:00",
+            created_by: user?.id ?? null,
+          },
+        ],
+        { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: true },
+      );
+    if (error) {
+      toast({ title: "Could not assign", description: error.message, variant: "destructive" });
+      return;
+    }
+    loadAll();
+  };
+
+  const boardMove = async (assignmentId: string, newJobId: string) => {
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .update({ job_id: newJobId })
+      .eq("id", assignmentId);
+    if (error) {
+      // Likely unique conflict — they're already on that job
+      toast({ title: "Could not move", description: error.message, variant: "destructive" });
+      return;
+    }
+    loadAll();
+  };
+
+  const boardUnassign = async (assignmentId: string) => {
+    await removeAssignment(assignmentId);
+  };
+
+
   const updateAssignmentNotes = async (id: string, notes: string) => {
     const value = notes.trim() ? notes.trim() : null;
     const { error } = await supabase
