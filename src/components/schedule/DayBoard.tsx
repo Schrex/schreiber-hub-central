@@ -11,7 +11,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Briefcase, MapPin, Plus, Trash2, UserMinus, X } from "lucide-react";
+import { Briefcase, GripVertical, MapPin, Plus, Trash2, UserMinus, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -87,19 +87,25 @@ function CrewChip({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      style={{ touchAction: "none" }}
       className={cn(
-        "touch-none select-none rounded-md border px-2 py-1.5 text-xs",
+        "flex select-none items-center gap-2 rounded-md border px-2 py-2 text-xs",
         crew.status === "off"
           ? "cursor-not-allowed border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
           : "cursor-grab border-border bg-background hover:border-primary/40 hover:bg-primary/5 active:cursor-grabbing",
         (isDragging || dragging) && "opacity-40",
       )}
     >
-      <div className="font-medium leading-tight">{crew.display_name}</div>
-      <div className="text-[10px] leading-tight text-muted-foreground">
-        {crew.status === "off"
-          ? `Off${crew.off_label ? ` · ${crew.off_label}` : ""}`
-          : crew.position ?? "—"}
+      {crew.status !== "off" && (
+        <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-medium leading-tight">{crew.display_name}</div>
+        <div className="truncate text-[10px] leading-tight text-muted-foreground">
+          {crew.status === "off"
+            ? `Off${crew.off_label ? ` · ${crew.off_label}` : ""}`
+            : crew.position ?? "—"}
+        </div>
       </div>
     </div>
   );
@@ -127,11 +133,13 @@ function AssignmentChip({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      style={{ touchAction: "none" }}
       className={cn(
-        "group flex touch-none select-none cursor-grab items-center justify-between gap-2 rounded-md border border-primary/20 bg-primary/5 px-2 py-1.5 text-xs active:cursor-grabbing",
+        "group flex select-none cursor-grab items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2 py-2 text-xs active:cursor-grabbing",
         (isDragging || dragging) && "opacity-40",
       )}
     >
+      <GripVertical className="h-3.5 w-3.5 shrink-0 text-primary/60" />
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium leading-tight">{a.display_name}</div>
         <div className="truncate text-[10px] leading-tight text-muted-foreground">
@@ -287,7 +295,7 @@ export function DayBoard({
 }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
   );
 
   const [active, setActive] = useState<DraggedItem | null>(null);
