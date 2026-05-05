@@ -99,6 +99,17 @@ export const EstimateUploads = ({ jobId }: { jobId: string }) => {
   };
 
   return (
+    <FileDropZone
+      accept="application/pdf,.pdf"
+      disabled={!canEdit || uploading}
+      onFiles={(fs) => {
+        const dt = new DataTransfer();
+        fs.forEach((f) => dt.items.add(f));
+        handleFiles(dt.files);
+      }}
+      label="Drop PDFs to upload"
+      className="rounded-2xl"
+    >
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-stone-100 flex items-center gap-2">
         <FileUp size={15} className="text-stone-700" />
