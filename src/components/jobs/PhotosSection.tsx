@@ -460,5 +460,6 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
         </DialogContent>
       </Dialog>
     </section>
+    </FileDropZone>
   );
 };
