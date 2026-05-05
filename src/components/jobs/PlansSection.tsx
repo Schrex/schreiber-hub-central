@@ -118,7 +118,11 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
       const path = `${jobId}/${cat}/${Date.now()}.${ext}`;
       console.log("[PlansSection] uploading", { path, size: file.size, type: file.type });
 
-      if (file.size > RESUMABLE_THRESHOLD) {
+      const isStandard =
+        file.type.startsWith("image/") || file.type === "application/pdf";
+      const useResumable = file.size > RESUMABLE_THRESHOLD || !isStandard;
+
+      if (useResumable) {
         await resumableUpload("job-plans", path, file, (pct) => setUploadPct(pct));
       } else {
         const { error: upErr } = await supabase.storage
