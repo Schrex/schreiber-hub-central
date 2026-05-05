@@ -246,6 +246,13 @@ export const PermitsSection = ({ jobId }: Props) => {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
+    <FileDropZone
+      accept="application/pdf,image/*"
+      multiple={false}
+      disabled={!canEdit}
+      onFiles={(fs) => { if (fs[0]) { setFile(fs[0]); setOpen(true); } }}
+      label="Drop permit document"
+    >
     <section className="rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
