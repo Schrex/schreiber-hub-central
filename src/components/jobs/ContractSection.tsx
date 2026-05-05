@@ -76,6 +76,21 @@ export const ContractSection = ({ jobId }: Props) => {
     }
   };
 
+  const openFilePicker = () => {
+    if (busy) return;
+    const input = fileInputRef.current;
+    if (!input) {
+      toast.error("Upload control is not ready yet");
+      return;
+    }
+    input.value = "";
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+      return;
+    }
+    input.click();
+  };
+
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -131,13 +146,14 @@ export const ContractSection = ({ jobId }: Props) => {
             <input
               ref={fileInputRef}
               type="file"
-              className="hidden"
+              className="pointer-events-none absolute h-px w-px opacity-0"
+              tabIndex={-1}
               accept=".pdf,.doc,.docx,image/*"
               onChange={onUpload}
             />
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={openFilePicker}
               disabled={busy}
               className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:border-primary/40 disabled:opacity-50"
             >
