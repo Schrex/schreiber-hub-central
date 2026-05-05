@@ -269,5 +269,6 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
         </ul>
       )}
     </section>
+    </FileDropZone>
   );
 };
