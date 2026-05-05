@@ -6,6 +6,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { FileDropZone } from "@/components/ui/FileDropZone";
 import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
 import exifr from "exifr";
 
