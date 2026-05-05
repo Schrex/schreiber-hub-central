@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { FileDropZone } from "@/components/ui/FileDropZone";
 import { toast } from "sonner";
 import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
 
