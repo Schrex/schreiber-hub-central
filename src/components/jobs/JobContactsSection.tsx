@@ -199,17 +199,22 @@ export const JobContactsSection = ({ jobId, jobName, foremanId }: Props) => {
   return (
     <section className="space-y-2 rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground flex items-center gap-1.5">
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex flex-1 items-center gap-1.5 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground hover:text-foreground"
+        >
+          {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
           <ContactRound className="h-3.5 w-3.5" /> Job contacts
-        </h2>
+          <span className="text-muted-foreground/60 normal-case tracking-normal">({filledCount})</span>
+        </button>
         <div className="flex items-center gap-1">
-          {filledCount > 1 && (
+          {open && filledCount > 1 && (
             <Button size="sm" variant="ghost" onClick={downloadAll} title="Save all to phone">
               <Download className="h-4 w-4" />
               <span className="ml-1 hidden sm:inline">Save all</span>
             </Button>
           )}
-          {canEdit && (
+          {open && canEdit && (
             <Button size="sm" variant="outline" onClick={() => setEditing({ job_id: jobId, category: "Other" })}>
               <Plus className="h-4 w-4" /> Add
             </Button>
@@ -217,42 +222,46 @@ export const JobContactsSection = ({ jobId, jobName, foremanId }: Props) => {
         </div>
       </div>
 
-      {canEdit && (
-        <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-          <input type="checkbox" checked={showEmpty} onChange={(e) => setShowEmpty(e.target.checked)} className="h-3 w-3" />
-          Show empty template slots
-        </label>
-      )}
+      {open && (
+        <>
+          {canEdit && (
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <input type="checkbox" checked={showEmpty} onChange={(e) => setShowEmpty(e.target.checked)} className="h-3 w-3" />
+              Show empty template slots
+            </label>
+          )}
 
-      {loading ? (
-        <p className="py-3 text-center text-xs text-muted-foreground">Loading…</p>
-      ) : orderedCats.length === 0 ? (
-        <p className="py-3 text-center text-xs text-muted-foreground">No contacts yet.</p>
-      ) : (
-        orderedCats.map(cat => {
-          const items = grouped[cat].filter(c => showEmpty || isFilled(c));
-          if (!items.length) return null;
-          const isCollapsed = collapsed[cat];
-          return (
-            <div key={cat} className="space-y-1.5">
-              <button
-                onClick={() => setCollapsed({ ...collapsed, [cat]: !isCollapsed })}
-                className="flex w-full items-center gap-1 pt-2 text-[10px] uppercase font-bold tracking-wider text-muted-foreground hover:text-foreground"
-              >
-                {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                {cat} <span className="text-muted-foreground/60">({items.filter(isFilled).length}/{items.length})</span>
-              </button>
-              {!isCollapsed && (
-                <ul className="space-y-1.5">
-                  {items.map((c) => (
-                    <ContactRow key={c.id} c={c} canEdit={canEdit} jobName={jobName}
-                      onEdit={() => setEditing(c)} onDelete={() => remove(c.id)} />
-                  ))}
-                </ul>
-              )}
-            </div>
-          );
-        })
+          {loading ? (
+            <p className="py-3 text-center text-xs text-muted-foreground">Loading…</p>
+          ) : orderedCats.length === 0 ? (
+            <p className="py-3 text-center text-xs text-muted-foreground">No contacts yet.</p>
+          ) : (
+            orderedCats.map(cat => {
+              const items = grouped[cat].filter(c => showEmpty || isFilled(c));
+              if (!items.length) return null;
+              const isCollapsed = collapsed[cat];
+              return (
+                <div key={cat} className="space-y-1.5">
+                  <button
+                    onClick={() => setCollapsed({ ...collapsed, [cat]: !isCollapsed })}
+                    className="flex w-full items-center gap-1 pt-2 text-[10px] uppercase font-bold tracking-wider text-muted-foreground hover:text-foreground"
+                  >
+                    {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    {cat} <span className="text-muted-foreground/60">({items.filter(isFilled).length}/{items.length})</span>
+                  </button>
+                  {!isCollapsed && (
+                    <ul className="space-y-1.5">
+                      {items.map((c) => (
+                        <ContactRow key={c.id} c={c} canEdit={canEdit} jobName={jobName}
+                          onEdit={() => setEditing(c)} onDelete={() => remove(c.id)} />
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </>
       )}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
