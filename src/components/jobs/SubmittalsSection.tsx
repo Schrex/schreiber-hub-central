@@ -17,6 +17,8 @@ interface Submittal {
   id: string;
   title: string;
   status: Status;
+  category: string | null;
+  ai_categorized: boolean;
   file_path: string | null;
   file_name: string | null;
   notes: string | null;
@@ -25,6 +27,13 @@ interface Submittal {
   uploaded_by_name: string | null;
   created_at: string;
 }
+
+const SUBMITTAL_CATEGORIES = [
+  "Concrete", "Rebar / Reinforcing Steel", "Asphalt", "Aggregate / Stone",
+  "Pipe", "Precast Structures", "Castings (Frames & Grates)",
+  "Erosion Control", "Geotextile", "Pavement Markings", "Signage",
+  "Guide Rail", "Electrical", "Landscaping", "Other",
+];
 
 const STATUS_LABEL: Record<Status, string> = {
   pending: "Pending",
@@ -53,13 +62,13 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
   const [items, setItems] = useState<Submittal[]>([]);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ title: "", status: "pending" as Status, notes: "" });
+  const [form, setForm] = useState({ title: "", status: "pending" as Status, notes: "", category: "" });
   const [file, setFile] = useState<File | null>(null);
 
   const load = async () => {
     const { data } = await supabase
       .from("job_submittals")
-      .select("id,title,status,file_path,file_name,notes,submitted_at,approved_at,uploaded_by_name,created_at")
+      .select("id,title,status,category,ai_categorized,file_path,file_name,notes,submitted_at,approved_at,uploaded_by_name,created_at")
       .eq("job_id", jobId)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
@@ -70,7 +79,7 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
 
   if (!canView) return null;
 
-  const reset = () => { setForm({ title: "", status: "pending", notes: "" }); setFile(null); };
+  const reset = () => { setForm({ title: "", status: "pending", notes: "", category: "" }); setFile(null); };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +103,7 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
         job_id: jobId,
         title: form.title.trim(),
         status: form.status,
+        category: form.category || null,
         notes: form.notes.trim() || null,
         file_path, file_name, file_size, mime_type,
         uploaded_by: user.id,
@@ -138,28 +148,57 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
   const quickUpload = async (files: File[]) => {
     if (!user || !files.length) return;
     setBusy(true);
+    const t = toast.loading(`Uploading ${files.length} file${files.length > 1 ? "s" : ""}…`);
     try {
       const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
       const uploaderName = (prof as any)?.display_name ?? null;
+      let aiHits = 0;
       for (const f of files) {
         const path = `${jobId}/${Date.now()}-${f.name}`;
         const { error: upErr } = await supabase.storage
           .from("job-submittals")
           .upload(path, f, { contentType: f.type });
         if (upErr) throw upErr;
+
+        // Ask AI to title + categorize. Fall back to filename on failure.
+        let title = f.name.replace(/\.[^.]+$/, "");
+        let category: string | null = null;
+        let aiCategorized = false;
+        try {
+          const { data: ai } = await supabase.functions.invoke("categorize-document", {
+            body: { kind: "submittal", bucket: "job-submittals", path, fileName: f.name },
+          });
+          const fields = (ai as any)?.fields;
+          if (fields && (fields.confidence ?? 0) >= 0.55) {
+            if (fields.title) title = String(fields.title);
+            if (fields.category) category = String(fields.category);
+            aiCategorized = true;
+            aiHits++;
+          }
+        } catch (e) {
+          console.warn("AI categorize failed", e);
+        }
+
         const { error } = await supabase.from("job_submittals").insert({
           job_id: jobId,
-          title: f.name.replace(/\.[^.]+$/, ""),
+          title,
+          category,
+          ai_categorized: aiCategorized,
           status: "pending",
           file_path: path, file_name: f.name, file_size: f.size, mime_type: f.type,
           uploaded_by: user.id, uploaded_by_name: uploaderName,
         });
         if (error) throw error;
       }
-      toast.success(`${files.length} submittal${files.length > 1 ? "s" : ""} added`);
+      toast.success(
+        aiHits
+          ? `${files.length} added — ${aiHits} auto-categorized ✨`
+          : `${files.length} submittal${files.length > 1 ? "s" : ""} added`,
+        { id: t },
+      );
       await load();
     } catch (err: any) {
-      toast.error(err.message ?? "Upload failed");
+      toast.error(err.message ?? "Upload failed", { id: t });
     } finally {
       setBusy(false);
     }
@@ -202,6 +241,17 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
                   </Select>
                 </div>
                 <div>
+                  <Label>Category</Label>
+                  <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                    <SelectTrigger><SelectValue placeholder="Pick a category" /></SelectTrigger>
+                    <SelectContent>
+                      {SUBMITTAL_CATEGORIES.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label htmlFor="s_file">File</Label>
                   <Input id="s_file" type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
                 </div>
@@ -226,11 +276,16 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
             <li key={s.id} className="rounded-md border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="truncate text-sm font-medium">{s.title}</p>
                     <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider ${STATUS_CLASS[s.status]}`}>
                       {STATUS_LABEL[s.status]}
                     </span>
+                    {s.category && (
+                      <span className="shrink-0 rounded bg-accent/15 px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider text-accent-foreground">
+                        {s.ai_categorized && "✨ "}{s.category}
+                      </span>
+                    )}
                   </div>
                   {s.file_name && (
                     <button onClick={() => view(s)} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline">

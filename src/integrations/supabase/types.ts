@@ -1404,6 +1404,7 @@ export type Database = {
       }
       job_permits: {
         Row: {
+          ai_categorized: boolean
           created_at: string
           created_by: string | null
           expiration_date: string | null
@@ -1423,6 +1424,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_categorized?: boolean
           created_at?: string
           created_by?: string | null
           expiration_date?: string | null
@@ -1442,6 +1444,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_categorized?: boolean
           created_at?: string
           created_by?: string | null
           expiration_date?: string | null
@@ -1600,7 +1603,9 @@ export type Database = {
       }
       job_submittals: {
         Row: {
+          ai_categorized: boolean
           approved_at: string | null
+          category: string | null
           created_at: string
           file_name: string | null
           file_path: string | null
@@ -1618,7 +1623,9 @@ export type Database = {
           uploaded_by_name: string | null
         }
         Insert: {
+          ai_categorized?: boolean
           approved_at?: string | null
+          category?: string | null
           created_at?: string
           file_name?: string | null
           file_path?: string | null
@@ -1636,7 +1643,9 @@ export type Database = {
           uploaded_by_name?: string | null
         }
         Update: {
+          ai_categorized?: boolean
           approved_at?: string | null
+          category?: string | null
           created_at?: string
           file_name?: string | null
           file_path?: string | null
