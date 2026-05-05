@@ -103,6 +103,7 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
         job_id: jobId,
         title: form.title.trim(),
         status: form.status,
+        category: form.category || null,
         notes: form.notes.trim() || null,
         file_path, file_name, file_size, mime_type,
         uploaded_by: user.id,
