@@ -122,7 +122,46 @@ export const SwpppSection = ({ jobId, jobNumber }: { jobId: string; jobNumber: s
     toast.success("Copied — paste into your forward");
   };
 
+  const quickUpload = async (files: File[]) => {
+    if (!user || !files.length) return;
+    setBusy(true);
+    try {
+      const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
+      const uploaderName = (prof as any)?.display_name ?? null;
+      const week = isoMonday();
+      for (const f of files) {
+        const path = `${jobId}/${week}/${Date.now()}-${f.name}`;
+        const { error: upErr } = await supabase.storage
+          .from("swpppp-reports")
+          .upload(path, f, { contentType: f.type });
+        if (upErr) throw upErr;
+        const { error } = await supabase.from("swpppp_reports").insert({
+          job_id: jobId,
+          week_of: week,
+          report_date: week,
+          file_path: path, file_name: f.name, file_size: f.size, mime_type: f.type,
+          source: "upload",
+          uploaded_by: user.id,
+          uploaded_by_name: uploaderName,
+        });
+        if (error) throw error;
+      }
+      toast.success(`${files.length} report${files.length > 1 ? "s" : ""} added`);
+      await load();
+    } catch (err: any) {
+      toast.error(err.message ?? "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
+    <FileDropZone
+      accept="application/pdf,image/*"
+      disabled={!canEdit || busy}
+      onFiles={quickUpload}
+      label="Drop SWPPP reports"
+    >
     <section className="space-y-2 rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground flex items-center gap-1.5">
