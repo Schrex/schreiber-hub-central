@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { FileDropZone } from "@/components/ui/FileDropZone";
 
 type Status = "pending" | "submitted" | "under_review" | "approved" | "revise_resubmit" | "rejected";
 
