@@ -79,7 +79,7 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
 
   if (!canView) return null;
 
-  const reset = () => { setForm({ title: "", status: "pending", notes: "" }); setFile(null); };
+  const reset = () => { setForm({ title: "", status: "pending", notes: "", category: "" }); setFile(null); };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
