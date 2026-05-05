@@ -68,7 +68,7 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
   const load = async () => {
     const { data } = await supabase
       .from("job_submittals")
-      .select("id,title,status,file_path,file_name,notes,submitted_at,approved_at,uploaded_by_name,created_at")
+      .select("id,title,status,category,ai_categorized,file_path,file_name,notes,submitted_at,approved_at,uploaded_by_name,created_at")
       .eq("job_id", jobId)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
