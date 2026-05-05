@@ -182,5 +182,6 @@ export const ContractSection = ({ jobId }: Props) => {
         <p className="text-xs text-muted-foreground">No contract uploaded.</p>
       )}
     </section>
+    </FileDropZone>
   );
 };
