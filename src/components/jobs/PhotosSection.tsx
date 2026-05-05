@@ -255,11 +255,8 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
-  const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = "";
+  const uploadFiles = async (files: File[]) => {
     if (!files.length) return;
-
     setUploading(true);
     setUploadPct(0);
     let done = 0;
@@ -308,6 +305,12 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
       setUploading(false);
       setUploadPct(0);
     }
+  };
+
+  const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    await uploadFiles(files);
   };
 
   const removePhoto = async (p: Photo) => {
