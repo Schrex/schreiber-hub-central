@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { FileDropZone } from "@/components/ui/FileDropZone";
 
 type Status =
   | "not_started"
