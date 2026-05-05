@@ -297,7 +297,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
                       >
                         <input
                           type="file"
-                          accept="application/pdf,image/*"
+                          accept={accept}
                           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                           disabled={uploadingCat === key}
                           onChange={(e) => void handleFile(key, e)}
