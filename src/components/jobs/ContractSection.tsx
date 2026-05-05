@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { resumableUpload } from "@/lib/resumableUpload";
+import { FileDropZone } from "@/components/ui/FileDropZone";
 
 interface Props {
   jobId: string;
