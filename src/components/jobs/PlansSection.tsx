@@ -208,6 +208,14 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
             };
             return (
               <li key={key} className="py-3 first:pt-0 last:pb-0">
+                <FileDropZone
+                  accept="application/pdf,image/*"
+                  multiple={false}
+                  disabled={!canManage || uploadingCat === key}
+                  onFiles={(fs) => fs[0] && uploadFile(key, fs[0])}
+                  label={`Drop to update ${label}`}
+                  className="rounded-md"
+                >
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{label}</p>
