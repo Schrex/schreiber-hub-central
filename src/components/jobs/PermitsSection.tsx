@@ -477,5 +477,6 @@ export const PermitsSection = ({ jobId }: Props) => {
         })}
       </div>
     </section>
+    </FileDropZone>
   );
 };
