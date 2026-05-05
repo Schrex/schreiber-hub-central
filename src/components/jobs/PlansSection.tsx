@@ -57,15 +57,21 @@ type Category =
   | "surface"
   | "linework";
 
-const CATEGORIES: { key: Category; label: string }[] = [
-  { key: "civil", label: "Civil" },
-  { key: "structural", label: "Structural" },
-  { key: "plumbing", label: "Plumbing" },
-  { key: "electrical", label: "Electrical" },
-  { key: "architectural", label: "Architectural" },
-  { key: "gps_model", label: "GPS Model" },
-  { key: "surface", label: "Surface" },
-  { key: "linework", label: "Linework" },
+const DEFAULT_ACCEPT = "application/pdf,image/*";
+// GPS / survey / CAD model files often have non-standard MIME types,
+// so allow any extension for these categories.
+const GPS_ACCEPT =
+  ".tp3,.cal,.dc,.job,.fcl,.fxl,.fal,.gc3,.t02,.tsj,.xml,.csv,.txt,.dxf,.dwg,.kml,.kmz,.zip,.json,.ttm,.svd,.svy,.cr5,.crd,.ref,.rw5,.fbk,.geo,.lan,.las,.laz,application/octet-stream";
+
+const CATEGORIES: { key: Category; label: string; accept: string }[] = [
+  { key: "civil", label: "Civil", accept: DEFAULT_ACCEPT },
+  { key: "structural", label: "Structural", accept: DEFAULT_ACCEPT },
+  { key: "plumbing", label: "Plumbing", accept: DEFAULT_ACCEPT },
+  { key: "electrical", label: "Electrical", accept: DEFAULT_ACCEPT },
+  { key: "architectural", label: "Architectural", accept: DEFAULT_ACCEPT },
+  { key: "gps_model", label: "GPS Model", accept: GPS_ACCEPT },
+  { key: "surface", label: "Surface", accept: GPS_ACCEPT },
+  { key: "linework", label: "Linework", accept: GPS_ACCEPT },
 ];
 
 interface Plan {
