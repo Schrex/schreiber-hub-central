@@ -264,11 +264,16 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
             <li key={s.id} className="rounded-md border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="truncate text-sm font-medium">{s.title}</p>
                     <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider ${STATUS_CLASS[s.status]}`}>
                       {STATUS_LABEL[s.status]}
                     </span>
+                    {s.category && (
+                      <span className="shrink-0 rounded bg-accent/15 px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider text-accent-foreground">
+                        {s.ai_categorized && "✨ "}{s.category}
+                      </span>
+                    )}
                   </div>
                   {s.file_name && (
                     <button onClick={() => view(s)} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline">
