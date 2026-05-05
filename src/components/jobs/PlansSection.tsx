@@ -310,7 +310,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
                       </label>
                     </div>
                   )}
-                </div>
+                </FileDropZone>
               </li>
             );
           })}
