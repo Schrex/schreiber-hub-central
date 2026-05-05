@@ -104,11 +104,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
-  const handleFile = async (cat: Category, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
+  const uploadFile = async (cat: Category, file: File) => {
     setUploadingCat(cat);
     setUploadPct(0);
     try {
@@ -131,7 +127,6 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
         }
       }
 
-      // Mark previous current as superseded
       await supabase
         .from("job_plans")
         .update({ is_current: false })
@@ -159,6 +154,13 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
       setUploadingCat(null);
       setUploadPct(0);
     }
+  };
+
+  const handleFile = async (cat: Category, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    await uploadFile(cat, file);
   };
 
   const openPlan = async (path: string) => {
