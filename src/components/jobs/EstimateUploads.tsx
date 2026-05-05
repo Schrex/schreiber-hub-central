@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileUp, FileText, Trash2, Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { FileDropZone } from "@/components/ui/FileDropZone";
 
 interface Estimate {
   id: string;
@@ -98,6 +99,17 @@ export const EstimateUploads = ({ jobId }: { jobId: string }) => {
   };
 
   return (
+    <FileDropZone
+      accept="application/pdf,.pdf"
+      disabled={!canEdit || uploading}
+      onFiles={(fs) => {
+        const dt = new DataTransfer();
+        fs.forEach((f) => dt.items.add(f));
+        handleFiles(dt.files);
+      }}
+      label="Drop PDFs to upload"
+      className="rounded-2xl"
+    >
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-stone-100 flex items-center gap-2">
         <FileUp size={15} className="text-stone-700" />
@@ -156,5 +168,6 @@ export const EstimateUploads = ({ jobId }: { jobId: string }) => {
         )}
       </div>
     </div>
+    </FileDropZone>
   );
 };

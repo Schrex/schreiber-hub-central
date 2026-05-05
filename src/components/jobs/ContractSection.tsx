@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { resumableUpload } from "@/lib/resumableUpload";
+import { FileDropZone } from "@/components/ui/FileDropZone";
 
 interface Props {
   jobId: string;
@@ -36,13 +37,11 @@ export const ContractSection = ({ jobId }: Props) => {
 
   useEffect(() => { load(); }, [jobId]);
 
-  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
+  const uploadFile = async (file: File) => {
+    if (!user) return;
     setBusy(true);
     setProgress(0);
     try {
-      // Remove old file if present
       if (meta?.contract_file_path) {
         await supabase.storage.from("job-contracts").remove([meta.contract_file_path]);
       }
@@ -73,8 +72,14 @@ export const ContractSection = ({ jobId }: Props) => {
     } finally {
       setBusy(false);
       setProgress(0);
-      e.target.value = "";
     }
+  };
+
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadFile(file);
+    e.target.value = "";
   };
 
   const onView = async () => {
@@ -108,6 +113,13 @@ export const ContractSection = ({ jobId }: Props) => {
   };
 
   return (
+    <FileDropZone
+      accept=".pdf,.doc,.docx,image/*"
+      multiple={false}
+      disabled={!canEdit || busy}
+      onFiles={(fs) => fs[0] && uploadFile(fs[0])}
+      label="Drop contract to upload"
+    >
     <section className="space-y-2 rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
@@ -170,5 +182,6 @@ export const ContractSection = ({ jobId }: Props) => {
         <p className="text-xs text-muted-foreground">No contract uploaded.</p>
       )}
     </section>
+    </FileDropZone>
   );
 };

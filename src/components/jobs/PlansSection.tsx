@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { FileDropZone } from "@/components/ui/FileDropZone";
 import { toast } from "sonner";
 import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
 
@@ -103,11 +104,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
-  const handleFile = async (cat: Category, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
+  const uploadFile = async (cat: Category, file: File) => {
     setUploadingCat(cat);
     setUploadPct(0);
     try {
@@ -130,7 +127,6 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
         }
       }
 
-      // Mark previous current as superseded
       await supabase
         .from("job_plans")
         .update({ is_current: false })
@@ -158,6 +154,13 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
       setUploadingCat(null);
       setUploadPct(0);
     }
+  };
+
+  const handleFile = async (cat: Category, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    await uploadFile(cat, file);
   };
 
   const openPlan = async (path: string) => {
@@ -205,6 +208,14 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
             };
             return (
               <li key={key} className="py-3 first:pt-0 last:pb-0">
+                <FileDropZone
+                  accept="application/pdf,image/*"
+                  multiple={false}
+                  disabled={!canManage || uploadingCat === key}
+                  onFiles={(fs) => fs[0] && uploadFile(key, fs[0])}
+                  label={`Drop to update ${label}`}
+                  className="rounded-md"
+                >
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{label}</p>
@@ -299,7 +310,8 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
                       </label>
                     </div>
                   )}
-                </div>
+                  </div>
+                </FileDropZone>
               </li>
             );
           })}

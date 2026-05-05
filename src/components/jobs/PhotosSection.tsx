@@ -6,6 +6,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { FileDropZone } from "@/components/ui/FileDropZone";
 import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
 import exifr from "exifr";
 
@@ -254,11 +255,8 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
-  const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = "";
+  const uploadFiles = async (files: File[]) => {
     if (!files.length) return;
-
     setUploading(true);
     setUploadPct(0);
     let done = 0;
@@ -309,6 +307,12 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
     }
   };
 
+  const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    await uploadFiles(files);
+  };
+
   const removePhoto = async (p: Photo) => {
     if (!confirm("Delete this photo?")) return;
     await supabase.storage.from("job-photos").remove([p.file_path]);
@@ -329,6 +333,12 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
   }, [photos]);
 
   return (
+    <FileDropZone
+      accept="image/*"
+      disabled={!canManage || uploading}
+      onFiles={uploadFiles}
+      label="Drop photos to upload"
+    >
     <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
@@ -450,5 +460,6 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
         </DialogContent>
       </Dialog>
     </section>
+    </FileDropZone>
   );
 };
