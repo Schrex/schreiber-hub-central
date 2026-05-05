@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileUp, FileText, Trash2, Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { FileDropZone } from "@/components/ui/FileDropZone";
 
 interface Estimate {
   id: string;
