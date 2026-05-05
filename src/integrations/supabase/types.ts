@@ -1177,54 +1177,108 @@ export type Database = {
         }
         Relationships: []
       }
+      job_contact_template_slots: {
+        Row: {
+          category: string
+          created_at: string
+          default_name: string | null
+          id: string
+          is_active: boolean
+          material: string | null
+          role_label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          default_name?: string | null
+          id?: string
+          is_active?: boolean
+          material?: string | null
+          role_label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          default_name?: string | null
+          id?: string
+          is_active?: boolean
+          material?: string | null
+          role_label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_contacts: {
         Row: {
           address: string | null
+          category: string | null
           company: string | null
           created_at: string
           created_by: string | null
           email: string | null
+          employee_contact_id: string | null
           id: string
+          is_template_slot: boolean
           job_id: string
           manager: string | null
-          name: string
+          material: string | null
+          name: string | null
           notes: string | null
           phone: string | null
+          role_label: string | null
           sort_order: number
           title: string | null
           updated_at: string
+          vendor_id: string | null
         }
         Insert: {
           address?: string | null
+          category?: string | null
           company?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
+          employee_contact_id?: string | null
           id?: string
+          is_template_slot?: boolean
           job_id: string
           manager?: string | null
-          name: string
+          material?: string | null
+          name?: string | null
           notes?: string | null
           phone?: string | null
+          role_label?: string | null
           sort_order?: number
           title?: string | null
           updated_at?: string
+          vendor_id?: string | null
         }
         Update: {
           address?: string | null
+          category?: string | null
           company?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
+          employee_contact_id?: string | null
           id?: string
+          is_template_slot?: boolean
           job_id?: string
           manager?: string | null
-          name?: string
+          material?: string | null
+          name?: string | null
           notes?: string | null
           phone?: string | null
+          role_label?: string | null
           sort_order?: number
           title?: string | null
           updated_at?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -3014,6 +3068,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      seed_job_contact_slots: { Args: { _job_id: string }; Returns: undefined }
     }
     Enums: {
       accident_incident_type:
