@@ -241,5 +241,6 @@ export const SwpppSection = ({ jobId, jobNumber }: { jobId: string; jobNumber: s
         </ul>
       )}
     </section>
+    </FileDropZone>
   );
 };
