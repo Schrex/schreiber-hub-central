@@ -37,13 +37,11 @@ export const ContractSection = ({ jobId }: Props) => {
 
   useEffect(() => { load(); }, [jobId]);
 
-  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
+  const uploadFile = async (file: File) => {
+    if (!user) return;
     setBusy(true);
     setProgress(0);
     try {
-      // Remove old file if present
       if (meta?.contract_file_path) {
         await supabase.storage.from("job-contracts").remove([meta.contract_file_path]);
       }
@@ -74,8 +72,14 @@ export const ContractSection = ({ jobId }: Props) => {
     } finally {
       setBusy(false);
       setProgress(0);
-      e.target.value = "";
     }
+  };
+
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadFile(file);
+    e.target.value = "";
   };
 
   const onView = async () => {
