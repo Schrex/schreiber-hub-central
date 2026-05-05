@@ -241,6 +241,17 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
                   </Select>
                 </div>
                 <div>
+                  <Label>Category</Label>
+                  <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                    <SelectTrigger><SelectValue placeholder="Pick a category" /></SelectTrigger>
+                    <SelectContent>
+                      {SUBMITTAL_CATEGORIES.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label htmlFor="s_file">File</Label>
                   <Input id="s_file" type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
                 </div>
