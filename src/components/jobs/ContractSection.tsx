@@ -113,6 +113,13 @@ export const ContractSection = ({ jobId }: Props) => {
   };
 
   return (
+    <FileDropZone
+      accept=".pdf,.doc,.docx,image/*"
+      multiple={false}
+      disabled={!canEdit || busy}
+      onFiles={(fs) => fs[0] && uploadFile(fs[0])}
+      label="Drop contract to upload"
+    >
     <section className="space-y-2 rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
