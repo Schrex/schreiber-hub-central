@@ -91,6 +91,7 @@ export const JobContactsSection = ({ jobId, jobName, foremanId }: Props) => {
   const [saving, setSaving] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [showEmpty, setShowEmpty] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
