@@ -62,7 +62,7 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
   const [items, setItems] = useState<Submittal[]>([]);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ title: "", status: "pending" as Status, notes: "" });
+  const [form, setForm] = useState({ title: "", status: "pending" as Status, notes: "", category: "" });
   const [file, setFile] = useState<File | null>(null);
 
   const load = async () => {
