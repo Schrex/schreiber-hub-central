@@ -17,6 +17,8 @@ interface Submittal {
   id: string;
   title: string;
   status: Status;
+  category: string | null;
+  ai_categorized: boolean;
   file_path: string | null;
   file_name: string | null;
   notes: string | null;
@@ -25,6 +27,13 @@ interface Submittal {
   uploaded_by_name: string | null;
   created_at: string;
 }
+
+const SUBMITTAL_CATEGORIES = [
+  "Concrete", "Rebar / Reinforcing Steel", "Asphalt", "Aggregate / Stone",
+  "Pipe", "Precast Structures", "Castings (Frames & Grates)",
+  "Erosion Control", "Geotextile", "Pavement Markings", "Signage",
+  "Guide Rail", "Electrical", "Landscaping", "Other",
+];
 
 const STATUS_LABEL: Record<Status, string> = {
   pending: "Pending",
