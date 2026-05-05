@@ -147,28 +147,57 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
   const quickUpload = async (files: File[]) => {
     if (!user || !files.length) return;
     setBusy(true);
+    const t = toast.loading(`Uploading ${files.length} file${files.length > 1 ? "s" : ""}…`);
     try {
       const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
       const uploaderName = (prof as any)?.display_name ?? null;
+      let aiHits = 0;
       for (const f of files) {
         const path = `${jobId}/${Date.now()}-${f.name}`;
         const { error: upErr } = await supabase.storage
           .from("job-submittals")
           .upload(path, f, { contentType: f.type });
         if (upErr) throw upErr;
+
+        // Ask AI to title + categorize. Fall back to filename on failure.
+        let title = f.name.replace(/\.[^.]+$/, "");
+        let category: string | null = null;
+        let aiCategorized = false;
+        try {
+          const { data: ai } = await supabase.functions.invoke("categorize-document", {
+            body: { kind: "submittal", bucket: "job-submittals", path, fileName: f.name },
+          });
+          const fields = (ai as any)?.fields;
+          if (fields && (fields.confidence ?? 0) >= 0.55) {
+            if (fields.title) title = String(fields.title);
+            if (fields.category) category = String(fields.category);
+            aiCategorized = true;
+            aiHits++;
+          }
+        } catch (e) {
+          console.warn("AI categorize failed", e);
+        }
+
         const { error } = await supabase.from("job_submittals").insert({
           job_id: jobId,
-          title: f.name.replace(/\.[^.]+$/, ""),
+          title,
+          category,
+          ai_categorized: aiCategorized,
           status: "pending",
           file_path: path, file_name: f.name, file_size: f.size, mime_type: f.type,
           uploaded_by: user.id, uploaded_by_name: uploaderName,
         });
         if (error) throw error;
       }
-      toast.success(`${files.length} submittal${files.length > 1 ? "s" : ""} added`);
+      toast.success(
+        aiHits
+          ? `${files.length} added — ${aiHits} auto-categorized ✨`
+          : `${files.length} submittal${files.length > 1 ? "s" : ""} added`,
+        { id: t },
+      );
       await load();
     } catch (err: any) {
-      toast.error(err.message ?? "Upload failed");
+      toast.error(err.message ?? "Upload failed", { id: t });
     } finally {
       setBusy(false);
     }
