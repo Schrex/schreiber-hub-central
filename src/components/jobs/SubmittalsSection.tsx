@@ -135,7 +135,42 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
     await load();
   };
 
+  const quickUpload = async (files: File[]) => {
+    if (!user || !files.length) return;
+    setBusy(true);
+    try {
+      const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
+      const uploaderName = (prof as any)?.display_name ?? null;
+      for (const f of files) {
+        const path = `${jobId}/${Date.now()}-${f.name}`;
+        const { error: upErr } = await supabase.storage
+          .from("job-submittals")
+          .upload(path, f, { contentType: f.type });
+        if (upErr) throw upErr;
+        const { error } = await supabase.from("job_submittals").insert({
+          job_id: jobId,
+          title: f.name.replace(/\.[^.]+$/, ""),
+          status: "pending",
+          file_path: path, file_name: f.name, file_size: f.size, mime_type: f.type,
+          uploaded_by: user.id, uploaded_by_name: uploaderName,
+        });
+        if (error) throw error;
+      }
+      toast.success(`${files.length} submittal${files.length > 1 ? "s" : ""} added`);
+      await load();
+    } catch (err: any) {
+      toast.error(err.message ?? "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
+    <FileDropZone
+      disabled={!canEdit || busy}
+      onFiles={quickUpload}
+      label="Drop files to add submittals"
+    >
     <section className="space-y-2 rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
