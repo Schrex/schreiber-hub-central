@@ -333,6 +333,12 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
   }, [photos]);
 
   return (
+    <FileDropZone
+      accept="image/*"
+      disabled={!canManage || uploading}
+      onFiles={uploadFiles}
+      label="Drop photos to upload"
+    >
     <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
