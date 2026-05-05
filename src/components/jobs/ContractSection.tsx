@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileText, Upload, Trash2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,7 @@ export const ContractSection = ({ jobId }: Props) => {
   const [meta, setMeta] = useState<ContractMeta | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     const { data } = await supabase
@@ -126,21 +127,26 @@ export const ContractSection = ({ jobId }: Props) => {
           Contract
         </h2>
         {canEdit && (
-          <label className="cursor-pointer">
+          <>
             <input
+              ref={fileInputRef}
               type="file"
               className="hidden"
               accept=".pdf,.doc,.docx,image/*"
               onChange={onUpload}
-              disabled={busy}
             />
-            <span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:border-primary/40">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:border-primary/40 disabled:opacity-50"
+            >
               <Upload className="h-3 w-3" />
               {busy
                 ? `Uploading ${progress}%`
                 : meta?.contract_file_path ? "Replace" : "Upload"}
-            </span>
-          </label>
+            </button>
+          </>
         )}
       </div>
 
