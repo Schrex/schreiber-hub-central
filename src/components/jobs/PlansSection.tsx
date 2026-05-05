@@ -198,7 +198,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
         <p className="text-xs text-muted-foreground">Loading…</p>
       ) : (
         <ul className="divide-y divide-border">
-          {CATEGORIES.map(({ key, label }) => {
+          {CATEGORIES.map(({ key, label, accept }) => {
             const catPlans = plans
               .filter((p) => p.category === key)
               .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -215,7 +215,7 @@ export const PlansSection = ({ jobId }: { jobId: string }) => {
             return (
               <li key={key} className="py-3 first:pt-0 last:pb-0">
                 <FileDropZone
-                  accept="application/pdf,image/*"
+                  accept={accept}
                   multiple={false}
                   disabled={!canManage || uploadingCat === key}
                   onFiles={(fs) => fs[0] && uploadFile(key, fs[0])}
