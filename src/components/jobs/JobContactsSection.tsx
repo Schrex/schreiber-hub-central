@@ -98,7 +98,7 @@ export const JobContactsSection = ({ jobId, jobName, foremanId }: Props) => {
     const [c, v, e] = await Promise.all([
       supabase.from("job_contacts").select("*").eq("job_id", jobId).order("sort_order").order("created_at"),
       supabase.from("vendors").select("id,name,category,contact_name,phone,email,address").eq("is_active", true).order("name"),
-      supabase.from("employee_contacts").select("id,name,job_title,phone,email,work_email").eq("is_active", true).order("name"),
+      supabase.rpc("list_employee_directory"),
     ]);
     setContacts((c.data as JobContact[] | null) ?? []);
     setVendors((v.data as Vendor[] | null) ?? []);
