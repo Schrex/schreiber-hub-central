@@ -88,14 +88,19 @@ async function parseRequest(req: Request): Promise<Parsed> {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  if (SHARED_SECRET) {
-    const url = new URL(req.url);
-    const provided = url.searchParams.get("secret") || req.headers.get("x-webhook-secret");
-    if (provided !== SHARED_SECRET) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+  // Mandatory shared-secret authentication. Reject if not configured or mismatched.
+  if (!SHARED_SECRET) {
+    console.error("SWPPPP_INBOUND_SECRET not configured");
+    return new Response(JSON.stringify({ error: "Webhook not configured" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const provided = req.headers.get("x-webhook-secret")
+    || new URL(req.url).searchParams.get("secret");
+  if (provided !== SHARED_SECRET) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {

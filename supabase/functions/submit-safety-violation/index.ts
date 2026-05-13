@@ -28,6 +28,13 @@ Deno.serve(async (req) => {
     const { data: v, error: vErr } = await admin.from('safety_violations').select('*').eq('id', violationId).maybeSingle()
     if (vErr || !v) throw new Error('Violation not found')
 
+    // Authz: only the filer, or office/admin, can trigger notifications
+    const { data: roles } = await admin.from('user_roles').select('role').eq('user_id', user.id)
+    const isPrivileged = (roles ?? []).some((r: any) => r.role === 'office' || r.role === 'admin')
+    if (v.filed_by !== user.id && !isPrivileged) {
+      return json({ error: 'Forbidden' }, 403)
+    }
+
     const { data: recipients } = await admin
       .from('user_roles')
       .select('user_id, profiles!inner(email)')

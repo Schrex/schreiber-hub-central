@@ -28,6 +28,13 @@ Deno.serve(async (req) => {
     const { data: report, error: rErr } = await admin.from('accident_reports').select('*').eq('id', reportId).maybeSingle()
     if (rErr || !report) throw new Error('Report not found')
 
+    // Authz: only the reporter, or office/admin, can trigger notifications
+    const { data: roles } = await admin.from('user_roles').select('role').eq('user_id', user.id)
+    const isPrivileged = (roles ?? []).some((r: any) => r.role === 'office' || r.role === 'admin')
+    if (report.reported_by !== user.id && !isPrivileged) {
+      return json({ error: 'Forbidden' }, 403)
+    }
+
     // Recipients: all office + admin users
     const { data: recipients } = await admin
       .from('user_roles')

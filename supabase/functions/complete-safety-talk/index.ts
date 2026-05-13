@@ -129,9 +129,14 @@ Deno.serve(async (req) => {
     for (const p of officeProfiles ?? []) {
       if (p.email && typeof p.email === 'string') recipients.add(p.email.trim().toLowerCase())
     }
-    if (Array.isArray(extraRecipients)) {
+    // Only admins may CC arbitrary external recipients (e.g. customer).
+    // Foremen completing their own talk cannot exfiltrate to external addresses.
+    if (Array.isArray(extraRecipients) && isAdmin) {
+      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       for (const e of extraRecipients) {
-        if (typeof e === 'string' && e.includes('@')) recipients.add(e.trim().toLowerCase())
+        if (typeof e === 'string' && EMAIL_RE.test(e.trim())) {
+          recipients.add(e.trim().toLowerCase())
+        }
       }
     }
 
