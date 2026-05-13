@@ -63,6 +63,21 @@ interface Person {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  // Require either the service-role key or a dedicated cron secret to invoke.
+  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const CRON_SECRET = Deno.env.get("DAILY_CELEBRATIONS_SECRET");
+  const auth = req.headers.get("Authorization") ?? "";
+  const provided = auth.replace(/^Bearer\s+/i, "").trim();
+  const cronHeader = req.headers.get("x-cron-secret") ?? "";
+  const okAuth =
+    (provided && provided === SERVICE_KEY) ||
+    (CRON_SECRET && (provided === CRON_SECRET || cronHeader === CRON_SECRET));
+  if (!okAuth) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
