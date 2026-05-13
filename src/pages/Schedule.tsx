@@ -185,11 +185,7 @@ const Schedule = () => {
         .select("id,name,address,job_number")
         .eq("status", "active")
         .order("name"),
-      supabase
-        .from("employee_contacts")
-        .select("id,name,converted_user_id,is_active")
-        .eq("is_active", true)
-        .order("name"),
+      supabase.rpc("list_employee_directory"),
       // Pull profiles too so we still capture any active login that has no contact yet
       supabase.from("profiles").select("user_id,display_name,contact_id").eq("is_active", true),
       supabase

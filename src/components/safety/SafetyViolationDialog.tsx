@@ -74,8 +74,13 @@ export const SafetyViolationDialog = ({ open, onOpenChange, presetJob }: Props) 
       supabase.from("jobs").select("id, name, job_number").eq("status", "active").order("name")
         .then(({ data }) => setJobs((data as JobOpt[]) ?? []));
     }
-    supabase.from("employee_contacts").select("id, name, department").eq("is_active", true).order("name")
-      .then(({ data }) => setEmployees((data as EmpOpt[]) ?? []));
+    supabase.rpc("list_employee_directory")
+      .then(({ data }) => {
+        const rows = ((data as { id: string; name: string; department: string | null; is_active: boolean }[] | null) ?? [])
+          .filter((r) => r.is_active)
+          .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+        setEmployees(rows.map((r) => ({ id: r.id, name: r.name, department: r.department })) as EmpOpt[]);
+      });
     setJobId(presetJob?.id ?? "");
   }, [open, presetJob]);
 

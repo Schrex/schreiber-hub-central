@@ -3027,6 +3027,29 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_attendee_by_token: {
+        Args: { _token: string }
+        Returns: {
+          attendee_name: string
+          created_at: string
+          id: string
+          initial_quiz_score: number
+          initial_quiz_total: number
+          notified_at: string
+          notify_channel: string
+          phone_snapshot: string
+          quiz_answers: Json
+          quiz_attempts: number
+          quiz_completed_at: string
+          quiz_score: number
+          quiz_total: number
+          session_id: string
+          signature_data: string
+          signed_at: string
+          source: string
+          user_id: string
+        }[]
+      }
       get_employee_contact_sensitive: {
         Args: { _id: string }
         Returns: {
@@ -3054,6 +3077,28 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      list_employee_directory: {
+        Args: never
+        Returns: {
+          converted_user_id: string
+          created_at: string
+          date_of_birth: string
+          department: string
+          email: string
+          first_name: string
+          hire_date: string
+          id: string
+          is_active: boolean
+          job_title: string
+          last_name: string
+          manager_contact_id: string
+          middle_initial: string
+          name: string
+          phone: string
+          updated_at: string
+          work_email: string
+        }[]
       }
       move_to_dlq: {
         Args: {

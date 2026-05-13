@@ -14,7 +14,7 @@ interface Attendee {
   attendee_name: string; signature_data: string | null; signed_at: string | null;
   quiz_score: number | null; quiz_total: number | null; quiz_completed_at: string | null;
   initial_quiz_score: number | null; initial_quiz_total: number | null; quiz_attempts: number;
-  access_token: string;
+  
 }
 interface Session {
   id: string; talk_id: string; foreman_name: string | null; status: string; started_at: string;
@@ -49,11 +49,9 @@ const TakeSafetyTalk = () => {
     if (!user) { navigate(`/auth?redirect=${encodeURIComponent(`/safety/take/${token}`)}`); return; }
     if (!token) { setErr("Invalid link"); setLoading(false); return; }
     (async () => {
-      const { data: att, error: attErr } = await supabase
-        .from("toolbox_talk_attendees")
-        .select("*")
-        .eq("access_token", token)
-        .maybeSingle();
+      const { data: attRows, error: attErr } = await supabase
+        .rpc("get_attendee_by_token", { _token: token });
+      const att = Array.isArray(attRows) ? attRows[0] : (attRows as any);
       if (attErr || !att) { setErr("This link is invalid or expired."); setLoading(false); return; }
       if (att.user_id && att.user_id !== user.id) {
         setErr("This link belongs to another team member. Please log in as them.");

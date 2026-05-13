@@ -38,10 +38,7 @@ export const CelebrationsBanner = () => {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("employee_contacts")
-        .select("id, name, date_of_birth, hire_date, is_active")
-        .eq("is_active", true);
+      const { data } = await supabase.rpc("list_employee_directory");
       const today = todayMMDD();
       const list: Item[] = [];
       (data ?? []).forEach((c) => {
