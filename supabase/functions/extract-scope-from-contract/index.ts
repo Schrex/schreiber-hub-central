@@ -35,6 +35,15 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
+    // Only office/admin may read contracts and write job scope. Replace requires admin.
+    const { data: roles } = await admin
+      .from("user_roles").select("role").eq("user_id", userData.user.id);
+    const roleSet = new Set((roles ?? []).map((r: any) => r.role));
+    const isOffice = roleSet.has("office") || roleSet.has("admin");
+    const isAdmin = roleSet.has("admin");
+    if (!isOffice) return json(403, { error: "forbidden" });
+    if (replace && !isAdmin) return json(403, { error: "replace requires admin" });
+
     const { data: job, error: jobErr } = await admin
       .from("jobs")
       .select("id, contract_file_path, contract_file_name")
