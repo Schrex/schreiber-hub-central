@@ -3027,6 +3027,23 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_employee_contact_sensitive: {
+        Args: { _id: string }
+        Returns: {
+          bank_account_holder: string
+          bank_account_number: string
+          bank_account_type: string
+          bank_name: string
+          bank_routing_number: string
+          drivers_license_number: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          id: string
+          ssn: string
+          terminated_by: string
+          termination_reason: string
+        }[]
+      }
       get_primary_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
