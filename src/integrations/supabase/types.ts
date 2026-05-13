@@ -3027,6 +3027,29 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_attendee_by_token: {
+        Args: { _token: string }
+        Returns: {
+          attendee_name: string
+          created_at: string
+          id: string
+          initial_quiz_score: number
+          initial_quiz_total: number
+          notified_at: string
+          notify_channel: string
+          phone_snapshot: string
+          quiz_answers: Json
+          quiz_attempts: number
+          quiz_completed_at: string
+          quiz_score: number
+          quiz_total: number
+          session_id: string
+          signature_data: string
+          signed_at: string
+          source: string
+          user_id: string
+        }[]
+      }
       get_employee_contact_sensitive: {
         Args: { _id: string }
         Returns: {
