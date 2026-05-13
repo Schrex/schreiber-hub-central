@@ -14,7 +14,7 @@ interface Attendee {
   attendee_name: string; signature_data: string | null; signed_at: string | null;
   quiz_score: number | null; quiz_total: number | null; quiz_completed_at: string | null;
   initial_quiz_score: number | null; initial_quiz_total: number | null; quiz_attempts: number;
-  access_token: string;
+  
 }
 interface Session {
   id: string; talk_id: string; foreman_name: string | null; status: string; started_at: string;
