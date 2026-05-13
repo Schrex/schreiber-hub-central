@@ -123,6 +123,21 @@ Deno.serve(async (req) => {
     };
     if (!kind || !bucket || !path) return json(400, { error: "kind, bucket, path required" });
 
+    // Only allow categorization for buckets tied to a specific document kind.
+    // This prevents using this endpoint as a service-role read proxy for
+    // unrelated private buckets like onboarding-signed, shop-waivers, etc.
+    const ALLOWED_BUCKETS_BY_KIND: Record<Kind, string[]> = {
+      submittal: ["job-submittals"],
+      permit: ["permits"],
+      swppp: ["swpppp-reports"],
+      estimate: ["job-estimates"],
+      contract: ["job-contracts"],
+    };
+    const allowed = ALLOWED_BUCKETS_BY_KIND[kind] ?? [];
+    if (!allowed.includes(bucket)) {
+      return json(403, { error: "bucket not allowed for this kind" });
+    }
+
     const authHeader = req.headers.get("Authorization") ?? "";
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -135,6 +150,11 @@ Deno.serve(async (req) => {
     });
     const { data: u } = await userClient.auth.getUser();
     if (!u?.user) return json(401, { error: "unauthorized" });
+
+    // Verify the caller can actually read this object under their own RLS
+    // before falling back to the service role to fetch the bytes for the AI.
+    const { error: probeErr } = await userClient.storage.from(bucket).download(path);
+    if (probeErr) return json(403, { error: "no access to file" });
 
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: blob, error: dlErr } = await admin.storage.from(bucket).download(path);
