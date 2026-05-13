@@ -102,7 +102,10 @@ export const JobContactsSection = ({ jobId, jobName, foremanId }: Props) => {
     ]);
     setContacts((c.data as JobContact[] | null) ?? []);
     setVendors((v.data as Vendor[] | null) ?? []);
-    setEmployees((e.data as EmployeeContact[] | null) ?? []);
+    const empRows = ((e.data as { id: string; name: string; job_title: string | null; phone: string | null; email: string | null; work_email: string | null; is_active: boolean }[] | null) ?? [])
+      .filter((r) => r.is_active)
+      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+    setEmployees(empRows as unknown as EmployeeContact[]);
     setLoading(false);
   };
 
