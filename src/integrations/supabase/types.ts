@@ -3078,6 +3078,28 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_employee_directory: {
+        Args: never
+        Returns: {
+          converted_user_id: string
+          created_at: string
+          date_of_birth: string
+          department: string
+          email: string
+          first_name: string
+          hire_date: string
+          id: string
+          is_active: boolean
+          job_title: string
+          last_name: string
+          manager_contact_id: string
+          middle_initial: string
+          name: string
+          phone: string
+          updated_at: string
+          work_email: string
+        }[]
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
