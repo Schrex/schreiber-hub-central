@@ -248,7 +248,7 @@ const EmployeeContacts = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("employee_contacts")
-      .select("*")
+      .select("id,name,first_name,last_name,middle_initial,job_title,department,phone,email,work_email,personal_email,address,notes,is_active,created_by,created_at,updated_at,converted_user_id,date_of_birth,drivers_license_class,drivers_license_expires,osha_card_number,osha_expires,other_certifications,hire_date,termination_date,manager_contact_id")
       .order("name", { ascending: true });
     if (error) {
       toast({ title: "Couldn't load contacts", description: error.message, variant: "destructive" });
