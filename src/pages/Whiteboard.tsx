@@ -204,6 +204,35 @@ const Whiteboard = () => {
         .map((t) => t.sort_order),
     );
 
+  const jobRefForParent = (parentId: string | null): string | null => {
+    if (!parentId) return null;
+    const p = tiles.find((t) => t.id === parentId);
+    return p && p.kind === "job" ? p.ref_id : null;
+  };
+
+  const syncAddAssignment = async (jobId: string, userId: string, dayIdx: number) => {
+    const date = dateAt(weekStart, dayIdx);
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .upsert(
+        [{ job_id: jobId, user_id: userId, assignment_date: date, start_time: "07:00", created_by: user?.id ?? null }],
+        { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: true },
+      );
+    if (error) {
+      toast({ title: "Schedule sync failed", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const syncRemoveAssignment = async (jobId: string, userId: string, dayIdx: number) => {
+    const date = dateAt(weekStart, dayIdx);
+    await supabase
+      .from("schedule_assignments")
+      .delete()
+      .eq("job_id", jobId)
+      .eq("user_id", userId)
+      .eq("assignment_date", date);
+  };
+
   const optimisticInsert = async (row: Omit<Tile, "id">) => {
     markLocalChange();
     const tempId = `tmp-${++tempCounter.current}`;
@@ -230,6 +259,11 @@ const Whiteboard = () => {
       return null;
     }
     setTiles((prev) => prev.map((t) => (t.id === tempId ? (data as Tile) : t)));
+    // Mirror crew-under-job placements into the regular schedule
+    if (row.kind === "crew" && row.section === "crew" && row.ref_id) {
+      const jobId = jobRefForParent(row.parent_tile_id);
+      if (jobId) await syncAddAssignment(jobId, row.ref_id, row.day_index);
+    }
     return data as Tile;
   };
 
@@ -243,18 +277,47 @@ const Whiteboard = () => {
     if (error) {
       setTiles((prev) => prev.map((t) => (t.id === id ? prevTile : t)));
       toast({ title: "Move failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    // Sync schedule_assignments when a crew tile changes job/day
+    if (prevTile.kind === "crew" && prevTile.ref_id) {
+      const newSection = patch.section ?? prevTile.section;
+      const newParent = patch.parent_tile_id !== undefined ? patch.parent_tile_id : prevTile.parent_tile_id;
+      const newDay = patch.day_index ?? prevTile.day_index;
+      const oldJobId = prevTile.section === "crew" ? jobRefForParent(prevTile.parent_tile_id) : null;
+      const newJobId = newSection === "crew" ? jobRefForParent(newParent) : null;
+      const sameSpot =
+        oldJobId === newJobId && prevTile.day_index === newDay;
+      if (!sameSpot) {
+        if (oldJobId) await syncRemoveAssignment(oldJobId, prevTile.ref_id, prevTile.day_index);
+        if (newJobId) await syncAddAssignment(newJobId, prevTile.ref_id, newDay);
+      }
     }
   };
 
   const optimisticDelete = async (id: string) => {
     markLocalChange();
     const prev = tiles;
+    const target = tiles.find((t) => t.id === id);
+    const childCrew = tiles.filter((t) => t.parent_tile_id === id && t.kind === "crew");
     setTiles((p) => p.filter((t) => t.id !== id && t.parent_tile_id !== id));
     if (id.startsWith("tmp-")) return;
     const { error } = await supabase.from("whiteboard_tiles").delete().eq("id", id);
     if (error) {
       setTiles(prev);
       toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    // Sync schedule_assignments removal
+    if (target?.kind === "crew" && target.ref_id && target.section === "crew") {
+      const jobId = jobRefForParent(target.parent_tile_id);
+      if (jobId) await syncRemoveAssignment(jobId, target.ref_id, target.day_index);
+    }
+    if (target?.kind === "job" && target.ref_id) {
+      // Job tile removed → drop all mirrored assignments for its child crew
+      for (const c of childCrew) {
+        if (c.ref_id) await syncRemoveAssignment(target.ref_id, c.ref_id, c.day_index);
+      }
     }
   };
 
