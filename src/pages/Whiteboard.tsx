@@ -874,7 +874,7 @@ const VirtualCrewChip = ({
       {...listeners}
       {...attributes}
       className={cn(
-        "max-w-[200px] truncate rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium touch-none cursor-grab active:cursor-grabbing",
+        "max-w-[150px] truncate rounded-md border border-border bg-background px-1.5 py-0.5 text-[11px] font-medium touch-none cursor-grab active:cursor-grabbing",
         isDragging && "opacity-30",
       )}
     >
