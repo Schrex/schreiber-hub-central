@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, addDays, startOfWeek, isToday, parseISO, isBefore, startOfDay } from "date-fns";
 import {
@@ -172,9 +172,11 @@ const Schedule = () => {
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   }, [selectedDate]);
 
+  const autoFilledRef = useRef<Set<string>>(new Set());
+
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }, { data: rolesData }] = await Promise.all([
+    let [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }, { data: rolesData }] = await Promise.all([
       supabase
         .from("schedule_assignments")
         .select("*, jobs(id,name,address,job_number)")
@@ -196,6 +198,51 @@ const Schedule = () => {
         .gte("end_date", selectedDate),
       supabase.from("user_roles").select("user_id, role"),
     ]);
+
+    // Auto carry-forward: if this day has no assignments and is today/future,
+    // copy the most recent prior day's assignments forward (once per session per date).
+    const todayIsoLocal = format(startOfDay(new Date()), "yyyy-MM-dd");
+    const isFutureOrToday = selectedDate >= todayIsoLocal;
+    if ((a?.length ?? 0) === 0 && isFutureOrToday && !autoFilledRef.current.has(selectedDate) && canEdit) {
+      autoFilledRef.current.add(selectedDate);
+      // Look back up to 14 days for the most recent date with any assignments.
+      const sinceIso = format(addDays(parseISO(selectedDate), -14), "yyyy-MM-dd");
+      const beforeIso = format(addDays(parseISO(selectedDate), -1), "yyyy-MM-dd");
+      const { data: priorRows } = await supabase
+        .from("schedule_assignments")
+        .select("job_id,user_id,start_time,role_on_job,notes,assignment_date")
+        .gte("assignment_date", sinceIso)
+        .lte("assignment_date", beforeIso)
+        .order("assignment_date", { ascending: false });
+      const mostRecent = priorRows?.[0]?.assignment_date;
+      const sourceRows = mostRecent ? priorRows!.filter((r) => r.assignment_date === mostRecent) : [];
+      if (sourceRows.length > 0) {
+        const newRows = sourceRows.map((r) => ({
+          job_id: r.job_id,
+          user_id: r.user_id,
+          assignment_date: selectedDate,
+          start_time: r.start_time,
+          role_on_job: r.role_on_job,
+          notes: r.notes,
+          created_by: user?.id ?? null,
+        }));
+        const { error: copyErr } = await supabase
+          .from("schedule_assignments")
+          .upsert(newRows, { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: true });
+        if (!copyErr) {
+          const { data: refetched } = await supabase
+            .from("schedule_assignments")
+            .select("*, jobs(id,name,address,job_number)")
+            .eq("assignment_date", selectedDate)
+            .order("start_time", { ascending: true, nullsFirst: false });
+          a = refetched;
+          toast({
+            title: "Carried forward",
+            description: `Filled ${newRows.length} assignment${newRows.length === 1 ? "" : "s"} from ${format(parseISO(mostRecent!), "EEE, MMM d")}.`,
+          });
+        }
+      }
+    }
 
     // Build a per-user role set; "office staff" = office or admin AND not foreman/employee
     const rolesByUser = new Map<string, Set<string>>();
@@ -419,9 +466,27 @@ const Schedule = () => {
     loadAll();
   };
 
-  // --- Drag & drop board handlers ---
+  // --- Drag & drop board handlers (optimistic, no full reload) ---
   const boardAssign = async (jobId: string, userId: string) => {
-    const { error } = await supabase
+    // Skip if already assigned to that job for the day
+    if (assignments.some((a) => a.job_id === jobId && a.user_id === userId)) return;
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const job = jobs.find((j) => j.id === jobId) ?? null;
+    const profile = profiles.find((p) => p.user_id === userId);
+    const optimistic: Assignment = {
+      id: tempId,
+      job_id: jobId,
+      user_id: userId,
+      assignment_date: selectedDate,
+      start_time: "07:00",
+      role_on_job: null,
+      notes: null,
+      jobs: job,
+      profile_name: profile?.display_name ?? "Unknown",
+      contact_id: profile?.contact_id ?? null,
+    };
+    setAssignments((prev) => [...prev, optimistic]);
+    const { data, error } = await supabase
       .from("schedule_assignments")
       .upsert(
         [
@@ -433,30 +498,58 @@ const Schedule = () => {
             created_by: user?.id ?? null,
           },
         ],
-        { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: true },
-      );
+        { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: false },
+      )
+      .select("id")
+      .maybeSingle();
     if (error) {
+      setAssignments((prev) => prev.filter((a) => a.id !== tempId));
       toast({ title: "Could not assign", description: error.message, variant: "destructive" });
       return;
     }
-    loadAll();
+    if (data?.id) {
+      setAssignments((prev) => prev.map((a) => (a.id === tempId ? { ...a, id: data.id } : a)));
+    }
   };
 
   const boardMove = async (assignmentId: string, newJobId: string) => {
+    const prev = assignments;
+    const moved = prev.find((a) => a.id === assignmentId);
+    if (!moved) return;
+    if (moved.job_id === newJobId) return;
+    // If the user is already on the destination job, treat as unassign from source
+    const dupe = prev.find((a) => a.user_id === moved.user_id && a.job_id === newJobId);
+    const newJob = jobs.find((j) => j.id === newJobId) ?? null;
+    const next = dupe
+      ? prev.filter((a) => a.id !== assignmentId)
+      : prev.map((a) => (a.id === assignmentId ? { ...a, job_id: newJobId, jobs: newJob } : a));
+    setAssignments(next);
+    if (dupe) {
+      const { error } = await supabase.from("schedule_assignments").delete().eq("id", assignmentId);
+      if (error) {
+        setAssignments(prev);
+        toast({ title: "Could not move", description: error.message, variant: "destructive" });
+      }
+      return;
+    }
     const { error } = await supabase
       .from("schedule_assignments")
       .update({ job_id: newJobId })
       .eq("id", assignmentId);
     if (error) {
-      // Likely unique conflict — they're already on that job
+      setAssignments(prev);
       toast({ title: "Could not move", description: error.message, variant: "destructive" });
-      return;
     }
-    loadAll();
   };
 
   const boardUnassign = async (assignmentId: string) => {
-    await removeAssignment(assignmentId);
+    const prev = assignments;
+    setAssignments((cur) => cur.filter((a) => a.id !== assignmentId));
+    const { error } = await supabase.from("schedule_assignments").delete().eq("id", assignmentId);
+    if (error) {
+      setAssignments(prev);
+      toast({ title: "Could not remove", description: error.message, variant: "destructive" });
+    }
   };
 
 
