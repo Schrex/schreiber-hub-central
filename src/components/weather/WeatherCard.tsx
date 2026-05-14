@@ -109,7 +109,7 @@ export const WeatherCard = ({ forecast, coords, loading, compact, error, needsPe
       {/* 7-day */}
       <div className="border-t border-border/60 px-4 py-3">
         <p className="pb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          7-day forecast
+          {daily.length}-day forecast
         </p>
         <div className="space-y-1.5">
           {daily.map((d, i) => {
