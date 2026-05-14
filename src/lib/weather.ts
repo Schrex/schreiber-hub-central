@@ -21,9 +21,15 @@ export interface CurrentWeather {
 export interface HourPoint {
   time: string; // ISO
   tempF: number;
+  apparentTempF: number;
   precipProb: number;
   precipIn: number;
   code: number;
+  windMph: number;
+  windDir: number;
+  humidity: number;
+  cloudCover: number;
+  isDay: boolean;
 }
 
 export interface DayPoint {
@@ -48,7 +54,7 @@ export const fetchForecast = async (lat: number, lon: number): Promise<Forecast>
     latitude: String(lat),
     longitude: String(lon),
     current: "temperature_2m,apparent_temperature,is_day,precipitation_probability,weather_code,wind_speed_10m",
-    hourly: "temperature_2m,precipitation_probability,precipitation,weather_code",
+    hourly: "temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m,cloud_cover,is_day",
     daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,sunrise,sunset",
     temperature_unit: "fahrenheit",
     wind_speed_unit: "mph",
@@ -73,13 +79,19 @@ export const fetchForecast = async (lat: number, lon: number): Promise<Forecast>
   const nowIdx = j.hourly.time.findIndex((t: string) => new Date(t).getTime() >= Date.now() - 30 * 60 * 1000);
   const start = Math.max(nowIdx, 0);
   const hourly: HourPoint[] = j.hourly.time
-    .slice(start, start + 24)
+    .slice(start, start + 48)
     .map((t: string, i: number) => ({
       time: t,
       tempF: Math.round(j.hourly.temperature_2m[start + i]),
+      apparentTempF: Math.round(j.hourly.apparent_temperature?.[start + i] ?? j.hourly.temperature_2m[start + i]),
       precipProb: j.hourly.precipitation_probability[start + i] ?? 0,
       precipIn: j.hourly.precipitation[start + i] ?? 0,
       code: j.hourly.weather_code[start + i],
+      windMph: Math.round(j.hourly.wind_speed_10m?.[start + i] ?? 0),
+      windDir: Math.round(j.hourly.wind_direction_10m?.[start + i] ?? 0),
+      humidity: Math.round(j.hourly.relative_humidity_2m?.[start + i] ?? 0),
+      cloudCover: Math.round(j.hourly.cloud_cover?.[start + i] ?? 0),
+      isDay: !!j.hourly.is_day?.[start + i],
     }));
 
   const daily: DayPoint[] = j.daily.time.map((d: string, i: number) => ({
