@@ -82,11 +82,17 @@ const Whiteboard = () => {
 
   const load = async ({ showLoading = true }: { showLoading?: boolean } = {}) => {
     if (showLoading) setLoading(true);
-    const [tilesRes, jobsRes, profilesRes, rolesRes] = await Promise.all([
+    const weekEnd = format(addDays(parseISO(weekStart), 6), "yyyy-MM-dd");
+    const [tilesRes, jobsRes, profilesRes, rolesRes, dispatchRes] = await Promise.all([
       supabase.from("whiteboard_tiles").select("*").eq("week_start", weekStart).order("sort_order"),
       supabase.from("jobs").select("id,name,job_number").eq("status", "active").order("name"),
       supabase.from("profiles").select("user_id,display_name").eq("is_active", true).order("display_name"),
       supabase.from("user_roles").select("user_id,role"),
+      supabase
+        .from("dispatch_orders")
+        .select("id,dispatch_date,driver_user_id,driver_name,truck_number")
+        .gte("dispatch_date", weekStart)
+        .lte("dispatch_date", weekEnd),
     ]);
     if (tilesRes.error) toast({ title: "Couldn't load board", description: tilesRes.error.message, variant: "destructive" });
 
@@ -110,6 +116,7 @@ const Whiteboard = () => {
         .filter((p) => p.user_id)
         .map((p) => ({ ...p, is_office: isOffice(p.user_id) })),
     );
+    setDispatches(((dispatchRes.data ?? []) as Dispatch[]));
     setLoading(false);
   };
 
