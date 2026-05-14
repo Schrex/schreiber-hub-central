@@ -106,10 +106,21 @@ export const WeatherCard = ({ forecast, coords, loading, compact, error, needsPe
           {hourly.slice(0, compact ? 12 : 48).map((h, idx, arr) => {
             const i = weatherCodeInfo(h.code);
             const hasPrecip = h.precipIn > 0;
-            const label = fmtHourLabel(h.time, idx, arr[idx - 1]?.time);
+            const d = new Date(h.time);
+            const prev = idx > 0 ? new Date(arr[idx - 1].time) : null;
+            const isNewDay = !prev || d.getDate() !== prev.getDate();
+            const dayLabel = d.toLocaleDateString([], { weekday: "short" });
+            const hourLabel = d.toLocaleTimeString([], { hour: "numeric" });
             return (
-              <div key={h.time} className="flex min-w-[68px] flex-col items-center gap-1 rounded-lg bg-surface/40 px-1.5 py-2">
-                <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">{label}</span>
+              <div key={h.time} className={cn(
+                "flex min-w-[68px] flex-col items-center gap-1 rounded-lg bg-surface/40 px-1.5 py-2",
+                isNewDay && idx > 0 && "border-l-2 border-primary/40 ml-1",
+              )}>
+                <span className={cn(
+                  "text-[9px] font-bold uppercase tracking-wider whitespace-nowrap",
+                  isNewDay ? "text-primary" : "text-muted-foreground/70",
+                )}>{dayLabel}</span>
+                <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">{hourLabel}</span>
                 <span className="text-base">{i.emoji}</span>
                 <span className="text-xs font-semibold text-foreground">{h.tempF}°</span>
                 <span className="text-[9px] text-muted-foreground">feels {h.apparentTempF}°</span>
