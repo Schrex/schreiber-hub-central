@@ -173,6 +173,7 @@ const Whiteboard = () => {
     );
 
   const optimisticInsert = async (row: Omit<Tile, "id">) => {
+    markLocalChange();
     const tempId = `tmp-${++tempCounter.current}`;
     const optimistic: Tile = { ...row, id: tempId };
     setTiles((prev) => [...prev, optimistic]);
@@ -203,6 +204,7 @@ const Whiteboard = () => {
   const optimisticUpdate = async (id: string, patch: Partial<Tile>) => {
     const prevTile = tiles.find((t) => t.id === id);
     if (!prevTile) return;
+    markLocalChange();
     setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
     if (id.startsWith("tmp-")) return;
     const { error } = await supabase.from("whiteboard_tiles").update(patch).eq("id", id);
@@ -213,6 +215,7 @@ const Whiteboard = () => {
   };
 
   const optimisticDelete = async (id: string) => {
+    markLocalChange();
     const prev = tiles;
     setTiles((p) => p.filter((t) => t.id !== id && t.parent_tile_id !== id));
     if (id.startsWith("tmp-")) return;
