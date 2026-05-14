@@ -607,7 +607,7 @@ const Vendors = () => {
           </div>
         )}
 
-        {canEdit && (
+        {canEdit && !selectMode && (
           <>
             <div className="flex gap-2">
               <Button onClick={openAdd} className="flex-1">
@@ -622,14 +622,24 @@ const Vendors = () => {
                 <Upload className="mr-1 h-4 w-4" /> {importing ? "Importing…" : "Import"}
               </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={importFromContacts}
-              disabled={importing}
-              className="w-full"
-            >
-              <Contact className="mr-1 h-4 w-4" /> Import from Contacts
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={importFromContacts}
+                disabled={importing}
+                className="flex-1"
+              >
+                <Contact className="mr-1 h-4 w-4" /> From Contacts
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSelectMode(true)}
+                disabled={vendors.length === 0}
+                className="flex-1"
+              >
+                <CheckSquare className="mr-1 h-4 w-4" /> Select
+              </Button>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -651,9 +661,39 @@ const Vendors = () => {
               }}
             />
             <p className="text-[11px] text-muted-foreground">
-              Tap "Import from Contacts" to pick directly from your phone (Android Chrome). On iPhone or desktop it falls back to picking a .vcf file.
+              Tap "From Contacts" to pick directly from your phone (Android Chrome). On iPhone or desktop it falls back to picking a .vcf file.
             </p>
           </>
+        )}
+
+        {selectMode && (
+          <div className="sticky top-[57px] z-20 -mx-3 flex flex-wrap items-center gap-2 border-b border-border bg-background/95 px-3 py-2 backdrop-blur">
+            <Button size="sm" variant="ghost" onClick={exitSelectMode} aria-label="Cancel selection">
+              <X className="mr-1 h-4 w-4" /> Cancel
+            </Button>
+            <Button size="sm" variant="outline" onClick={toggleSelectAll}>
+              {allFilteredSelected ? "Clear" : "All"}
+            </Button>
+            <span className="ml-auto text-xs text-muted-foreground">{selectedIds.size} selected</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setBulkCategory(""); setBulkCategoryOpen(true); }}
+              disabled={selectedIds.size === 0}
+            >
+              <Pencil className="mr-1 h-3.5 w-3.5" /> Type
+            </Button>
+            {canDelete && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={bulkDelete}
+                disabled={selectedIds.size === 0}
+              >
+                <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+              </Button>
+            )}
+          </div>
         )}
 
         <div className="space-y-2">
