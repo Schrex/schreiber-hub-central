@@ -1,0 +1,2 @@
+ALTER TABLE public.whiteboard_tiles DROP CONSTRAINT IF EXISTS whiteboard_tiles_section_check;
+ALTER TABLE public.whiteboard_tiles ADD CONSTRAINT whiteboard_tiles_section_check CHECK (section IN ('jobs','crew','tasks','off-work'));
