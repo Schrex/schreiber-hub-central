@@ -127,8 +127,8 @@ export const WeatherCard = ({ forecast, coords, loading, compact, error, needsPe
                 <span className={cn("text-[10px]", h.precipProb >= 30 ? "text-primary font-semibold" : "text-muted-foreground")}>
                   {h.precipProb}%
                 </span>
-                <span className={cn("text-[10px] tabular-nums", hasPrecip ? "text-primary font-semibold" : "text-muted-foreground/40")}>
-                  {hasPrecip ? `${h.precipIn.toFixed(2)}"` : "—"}
+                <span className={cn("text-[10px] tabular-nums whitespace-nowrap", hasPrecip ? "text-primary font-semibold" : "text-muted-foreground/40")}>
+                  {hasPrecip ? `🌧 ${h.precipIn.toFixed(2)}"` : "— in"}
                 </span>
                 <span className="text-[9px] text-muted-foreground tabular-nums whitespace-nowrap">
                   {h.windMph} {compass(h.windDir)}
