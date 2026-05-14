@@ -895,6 +895,32 @@ const Vendors = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={bulkCategoryOpen} onOpenChange={setBulkCategoryOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set type for {selectedIds.size} vendor{selectedIds.size === 1 ? "" : "s"}</DialogTitle>
+            <DialogDescription>Leave blank to clear the type.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="bulk-cat">Type / category</Label>
+            <Input
+              id="bulk-cat"
+              list="bulk-cat-list"
+              placeholder="Materials, Equipment, Subcontractor…"
+              value={bulkCategory}
+              onChange={(e) => setBulkCategory(e.target.value)}
+            />
+            <datalist id="bulk-cat-list">
+              {categories.map((c) => <option key={c} value={c} />)}
+            </datalist>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setBulkCategoryOpen(false)}>Cancel</Button>
+            <Button onClick={bulkApplyCategory}>Apply</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
