@@ -167,15 +167,29 @@ const Whiteboard = () => {
     return map;
   }, [tiles]);
 
-  // Replace with simpler computation
+  const dispatchesByDay = useMemo(() => {
+    const map = new Map<number, Dispatch[]>();
+    for (let d = 0; d < 7; d++) map.set(d, []);
+    dispatches.forEach((d) => {
+      const idx = days.findIndex((x) => format(x, "yyyy-MM-dd") === d.dispatch_date);
+      if (idx >= 0) map.get(idx)!.push(d);
+    });
+    return map;
+  }, [dispatches, days]);
+
   const placedUserIdsByDaySimple = useMemo(() => {
     const map = new Map<number, Set<string>>();
     for (let d = 0; d < 7; d++) map.set(d, new Set());
     tiles.forEach((t) => {
       if (t.kind === "crew" && t.ref_id) map.get(t.day_index)!.add(t.ref_id);
     });
+    dispatchesByDay.forEach((list, idx) => {
+      list.forEach((d) => {
+        if (d.driver_user_id) map.get(idx)!.add(d.driver_user_id);
+      });
+    });
     return map;
-  }, [tiles]);
+  }, [tiles, dispatchesByDay]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
