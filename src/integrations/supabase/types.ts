@@ -2997,6 +2997,7 @@ export type Database = {
           id: string
           kind: string
           label: string
+          parent_tile_id: string | null
           ref_id: string | null
           section: string
           sort_order: number
@@ -3011,6 +3012,7 @@ export type Database = {
           id?: string
           kind: string
           label: string
+          parent_tile_id?: string | null
           ref_id?: string | null
           section: string
           sort_order?: number
@@ -3025,13 +3027,22 @@ export type Database = {
           id?: string
           kind?: string
           label?: string
+          parent_tile_id?: string | null
           ref_id?: string | null
           section?: string
           sort_order?: number
           updated_at?: string
           week_start?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "whiteboard_tiles_parent_tile_id_fkey"
+            columns: ["parent_tile_id"]
+            isOneToOne: false
+            referencedRelation: "whiteboard_tiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
