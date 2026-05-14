@@ -256,12 +256,9 @@ const Whiteboard = () => {
       >
         {/* Palette */}
         <div className="border-b border-border bg-muted/30 px-3 py-2">
-          <div className="flex items-center gap-2 pb-1">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Palette · drag onto a day</p>
-            <label className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <input type="checkbox" checked={showOffice} onChange={(e) => setShowOffice(e.target.checked)} /> Office
-            </label>
-          </div>
+          <p className="pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Palette · drag onto a day
+          </p>
           <div className="space-y-1.5">
             <PaletteRow
               label="Jobs"
