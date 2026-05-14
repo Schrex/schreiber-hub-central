@@ -679,6 +679,52 @@ const DayColumn = ({
   );
 };
 
+const TruckingZone = ({
+  dayIdx,
+  dispatches,
+  onDeleteDispatch,
+}: {
+  dayIdx: number;
+  dispatches: Dispatch[];
+  onDeleteDispatch: (id: string) => void;
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id: `truckzone:${dayIdx}` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-lg border border-amber-400/40 bg-amber-50/40 p-1.5 transition-colors dark:bg-amber-950/20",
+        isOver && "ring-2 ring-amber-500 border-amber-500",
+      )}
+    >
+      <p className="flex items-center gap-1 px-1 pb-1 text-[9px] font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+        <Truck className="h-3 w-3" /> Trucking
+      </p>
+      <div className="space-y-1">
+        {dispatches.length === 0 ? (
+          <p className="px-1 py-1 text-[10px] text-muted-foreground/60">Drop crew to dispatch</p>
+        ) : (
+          dispatches.map((d) => (
+            <div key={d.id} className="flex items-center gap-1 rounded-md border border-amber-400/30 bg-card px-2 py-1">
+              <span className="min-w-0 flex-1 truncate text-[11px] font-medium">
+                {d.driver_name ?? "Driver"}
+                {d.truck_number ? <span className="text-muted-foreground"> · {d.truck_number}</span> : null}
+              </span>
+              <button
+                onClick={() => onDeleteDispatch(d.id)}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Remove dispatch"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
 const JobsZone = ({
   dayIdx,
   hasJobs,
