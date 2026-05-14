@@ -38,7 +38,7 @@ type Tile = {
 };
 
 type Job = { id: string; name: string; job_number: string | null };
-type Profile = { user_id: string; display_name: string | null; is_office: boolean | null };
+type Profile = { user_id: string; display_name: string | null };
 
 const SECTIONS: Array<{ key: Section; label: string; emptyHint: string }> = [
   { key: "jobs", label: "Jobs", emptyHint: "Drop job here" },
@@ -60,7 +60,7 @@ const Whiteboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [taskDraft, setTaskDraft] = useState<{ day: number; text: string } | null>(null);
-  const [showOffice, setShowOffice] = useState(false);
+  
 
   const days = useMemo(() => {
     const start = parseISO(weekStart);
@@ -72,7 +72,7 @@ const Whiteboard = () => {
     const [tilesRes, jobsRes, profilesRes] = await Promise.all([
       supabase.from("whiteboard_tiles").select("*").eq("week_start", weekStart).order("sort_order"),
       supabase.from("jobs").select("id,name,job_number").eq("status", "active").order("name"),
-      supabase.from("profiles").select("user_id,display_name,is_office").eq("is_active", true).order("display_name"),
+      supabase.from("profiles").select("user_id,display_name").eq("is_active", true).order("display_name"),
     ]);
     if (tilesRes.error) toast({ title: "Couldn't load board", description: tilesRes.error.message, variant: "destructive" });
     setTiles(((tilesRes.data ?? []) as Tile[]));
@@ -107,8 +107,8 @@ const Whiteboard = () => {
   const placedCrewIds = useMemo(() => new Set(tiles.filter((t) => t.kind === "crew").map((t) => t.ref_id)), [tiles]);
   const availableJobs = useMemo(() => jobs.filter((j) => !placedJobIds.has(j.id)), [jobs, placedJobIds]);
   const availableCrew = useMemo(
-    () => profiles.filter((p) => !placedCrewIds.has(p.user_id) && (showOffice || !p.is_office)),
-    [profiles, placedCrewIds, showOffice],
+    () => profiles.filter((p) => !placedCrewIds.has(p.user_id)),
+    [profiles, placedCrewIds],
   );
 
   const sensors = useSensors(
