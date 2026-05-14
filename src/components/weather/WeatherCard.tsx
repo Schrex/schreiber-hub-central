@@ -41,6 +41,7 @@ const fmtDay = (date: string, idx: number) => {
 };
 
 export const WeatherCard = ({ forecast, coords, loading, compact, error, needsPermission, onRequestLocation }: Props) => {
+  const [expanded, setExpanded] = useState(false);
   if (loading || !forecast) {
     return (
       <div className="rounded-2xl border border-border bg-surface p-4 space-y-2">
