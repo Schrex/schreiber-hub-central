@@ -229,6 +229,37 @@ const Vendors = () => {
     });
   }, [vendors, search, categoryFilter]);
 
+  const grouped = useMemo(() => {
+    const map = new Map<string, Vendor[]>();
+    filtered.forEach((v) => {
+      const key = v.category?.trim() || "Uncategorized";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(v);
+    });
+    return Array.from(map.entries()).sort(([a], [b]) => {
+      if (a === "Uncategorized") return 1;
+      if (b === "Uncategorized") return -1;
+      return a.localeCompare(b);
+    });
+  }, [filtered]);
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((v) => selectedIds.has(v.id));
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((v) => v.id)));
+    }
+  };
+  const toggleGroup = (items: Vendor[]) => {
+    const allSel = items.every((v) => selectedIds.has(v.id));
+    setSelectedIds((s) => {
+      const next = new Set(s);
+      items.forEach((v) => (allSel ? next.delete(v.id) : next.add(v.id)));
+      return next;
+    });
+  };
+
   const openAdd = () => {
     setEditing(null);
     setForm(emptyForm);
