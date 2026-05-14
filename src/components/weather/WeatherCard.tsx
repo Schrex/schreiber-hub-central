@@ -1,4 +1,5 @@
-import { Cloud, Droplets, Wind, MapPin, Navigation } from "lucide-react";
+import { useState } from "react";
+import { Cloud, Droplets, Wind, MapPin, Navigation, ChevronDown, ChevronUp } from "lucide-react";
 import type { Forecast, Coords } from "@/lib/weather";
 import { weatherCodeInfo } from "@/lib/weather";
 import { cn } from "@/lib/utils";
