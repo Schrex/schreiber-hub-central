@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Users } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Users, Moon } from "lucide-react";
 import { format, addDays, startOfWeek, parseISO } from "date-fns";
 import {
   DndContext,
@@ -22,7 +22,7 @@ import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
 import { cn } from "@/lib/utils";
 
-type Section = "jobs" | "crew" | "tasks";
+type Section = "jobs" | "crew" | "tasks" | "off-work";
 type Kind = "job" | "crew" | "task";
 
 type Tile = {
@@ -39,7 +39,7 @@ type Tile = {
 };
 
 type Job = { id: string; name: string; job_number: string | null };
-type Profile = { user_id: string; display_name: string | null };
+type Profile = { user_id: string; display_name: string | null; is_office: boolean };
 
 const weekStartStr = (d: Date) => format(startOfWeek(d, { weekStartsOn: 1 }), "yyyy-MM-dd");
 
@@ -55,6 +55,7 @@ const Whiteboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [taskDraft, setTaskDraft] = useState<{ day: number; text: string } | null>(null);
+  const tempCounter = useRef(0);
 
   const days = useMemo(() => {
     const start = parseISO(weekStart);
@@ -63,15 +64,34 @@ const Whiteboard = () => {
 
   const load = async () => {
     setLoading(true);
-    const [tilesRes, jobsRes, profilesRes] = await Promise.all([
+    const [tilesRes, jobsRes, profilesRes, rolesRes] = await Promise.all([
       supabase.from("whiteboard_tiles").select("*").eq("week_start", weekStart).order("sort_order"),
       supabase.from("jobs").select("id,name,job_number").eq("status", "active").order("name"),
       supabase.from("profiles").select("user_id,display_name").eq("is_active", true).order("display_name"),
+      supabase.from("user_roles").select("user_id,role"),
     ]);
     if (tilesRes.error) toast({ title: "Couldn't load board", description: tilesRes.error.message, variant: "destructive" });
+
+    const rolesByUser = new Map<string, Set<string>>();
+    ((rolesRes.data ?? []) as { user_id: string; role: string }[]).forEach((r) => {
+      const s = rolesByUser.get(r.user_id) ?? new Set<string>();
+      s.add(r.role);
+      rolesByUser.set(r.user_id, s);
+    });
+    const isOffice = (uid: string) => {
+      const s = rolesByUser.get(uid);
+      if (!s) return false;
+      const fieldRole = s.has("foreman") || s.has("employee");
+      return (s.has("office") || s.has("admin")) && !fieldRole;
+    };
+
     setTiles(((tilesRes.data ?? []) as Tile[]));
     setJobs(((jobsRes.data ?? []) as Job[]));
-    setProfiles(((profilesRes.data ?? []) as Profile[]).filter((p) => p.user_id));
+    setProfiles(
+      ((profilesRes.data ?? []) as { user_id: string; display_name: string | null }[])
+        .filter((p) => p.user_id)
+        .map((p) => ({ ...p, is_office: isOffice(p.user_id) })),
+    );
     setLoading(false);
   };
 
@@ -98,17 +118,100 @@ const Whiteboard = () => {
   }, [weekStart, canUse]);
 
   const placedJobIds = useMemo(() => new Set(tiles.filter((t) => t.kind === "job").map((t) => t.ref_id)), [tiles]);
-  const placedCrewIds = useMemo(() => new Set(tiles.filter((t) => t.kind === "crew").map((t) => t.ref_id)), [tiles]);
   const availableJobs = useMemo(() => jobs.filter((j) => !placedJobIds.has(j.id)), [jobs, placedJobIds]);
-  const availableCrew = useMemo(
-    () => profiles.filter((p) => !placedCrewIds.has(p.user_id)),
-    [profiles, placedCrewIds],
-  );
+
+  // Field employees only (exclude office staff). These auto-appear as unassigned per day
+  // unless they're placed under a job or in Off Work for that day.
+  const fieldEmployees = useMemo(() => profiles.filter((p) => !p.is_office), [profiles]);
+
+  const placedUserIdsByDay = useMemo(() => {
+    const map = new Map<number, Set<string>>();
+    for (let d = 0; d < 7; d++) map.set(d, new Set());
+    tiles.forEach((t) => {
+      if (t.kind === "crew" && t.ref_id && (t.section === "crew" || t.section === "off-work") && t.parent_tile_id) {
+        // crew under a job
+        map.get(t.day_index)!.add(t.ref_id);
+      } else if (t.kind === "crew" && t.ref_id && t.section === "off-work") {
+        map.get(t.day_index)!.add(t.ref_id);
+      }
+    });
+    // Simpler: anything with kind=crew and ref_id is "placed" (job-assigned or off-work)
+    return map;
+  }, [tiles]);
+
+  // Replace with simpler computation
+  const placedUserIdsByDaySimple = useMemo(() => {
+    const map = new Map<number, Set<string>>();
+    for (let d = 0; d < 7; d++) map.set(d, new Set());
+    tiles.forEach((t) => {
+      if (t.kind === "crew" && t.ref_id) map.get(t.day_index)!.add(t.ref_id);
+    });
+    return map;
+  }, [tiles]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
   );
+
+  const sortFor = (day: number, section: Section, parent: string | null) =>
+    Math.max(
+      0,
+      ...tiles
+        .filter((t) => t.day_index === day && t.section === section && (t.parent_tile_id ?? null) === parent)
+        .map((t) => t.sort_order),
+    );
+
+  const optimisticInsert = async (row: Omit<Tile, "id">) => {
+    const tempId = `tmp-${++tempCounter.current}`;
+    const optimistic: Tile = { ...row, id: tempId };
+    setTiles((prev) => [...prev, optimistic]);
+    const { data, error } = await supabase
+      .from("whiteboard_tiles")
+      .insert({
+        week_start: row.week_start,
+        day_index: row.day_index,
+        section: row.section,
+        kind: row.kind,
+        ref_id: row.ref_id,
+        label: row.label,
+        sort_order: row.sort_order,
+        parent_tile_id: row.parent_tile_id,
+        created_by: user?.id ?? null,
+      })
+      .select("*")
+      .maybeSingle();
+    if (error || !data) {
+      setTiles((prev) => prev.filter((t) => t.id !== tempId));
+      toast({ title: "Couldn't place tile", description: error?.message ?? "Unknown error", variant: "destructive" });
+      return null;
+    }
+    setTiles((prev) => prev.map((t) => (t.id === tempId ? (data as Tile) : t)));
+    return data as Tile;
+  };
+
+  const optimisticUpdate = async (id: string, patch: Partial<Tile>) => {
+    const prevTile = tiles.find((t) => t.id === id);
+    if (!prevTile) return;
+    setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+    if (id.startsWith("tmp-")) return;
+    const { error } = await supabase.from("whiteboard_tiles").update(patch).eq("id", id);
+    if (error) {
+      setTiles((prev) => prev.map((t) => (t.id === id ? prevTile : t)));
+      toast({ title: "Move failed", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const optimisticDelete = async (id: string) => {
+    const prev = tiles;
+    setTiles((p) => p.filter((t) => t.id !== id && t.parent_tile_id !== id));
+    if (id.startsWith("tmp-")) return;
+    const { error } = await supabase.from("whiteboard_tiles").delete().eq("id", id);
+    if (error) {
+      setTiles(prev);
+      toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+    }
+  };
 
   const onDragEnd = async (e: DragEndEvent) => {
     setActiveId(null);
@@ -116,105 +219,104 @@ const Whiteboard = () => {
     const dragId = e.active.id.toString();
     if (!overId) return;
 
-    // Drop targets:
-    //   zone:{day}:jobs            – job tile (top of day)
-    //   zone:{day}:tasks           – task tile
-    //   zone:{day}:unassigned-crew – crew not attached to a job
-    //   crewzone:{jobTileId}       – crew under a specific job
-
+    // Targets
     let target:
-      | { kind: "section"; day: number; section: Section; parent: null }
-      | { kind: "crewUnder"; day: number; section: "crew"; parent: string }
+      | { day: number; section: Section; parent: string | null }
       | null = null;
 
-    const sectionMatch = overId.match(/^zone:(\d+):(jobs|tasks|unassigned-crew)$/);
-    if (sectionMatch) {
-      const day = parseInt(sectionMatch[1], 10);
-      const sec = sectionMatch[2];
-      const section: Section = sec === "jobs" ? "jobs" : sec === "tasks" ? "tasks" : "crew";
-      target = { kind: "section", day, section, parent: null };
+    const m = overId.match(/^zone:(\d+):(jobs|tasks|unassigned|off-work)$/);
+    if (m) {
+      const day = parseInt(m[1], 10);
+      const sec = m[2];
+      const section: Section =
+        sec === "jobs" ? "jobs" : sec === "tasks" ? "tasks" : sec === "off-work" ? "off-work" : "crew";
+      target = { day, section, parent: null };
     } else if (overId.startsWith("crewzone:")) {
       const parent = overId.slice("crewzone:".length);
       const parentTile = tiles.find((t) => t.id === parent);
       if (!parentTile) return;
-      target = { kind: "crewUnder", day: parentTile.day_index, section: "crew", parent };
+      target = { day: parentTile.day_index, section: "crew", parent };
     }
     if (!target) return;
 
-    const sortFor = (day: number, section: Section, parent: string | null) =>
-      Math.max(
-        0,
-        ...tiles
-          .filter((t) => t.day_index === day && t.section === section && (t.parent_tile_id ?? null) === parent)
-          .map((t) => t.sort_order),
-      );
-
-    if (dragId.startsWith("palette:")) {
-      const [, pkind, refId] = dragId.split(":");
-      if (pkind === "job" && target.section !== "jobs") {
+    // Drag from job palette
+    if (dragId.startsWith("palette:job:")) {
+      if (target.section !== "jobs") {
         toast({ title: "Drop jobs into the Jobs row", variant: "destructive" });
         return;
       }
-      if (pkind === "crew" && target.section !== "crew") {
-        toast({ title: "Drop crew onto a job (or the day's crew area)", variant: "destructive" });
-        return;
-      }
-      let label = "";
-      if (pkind === "job") {
-        const j = jobs.find((x) => x.id === refId);
-        if (!j) return;
-        label = j.job_number ? `${j.job_number} · ${j.name}` : j.name;
-      } else {
-        const p = profiles.find((x) => x.user_id === refId);
-        if (!p) return;
-        label = p.display_name ?? "Unknown";
-      }
-      const parent = target.kind === "crewUnder" ? target.parent : null;
-      const { error } = await supabase.from("whiteboard_tiles").insert({
+      const refId = dragId.slice("palette:job:".length);
+      const j = jobs.find((x) => x.id === refId);
+      if (!j) return;
+      await optimisticInsert({
         week_start: weekStart,
         day_index: target.day,
-        section: target.section,
-        kind: pkind as Kind,
+        section: "jobs",
+        kind: "job",
         ref_id: refId,
-        label,
-        sort_order: sortFor(target.day, target.section, parent) + 10,
-        parent_tile_id: parent,
-        created_by: user?.id ?? null,
+        label: j.job_number ? `${j.job_number} · ${j.name}` : j.name,
+        color: null,
+        sort_order: sortFor(target.day, "jobs", null) + 10,
+        parent_tile_id: null,
       });
-      if (error) toast({ title: "Couldn't place tile", description: error.message, variant: "destructive" });
       return;
     }
 
+    // Drag a virtual unassigned crew chip → must land in a job or off-work
+    if (dragId.startsWith("virtual:")) {
+      const [, dayStr, userId] = dragId.split(":");
+      const srcDay = parseInt(dayStr, 10);
+      if (target.day !== srcDay) {
+        toast({ title: "Drop within the same day", variant: "destructive" });
+        return;
+      }
+      if (target.section !== "crew" && target.section !== "off-work") {
+        toast({ title: "Drop crew onto a job or Off Work", variant: "destructive" });
+        return;
+      }
+      const p = profiles.find((x) => x.user_id === userId);
+      if (!p) return;
+      await optimisticInsert({
+        week_start: weekStart,
+        day_index: target.day,
+        section: target.section,
+        kind: "crew",
+        ref_id: userId,
+        label: p.display_name ?? "Unknown",
+        color: null,
+        sort_order: sortFor(target.day, target.section, target.parent) + 10,
+        parent_tile_id: target.parent,
+      });
+      return;
+    }
+
+    // Drag an existing tile
     if (dragId.startsWith("tile:")) {
       const tileId = dragId.slice(5);
       const t = tiles.find((x) => x.id === tileId);
       if (!t) return;
       if (t.kind === "job" && target.section !== "jobs") return;
-      if (t.kind === "crew" && target.section !== "crew") return;
       if (t.kind === "task" && target.section !== "tasks") return;
-      const newParent = target.kind === "crewUnder" ? target.parent : null;
-      if (
+      if (t.kind === "crew") {
+        // Crew dropped on "unassigned" zone → delete (return to virtual list)
+        if (target.section === "crew" && target.parent === null && overId.endsWith(":unassigned")) {
+          await optimisticDelete(t.id);
+          return;
+        }
+        if (target.section !== "crew" && target.section !== "off-work") return;
+      }
+      const sameSpot =
         t.day_index === target.day &&
         t.section === target.section &&
-        (t.parent_tile_id ?? null) === newParent
-      )
-        return;
-      const { error } = await supabase
-        .from("whiteboard_tiles")
-        .update({
-          day_index: target.day,
-          section: target.section,
-          parent_tile_id: newParent,
-          sort_order: sortFor(target.day, target.section, newParent) + 10,
-        })
-        .eq("id", t.id);
-      if (error) toast({ title: "Move failed", description: error.message, variant: "destructive" });
+        (t.parent_tile_id ?? null) === target.parent;
+      if (sameSpot) return;
+      await optimisticUpdate(t.id, {
+        day_index: target.day,
+        section: target.section,
+        parent_tile_id: target.parent,
+        sort_order: sortFor(target.day, target.section, target.parent) + 10,
+      });
     }
-  };
-
-  const removeTile = async (id: string) => {
-    const { error } = await supabase.from("whiteboard_tiles").delete().eq("id", id);
-    if (error) toast({ title: "Remove failed", description: error.message, variant: "destructive" });
   };
 
   const addTask = async (day: number, text: string) => {
@@ -223,21 +325,17 @@ const Whiteboard = () => {
       setTaskDraft(null);
       return;
     }
-    const maxSort = Math.max(
-      0,
-      ...tiles.filter((t) => t.day_index === day && t.section === "tasks").map((t) => t.sort_order),
-    );
-    const { error } = await supabase.from("whiteboard_tiles").insert({
+    await optimisticInsert({
       week_start: weekStart,
       day_index: day,
       section: "tasks",
       kind: "task",
       ref_id: null,
       label: trimmed,
-      sort_order: maxSort + 10,
-      created_by: user?.id ?? null,
+      color: null,
+      sort_order: sortFor(day, "tasks", null) + 10,
+      parent_tile_id: null,
     });
-    if (error) toast({ title: "Couldn't add task", description: error.message, variant: "destructive" });
     setTaskDraft(null);
   };
 
@@ -253,14 +351,13 @@ const Whiteboard = () => {
   let activeLabel: string | null = null;
   if (activeId?.startsWith("tile:")) {
     activeLabel = tiles.find((t) => t.id === activeId.slice(5))?.label ?? null;
-  } else if (activeId?.startsWith("palette:")) {
-    const [, pkind, refId] = activeId.split(":");
-    if (pkind === "job") {
-      const j = jobs.find((x) => x.id === refId);
-      activeLabel = j ? (j.job_number ? `${j.job_number} · ${j.name}` : j.name) : null;
-    } else if (pkind === "crew") {
-      activeLabel = profiles.find((x) => x.user_id === refId)?.display_name ?? null;
-    }
+  } else if (activeId?.startsWith("palette:job:")) {
+    const refId = activeId.slice("palette:job:".length);
+    const j = jobs.find((x) => x.id === refId);
+    activeLabel = j ? (j.job_number ? `${j.job_number} · ${j.name}` : j.name) : null;
+  } else if (activeId?.startsWith("virtual:")) {
+    const [, , uid] = activeId.split(":");
+    activeLabel = profiles.find((p) => p.user_id === uid)?.display_name ?? null;
   }
 
   return (
@@ -292,28 +389,23 @@ const Whiteboard = () => {
         onDragEnd={onDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        {/* Palette */}
+        {/* Job palette */}
         <div className="border-b border-border bg-muted/30 px-3 py-2">
           <p className="pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Palette · drag onto a day
+            Jobs · drag onto a day
           </p>
-          <div className="space-y-1.5">
-            <PaletteRow
-              label="Jobs"
-              tiles={availableJobs.map((j) => ({
-                id: `palette:job:${j.id}`,
-                label: j.job_number ? `${j.job_number} · ${j.name}` : j.name,
-                tone: "job" as const,
-              }))}
-            />
-            <PaletteRow
-              label="Crew"
-              tiles={availableCrew.map((p) => ({
-                id: `palette:crew:${p.user_id}`,
-                label: p.display_name ?? "Unknown",
-                tone: "crew" as const,
-              }))}
-            />
+          <div className="flex flex-wrap gap-1">
+            {availableJobs.length === 0 ? (
+              <span className="pt-1 text-[11px] text-muted-foreground">All placed.</span>
+            ) : (
+              availableJobs.map((j) => (
+                <PaletteChip
+                  key={j.id}
+                  id={`palette:job:${j.id}`}
+                  label={j.job_number ? `${j.job_number} · ${j.name}` : j.name}
+                />
+              ))
+            )}
           </div>
         </div>
 
@@ -323,18 +415,23 @@ const Whiteboard = () => {
             <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
           ) : (
             <div className="flex gap-2 min-w-max pb-24">
-              {days.map((d, idx) => (
-                <DayColumn
-                  key={idx}
-                  day={d}
-                  idx={idx}
-                  tiles={tiles.filter((t) => t.day_index === idx)}
-                  onRemove={removeTile}
-                  taskDraft={taskDraft?.day === idx ? taskDraft : null}
-                  setTaskDraft={setTaskDraft}
-                  onAddTask={addTask}
-                />
-              ))}
+              {days.map((d, idx) => {
+                const placedSet = placedUserIdsByDaySimple.get(idx) ?? new Set<string>();
+                const unassignedField = fieldEmployees.filter((p) => !placedSet.has(p.user_id));
+                return (
+                  <DayColumn
+                    key={idx}
+                    day={d}
+                    idx={idx}
+                    tiles={tiles.filter((t) => t.day_index === idx)}
+                    unassignedField={unassignedField}
+                    onDelete={optimisticDelete}
+                    taskDraft={taskDraft?.day === idx ? taskDraft : null}
+                    setTaskDraft={setTaskDraft}
+                    onAddTask={addTask}
+                  />
+                );
+              })}
             </div>
           )}
         </main>
@@ -353,26 +450,7 @@ const Whiteboard = () => {
   );
 };
 
-const PaletteRow = ({
-  label,
-  tiles,
-}: {
-  label: string;
-  tiles: { id: string; label: string; tone: "job" | "crew" }[];
-}) => (
-  <div className="flex items-start gap-2">
-    <p className="w-10 shrink-0 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-    <div className="flex flex-wrap gap-1">
-      {tiles.length === 0 ? (
-        <span className="pt-1 text-[11px] text-muted-foreground">All placed.</span>
-      ) : (
-        tiles.map((t) => <PaletteChip key={t.id} id={t.id} label={t.label} tone={t.tone} />)
-      )}
-    </div>
-  </div>
-);
-
-const PaletteChip = ({ id, label, tone }: { id: string; label: string; tone: "job" | "crew" }) => {
+const PaletteChip = ({ id, label }: { id: string; label: string }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id });
   return (
     <button
@@ -380,8 +458,7 @@ const PaletteChip = ({ id, label, tone }: { id: string; label: string; tone: "jo
       {...listeners}
       {...attributes}
       className={cn(
-        "max-w-[220px] truncate rounded-md border px-2 py-1 text-[11px] font-medium touch-none cursor-grab active:cursor-grabbing",
-        tone === "job" ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-background",
+        "max-w-[220px] truncate rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary touch-none cursor-grab active:cursor-grabbing",
         isDragging && "opacity-30",
       )}
     >
@@ -394,7 +471,8 @@ const DayColumn = ({
   day,
   idx,
   tiles,
-  onRemove,
+  unassignedField,
+  onDelete,
   taskDraft,
   setTaskDraft,
   onAddTask,
@@ -402,7 +480,8 @@ const DayColumn = ({
   day: Date;
   idx: number;
   tiles: Tile[];
-  onRemove: (id: string) => void;
+  unassignedField: Profile[];
+  onDelete: (id: string) => void;
   taskDraft: { day: number; text: string } | null;
   setTaskDraft: (v: { day: number; text: string } | null) => void;
   onAddTask: (day: number, text: string) => void;
@@ -413,15 +492,15 @@ const DayColumn = ({
     .slice()
     .sort((a, b) => a.sort_order - b.sort_order);
   const taskTiles = tiles.filter((t) => t.section === "tasks");
+  const offWorkTiles = tiles
+    .filter((t) => t.section === "off-work")
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order);
   const crewByJob = (jobTileId: string) =>
     tiles
       .filter((t) => t.section === "crew" && t.parent_tile_id === jobTileId)
       .slice()
       .sort((a, b) => a.sort_order - b.sort_order);
-  const unassignedCrew = tiles
-    .filter((t) => t.section === "crew" && !t.parent_tile_id)
-    .slice()
-    .sort((a, b) => a.sort_order - b.sort_order);
 
   return (
     <div className="w-[240px] shrink-0">
@@ -438,34 +517,20 @@ const DayColumn = ({
       </div>
 
       <div className="space-y-2">
-        {/* Jobs (each with its own crew area) */}
         <JobsZone dayIdx={idx} hasJobs={jobTiles.length > 0}>
           {jobTiles.map((j) => (
-            <JobGroup
-              key={j.id}
-              job={j}
-              crew={crewByJob(j.id)}
-              onRemove={onRemove}
-            />
+            <JobGroup key={j.id} job={j} crew={crewByJob(j.id)} onDelete={onDelete} />
           ))}
         </JobsZone>
 
-        {/* Unassigned crew (only visible if used) */}
-        {unassignedCrew.length > 0 ? (
-          <UnassignedCrewZone dayIdx={idx}>
-            {unassignedCrew.map((t) => (
-              <TileCard key={t.id} tile={t} onRemove={onRemove} />
-            ))}
-          </UnassignedCrewZone>
-        ) : (
-          <UnassignedCrewZone dayIdx={idx} compact />
-        )}
+        <UnassignedCrewZone dayIdx={idx} field={unassignedField} />
 
-        {/* Tasks */}
+        <OffWorkZone dayIdx={idx} tiles={offWorkTiles} onDelete={onDelete} />
+
         <TaskSection
           dayIdx={idx}
           tasks={taskTiles}
-          onRemove={onRemove}
+          onDelete={onDelete}
           taskDraft={taskDraft}
           setTaskDraft={setTaskDraft}
           onAddTask={onAddTask}
@@ -493,14 +558,10 @@ const JobsZone = ({
         isOver && "ring-2 ring-primary border-primary",
       )}
     >
-      <p className="px-1 pb-1 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
-        Jobs
-      </p>
+      <p className="px-1 pb-1 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Jobs</p>
       <div className="space-y-2">
         {children}
-        {!hasJobs && (
-          <p className="px-1 py-2 text-[10px] text-muted-foreground/60">Drop a job here</p>
-        )}
+        {!hasJobs && <p className="px-1 py-2 text-[10px] text-muted-foreground/60">Drop a job here</p>}
       </div>
     </div>
   );
@@ -509,11 +570,11 @@ const JobsZone = ({
 const JobGroup = ({
   job,
   crew,
-  onRemove,
+  onDelete,
 }: {
   job: Tile;
   crew: Tile[];
-  onRemove: (id: string) => void;
+  onDelete: (id: string) => void;
 }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `tile:${job.id}` });
   const drop = useDroppable({ id: `crewzone:${job.id}` });
@@ -528,7 +589,7 @@ const JobGroup = ({
         >
           {job.label}
         </button>
-        <button onClick={() => onRemove(job.id)} className="opacity-70 hover:opacity-100" aria-label="Remove job">
+        <button onClick={() => onDelete(job.id)} className="opacity-70 hover:opacity-100" aria-label="Remove job">
           <X className="h-3 w-3" />
         </button>
       </div>
@@ -542,40 +603,115 @@ const JobGroup = ({
         {crew.length === 0 ? (
           <p className="px-1 py-1 text-[10px] text-muted-foreground/60">Drop crew here</p>
         ) : (
-          crew.map((c) => <TileCard key={c.id} tile={c} onRemove={onRemove} />)
+          crew.map((c) => <PlacedCrewCard key={c.id} tile={c} />)
         )}
       </div>
     </div>
   );
 };
 
-const UnassignedCrewZone = ({
-  dayIdx,
-  compact,
-  children,
-}: {
-  dayIdx: number;
-  compact?: boolean;
-  children?: React.ReactNode;
-}) => {
-  const { setNodeRef, isOver } = useDroppable({ id: `zone:${dayIdx}:unassigned-crew` });
+const UnassignedCrewZone = ({ dayIdx, field }: { dayIdx: number; field: Profile[] }) => {
+  const { setNodeRef, isOver } = useDroppable({ id: `zone:${dayIdx}:unassigned` });
   return (
     <div
       ref={setNodeRef}
       className={cn(
         "rounded-lg border border-dashed border-border bg-secondary/30 p-1.5 transition-colors",
-        compact ? "min-h-[36px]" : "min-h-[60px]",
         isOver && "ring-2 ring-primary border-primary",
       )}
     >
       <p className="flex items-center gap-1 px-1 pb-1 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
         <Users className="h-3 w-3" /> Unassigned crew
       </p>
-      <div className="space-y-1">
-        {children ?? (
-          <p className="px-1 py-1 text-[10px] text-muted-foreground/60">Drop crew here to leave them unassigned</p>
+      <div className="flex flex-wrap gap-1">
+        {field.length === 0 ? (
+          <p className="px-1 py-1 text-[10px] text-muted-foreground/60">Everyone is placed.</p>
+        ) : (
+          field.map((p) => <VirtualCrewChip key={p.user_id} dayIdx={dayIdx} userId={p.user_id} label={p.display_name ?? "Unknown"} />)
         )}
       </div>
+    </div>
+  );
+};
+
+const OffWorkZone = ({
+  dayIdx,
+  tiles,
+  onDelete,
+}: {
+  dayIdx: number;
+  tiles: Tile[];
+  onDelete: (id: string) => void;
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id: `zone:${dayIdx}:off-work` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 p-1.5 transition-colors",
+        isOver && "ring-2 ring-primary border-primary",
+      )}
+    >
+      <p className="flex items-center gap-1 px-1 pb-1 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <Moon className="h-3 w-3" /> Off work
+      </p>
+      <div className="space-y-1">
+        {tiles.length === 0 ? (
+          <p className="px-1 py-1 text-[10px] text-muted-foreground/60">Drop crew here when off</p>
+        ) : (
+          tiles.map((t) => (
+            <div key={t.id} className="flex items-center gap-1">
+              <PlacedCrewCard tile={t} muted />
+              <button onClick={() => onDelete(t.id)} className="text-muted-foreground hover:text-foreground" aria-label="Remove">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+const VirtualCrewChip = ({
+  dayIdx,
+  userId,
+  label,
+}: {
+  dayIdx: number;
+  userId: string;
+  label: string;
+}) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `virtual:${dayIdx}:${userId}` });
+  return (
+    <button
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={cn(
+        "max-w-[200px] truncate rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium touch-none cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-30",
+      )}
+    >
+      {label}
+    </button>
+  );
+};
+
+const PlacedCrewCard = ({ tile, muted }: { tile: Tile; muted?: boolean }) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `tile:${tile.id}` });
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={cn(
+        "flex-1 truncate rounded-md px-2 py-1 text-[11px] font-medium shadow-sm touch-none cursor-grab active:cursor-grabbing",
+        muted ? "bg-muted text-muted-foreground" : "bg-card border border-border text-foreground",
+        isDragging && "opacity-30",
+      )}
+    >
+      {tile.label}
     </div>
   );
 };
@@ -583,14 +719,14 @@ const UnassignedCrewZone = ({
 const TaskSection = ({
   dayIdx,
   tasks,
-  onRemove,
+  onDelete,
   taskDraft,
   setTaskDraft,
   onAddTask,
 }: {
   dayIdx: number;
   tasks: Tile[];
-  onRemove: (id: string) => void;
+  onDelete: (id: string) => void;
   taskDraft: { day: number; text: string } | null;
   setTaskDraft: (v: { day: number; text: string } | null) => void;
   onAddTask: (day: number, text: string) => void;
@@ -610,7 +746,7 @@ const TaskSection = ({
           .slice()
           .sort((a, b) => a.sort_order - b.sort_order)
           .map((t) => (
-            <TileCard key={t.id} tile={t} onRemove={onRemove} />
+            <TaskCard key={t.id} tile={t} onDelete={onDelete} />
           ))}
         {taskDraft ? (
           <div className="flex gap-1 pt-1">
@@ -643,31 +779,24 @@ const TaskSection = ({
   );
 };
 
-const TileCard = ({ tile, onRemove }: { tile: Tile; onRemove: (id: string) => void }) => {
+const TaskCard = ({ tile, onDelete }: { tile: Tile; onDelete: (id: string) => void }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `tile:${tile.id}` });
-  const tone =
-    tile.kind === "job"
-      ? "bg-primary text-primary-foreground"
-      : tile.kind === "crew"
-        ? "bg-card border border-border text-foreground"
-        : "bg-accent text-accent-foreground";
   return (
     <div
-      ref={setNodeRef}
       className={cn(
-        "group flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-sm touch-none",
-        tone,
+        "group flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-[11px] font-medium text-accent-foreground shadow-sm touch-none",
         isDragging && "opacity-30",
       )}
     >
       <button
+        ref={setNodeRef}
         {...listeners}
         {...attributes}
         className="min-w-0 flex-1 truncate text-left cursor-grab active:cursor-grabbing"
       >
         {tile.label}
       </button>
-      <button onClick={() => onRemove(tile.id)} className="opacity-60 hover:opacity-100" aria-label="Remove">
+      <button onClick={() => onDelete(tile.id)} className="opacity-60 hover:opacity-100" aria-label="Remove">
         <X className="h-3 w-3" />
       </button>
     </div>
