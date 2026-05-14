@@ -640,10 +640,10 @@ const DayColumn = ({
       .sort((a, b) => a.sort_order - b.sort_order);
 
   return (
-    <div className="w-[240px] shrink-0">
+    <div className="w-[172px] shrink-0">
       <div
         className={cn(
-          "mb-1 rounded-md border border-border bg-card px-2 py-1.5 text-center",
+          "mb-1 rounded-md border border-border bg-card px-1.5 py-1 text-center",
           isToday && "border-primary bg-primary/5",
         )}
       >
@@ -659,6 +659,8 @@ const DayColumn = ({
             <JobGroup key={j.id} job={j} crew={crewByJob(j.id)} onDelete={onDelete} />
           ))}
         </JobsZone>
+
+        <TruckingZone dayIdx={idx} dispatches={dispatches} onDeleteDispatch={onDeleteDispatch} />
 
         <UnassignedCrewZone dayIdx={idx} field={unassignedField} />
 
