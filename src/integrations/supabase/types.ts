@@ -2988,6 +2988,51 @@ export type Database = {
         }
         Relationships: []
       }
+      whiteboard_tiles: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string | null
+          day_index: number
+          id: string
+          kind: string
+          label: string
+          ref_id: string | null
+          section: string
+          sort_order: number
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          day_index: number
+          id?: string
+          kind: string
+          label: string
+          ref_id?: string | null
+          section: string
+          sort_order?: number
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          day_index?: number
+          id?: string
+          kind?: string
+          label?: string
+          ref_id?: string | null
+          section?: string
+          sort_order?: number
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       positions_public: {

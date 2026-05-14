@@ -497,6 +497,16 @@ const Schedule = () => {
             <h1 className="font-display text-lg font-semibold">Schedule</h1>
             <p className="text-xs text-muted-foreground">Crews assigned to jobs</p>
           </div>
+          {(role === "office" || role === "admin" || role === "foreman") && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mr-1 h-7 px-2 text-xs"
+              onClick={() => navigate("/schedule/whiteboard")}
+            >
+              Whiteboard
+            </Button>
+          )}
           {canEdit && (
             <div className="mr-1 inline-flex rounded-md border bg-muted/40 p-0.5 text-xs">
               <button

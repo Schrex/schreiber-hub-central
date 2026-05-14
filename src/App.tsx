@@ -15,6 +15,7 @@ import Dispatch from "./pages/Dispatch.tsx";
 import Referrals from "./pages/Referrals.tsx";
 import TimeOff from "./pages/TimeOff.tsx";
 import Schedule from "./pages/Schedule.tsx";
+import Whiteboard from "./pages/Whiteboard.tsx";
 import Tools from "./pages/Tools.tsx";
 import TruckingCalculator from "./pages/TruckingCalculator.tsx";
 import PerformanceReviews from "./pages/PerformanceReviews.tsx";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
             <Route path="/time-off" element={<ProtectedRoute><TimeOff /></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
+            <Route path="/schedule/whiteboard" element={<ProtectedRoute><Whiteboard /></ProtectedRoute>} />
             <Route path="/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
             <Route path="/tools/trucking" element={<ProtectedRoute><TruckingCalculator /></ProtectedRoute>} />
             <Route path="/tools/performance-reviews" element={<ProtectedRoute><PerformanceReviews /></ProtectedRoute>} />
