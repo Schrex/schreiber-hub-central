@@ -172,9 +172,11 @@ const Schedule = () => {
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   }, [selectedDate]);
 
+  const autoFilledRef = useRef<Set<string>>(new Set());
+
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }, { data: rolesData }] = await Promise.all([
+    let [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }, { data: rolesData }] = await Promise.all([
       supabase
         .from("schedule_assignments")
         .select("*, jobs(id,name,address,job_number)")
@@ -196,6 +198,51 @@ const Schedule = () => {
         .gte("end_date", selectedDate),
       supabase.from("user_roles").select("user_id, role"),
     ]);
+
+    // Auto carry-forward: if this day has no assignments and is today/future,
+    // copy the most recent prior day's assignments forward (once per session per date).
+    const todayIsoLocal = format(startOfDay(new Date()), "yyyy-MM-dd");
+    const isFutureOrToday = selectedDate >= todayIsoLocal;
+    if ((a?.length ?? 0) === 0 && isFutureOrToday && !autoFilledRef.current.has(selectedDate) && canEdit) {
+      autoFilledRef.current.add(selectedDate);
+      // Look back up to 14 days for the most recent date with any assignments.
+      const sinceIso = format(addDays(parseISO(selectedDate), -14), "yyyy-MM-dd");
+      const beforeIso = format(addDays(parseISO(selectedDate), -1), "yyyy-MM-dd");
+      const { data: priorRows } = await supabase
+        .from("schedule_assignments")
+        .select("job_id,user_id,start_time,role_on_job,notes,assignment_date")
+        .gte("assignment_date", sinceIso)
+        .lte("assignment_date", beforeIso)
+        .order("assignment_date", { ascending: false });
+      const mostRecent = priorRows?.[0]?.assignment_date;
+      const sourceRows = mostRecent ? priorRows!.filter((r) => r.assignment_date === mostRecent) : [];
+      if (sourceRows.length > 0) {
+        const newRows = sourceRows.map((r) => ({
+          job_id: r.job_id,
+          user_id: r.user_id,
+          assignment_date: selectedDate,
+          start_time: r.start_time,
+          role_on_job: r.role_on_job,
+          notes: r.notes,
+          created_by: user?.id ?? null,
+        }));
+        const { error: copyErr } = await supabase
+          .from("schedule_assignments")
+          .upsert(newRows, { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: true });
+        if (!copyErr) {
+          const { data: refetched } = await supabase
+            .from("schedule_assignments")
+            .select("*, jobs(id,name,address,job_number)")
+            .eq("assignment_date", selectedDate)
+            .order("start_time", { ascending: true, nullsFirst: false });
+          a = refetched;
+          toast({
+            title: "Carried forward",
+            description: `Filled ${newRows.length} assignment${newRows.length === 1 ? "" : "s"} from ${format(parseISO(mostRecent!), "EEE, MMM d")}.`,
+          });
+        }
+      }
+    }
 
     // Build a per-user role set; "office staff" = office or admin AND not foreman/employee
     const rolesByUser = new Map<string, Set<string>>();
