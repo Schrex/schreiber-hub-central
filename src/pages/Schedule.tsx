@@ -466,9 +466,27 @@ const Schedule = () => {
     loadAll();
   };
 
-  // --- Drag & drop board handlers ---
+  // --- Drag & drop board handlers (optimistic, no full reload) ---
   const boardAssign = async (jobId: string, userId: string) => {
-    const { error } = await supabase
+    // Skip if already assigned to that job for the day
+    if (assignments.some((a) => a.job_id === jobId && a.user_id === userId)) return;
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const job = jobs.find((j) => j.id === jobId) ?? null;
+    const profile = profiles.find((p) => p.user_id === userId);
+    const optimistic: Assignment = {
+      id: tempId,
+      job_id: jobId,
+      user_id: userId,
+      assignment_date: selectedDate,
+      start_time: "07:00",
+      role_on_job: null,
+      notes: null,
+      jobs: job,
+      profile_name: profile?.display_name ?? "Unknown",
+      contact_id: profile?.contact_id ?? null,
+    };
+    setAssignments((prev) => [...prev, optimistic]);
+    const { data, error } = await supabase
       .from("schedule_assignments")
       .upsert(
         [
@@ -480,30 +498,58 @@ const Schedule = () => {
             created_by: user?.id ?? null,
           },
         ],
-        { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: true },
-      );
+        { onConflict: "job_id,user_id,assignment_date", ignoreDuplicates: false },
+      )
+      .select("id")
+      .maybeSingle();
     if (error) {
+      setAssignments((prev) => prev.filter((a) => a.id !== tempId));
       toast({ title: "Could not assign", description: error.message, variant: "destructive" });
       return;
     }
-    loadAll();
+    if (data?.id) {
+      setAssignments((prev) => prev.map((a) => (a.id === tempId ? { ...a, id: data.id } : a)));
+    }
   };
 
   const boardMove = async (assignmentId: string, newJobId: string) => {
+    const prev = assignments;
+    const moved = prev.find((a) => a.id === assignmentId);
+    if (!moved) return;
+    if (moved.job_id === newJobId) return;
+    // If the user is already on the destination job, treat as unassign from source
+    const dupe = prev.find((a) => a.user_id === moved.user_id && a.job_id === newJobId);
+    const newJob = jobs.find((j) => j.id === newJobId) ?? null;
+    const next = dupe
+      ? prev.filter((a) => a.id !== assignmentId)
+      : prev.map((a) => (a.id === assignmentId ? { ...a, job_id: newJobId, jobs: newJob } : a));
+    setAssignments(next);
+    if (dupe) {
+      const { error } = await supabase.from("schedule_assignments").delete().eq("id", assignmentId);
+      if (error) {
+        setAssignments(prev);
+        toast({ title: "Could not move", description: error.message, variant: "destructive" });
+      }
+      return;
+    }
     const { error } = await supabase
       .from("schedule_assignments")
       .update({ job_id: newJobId })
       .eq("id", assignmentId);
     if (error) {
-      // Likely unique conflict — they're already on that job
+      setAssignments(prev);
       toast({ title: "Could not move", description: error.message, variant: "destructive" });
-      return;
     }
-    loadAll();
   };
 
   const boardUnassign = async (assignmentId: string) => {
-    await removeAssignment(assignmentId);
+    const prev = assignments;
+    setAssignments((cur) => cur.filter((a) => a.id !== assignmentId));
+    const { error } = await supabase.from("schedule_assignments").delete().eq("id", assignmentId);
+    if (error) {
+      setAssignments(prev);
+      toast({ title: "Could not remove", description: error.message, variant: "destructive" });
+    }
   };
 
 
