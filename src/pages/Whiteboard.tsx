@@ -56,6 +56,7 @@ const Whiteboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [taskDraft, setTaskDraft] = useState<{ day: number; text: string } | null>(null);
+  const [copyOpen, setCopyOpen] = useState(false);
   const tempCounter = useRef(0);
 
   const days = useMemo(() => {
