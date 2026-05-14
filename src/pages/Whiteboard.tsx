@@ -58,14 +58,19 @@ const Whiteboard = () => {
   const [taskDraft, setTaskDraft] = useState<{ day: number; text: string } | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
   const tempCounter = useRef(0);
+  const ignoreRealtimeUntilRef = useRef(0);
 
   const days = useMemo(() => {
     const start = parseISO(weekStart);
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   }, [weekStart]);
 
-  const load = async () => {
-    setLoading(true);
+  const markLocalChange = () => {
+    ignoreRealtimeUntilRef.current = Date.now() + 2500;
+  };
+
+  const load = async ({ showLoading = true }: { showLoading?: boolean } = {}) => {
+    if (showLoading) setLoading(true);
     const [tilesRes, jobsRes, profilesRes, rolesRes] = await Promise.all([
       supabase.from("whiteboard_tiles").select("*").eq("week_start", weekStart).order("sort_order"),
       supabase.from("jobs").select("id,name,job_number").eq("status", "active").order("name"),
@@ -102,7 +107,7 @@ const Whiteboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart, canUse]);
 
-  // Realtime: refetch on any change to this week's tiles
+  // Realtime: background refresh on external changes, but don't refetch after our own optimistic moves.
   useEffect(() => {
     if (!canUse) return;
     const ch = supabase
@@ -110,7 +115,10 @@ const Whiteboard = () => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "whiteboard_tiles", filter: `week_start=eq.${weekStart}` },
-        () => load(),
+        () => {
+          if (Date.now() < ignoreRealtimeUntilRef.current) return;
+          void load({ showLoading: false });
+        },
       )
       .subscribe();
     return () => {
@@ -165,6 +173,7 @@ const Whiteboard = () => {
     );
 
   const optimisticInsert = async (row: Omit<Tile, "id">) => {
+    markLocalChange();
     const tempId = `tmp-${++tempCounter.current}`;
     const optimistic: Tile = { ...row, id: tempId };
     setTiles((prev) => [...prev, optimistic]);
@@ -195,6 +204,7 @@ const Whiteboard = () => {
   const optimisticUpdate = async (id: string, patch: Partial<Tile>) => {
     const prevTile = tiles.find((t) => t.id === id);
     if (!prevTile) return;
+    markLocalChange();
     setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
     if (id.startsWith("tmp-")) return;
     const { error } = await supabase.from("whiteboard_tiles").update(patch).eq("id", id);
@@ -205,6 +215,7 @@ const Whiteboard = () => {
   };
 
   const optimisticDelete = async (id: string) => {
+    markLocalChange();
     const prev = tiles;
     setTiles((p) => p.filter((t) => t.id !== id && t.parent_tile_id !== id));
     if (id.startsWith("tmp-")) return;
