@@ -989,13 +989,6 @@ export type Database = {
             referencedRelation: "employee_contacts"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "employee_contacts_manager_contact_id_fkey"
-            columns: ["manager_contact_id"]
-            isOneToOne: false
-            referencedRelation: "employee_contacts_directory"
-            referencedColumns: ["id"]
-          },
         ]
       }
       employee_positions: {
@@ -2219,13 +2212,6 @@ export type Database = {
             referencedRelation: "employee_contacts"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "profiles_contact_id_fkey"
-            columns: ["contact_id"]
-            isOneToOne: false
-            referencedRelation: "employee_contacts_directory"
-            referencedColumns: ["id"]
-          },
         ]
       }
       referrals: {
@@ -3060,111 +3046,6 @@ export type Database = {
       }
     }
     Views: {
-      employee_contacts_directory: {
-        Row: {
-          address: string | null
-          converted_user_id: string | null
-          created_at: string | null
-          created_by: string | null
-          date_of_birth: string | null
-          department: string | null
-          drivers_license_class: string | null
-          drivers_license_expires: string | null
-          email: string | null
-          first_name: string | null
-          hire_date: string | null
-          id: string | null
-          is_active: boolean | null
-          job_title: string | null
-          last_name: string | null
-          manager_contact_id: string | null
-          middle_initial: string | null
-          name: string | null
-          notes: string | null
-          osha_card_number: string | null
-          osha_expires: string | null
-          other_certifications: string | null
-          personal_email: string | null
-          phone: string | null
-          termination_date: string | null
-          updated_at: string | null
-          work_email: string | null
-        }
-        Insert: {
-          address?: string | null
-          converted_user_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          date_of_birth?: string | null
-          department?: string | null
-          drivers_license_class?: string | null
-          drivers_license_expires?: string | null
-          email?: string | null
-          first_name?: string | null
-          hire_date?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          job_title?: string | null
-          last_name?: string | null
-          manager_contact_id?: string | null
-          middle_initial?: string | null
-          name?: string | null
-          notes?: string | null
-          osha_card_number?: string | null
-          osha_expires?: string | null
-          other_certifications?: string | null
-          personal_email?: string | null
-          phone?: string | null
-          termination_date?: string | null
-          updated_at?: string | null
-          work_email?: string | null
-        }
-        Update: {
-          address?: string | null
-          converted_user_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          date_of_birth?: string | null
-          department?: string | null
-          drivers_license_class?: string | null
-          drivers_license_expires?: string | null
-          email?: string | null
-          first_name?: string | null
-          hire_date?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          job_title?: string | null
-          last_name?: string | null
-          manager_contact_id?: string | null
-          middle_initial?: string | null
-          name?: string | null
-          notes?: string | null
-          osha_card_number?: string | null
-          osha_expires?: string | null
-          other_certifications?: string | null
-          personal_email?: string | null
-          phone?: string | null
-          termination_date?: string | null
-          updated_at?: string | null
-          work_email?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_contacts_manager_contact_id_fkey"
-            columns: ["manager_contact_id"]
-            isOneToOne: false
-            referencedRelation: "employee_contacts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_contacts_manager_contact_id_fkey"
-            columns: ["manager_contact_id"]
-            isOneToOne: false
-            referencedRelation: "employee_contacts_directory"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       positions_public: {
         Row: {
           description: string | null
