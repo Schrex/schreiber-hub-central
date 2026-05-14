@@ -370,6 +370,9 @@ const Whiteboard = () => {
         </Button>
         <h1 className="text-lg font-semibold">Whiteboard</h1>
         <div className="ml-auto flex items-center gap-1">
+          <Button variant="outline" size="sm" className="h-8 gap-1 px-2 text-xs" onClick={() => setCopyOpen(true)}>
+            <Copy className="h-3.5 w-3.5" /> Copy forward
+          </Button>
           <Button size="icon" variant="ghost" onClick={() => setWeekStart(weekStartStr(addDays(parseISO(weekStart), -7)))} aria-label="Previous week">
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -384,6 +387,15 @@ const Whiteboard = () => {
           </Button>
         </div>
       </header>
+
+      <CopyForwardDialog
+        open={copyOpen}
+        onOpenChange={setCopyOpen}
+        weekStart={weekStart}
+        sourceTiles={tiles}
+        fieldEmployees={fieldEmployees}
+        onCopied={load}
+      />
 
       <DndContext
         sensors={sensors}
