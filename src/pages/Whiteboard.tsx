@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Users, Moon } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Users, Moon, Copy } from "lucide-react";
+import { CopyForwardDialog } from "@/components/whiteboard/CopyForwardDialog";
 import { format, addDays, startOfWeek, parseISO } from "date-fns";
 import {
   DndContext,
