@@ -704,82 +704,116 @@ const Vendors = () => {
               {vendors.length === 0 ? "No vendors yet." : "No matches."}
             </p>
           ) : (
-            filtered.map((v) => {
-              const isOpen = expandedId === v.id;
+            grouped.map(([cat, items]) => {
+              const groupAllSelected = items.every((v) => selectedIds.has(v.id));
               return (
-                <Card key={v.id} className="px-3 py-1.5">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedId(isOpen ? null : v.id)}
-                      className="min-w-0 flex-1 text-left"
-                      aria-expanded={isOpen}
-                    >
-                      <h3 className="truncate text-sm font-medium">{v.name}</h3>
-                    </button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      onClick={() => downloadVendorContact(v)}
-                      aria-label="Save to phone contacts"
-                      title="Save to contacts"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </Button>
-                    {canEdit && (
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(v)} aria-label="Edit">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                    {canDelete && (
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(v)} aria-label="Delete">
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
+                <section key={cat} className="space-y-1.5">
+                  <div className="sticky top-[57px] z-10 -mx-3 flex items-center gap-2 bg-background/95 px-3 py-1 backdrop-blur">
+                    <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {cat}
+                    </h2>
+                    <span className="text-[11px] text-muted-foreground">· {items.length}</span>
+                    {selectMode && (
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(items)}
+                        className="ml-auto text-[11px] font-medium text-primary"
+                      >
+                        {groupAllSelected ? "Clear group" : "Select group"}
+                      </button>
                     )}
                   </div>
-                  {isOpen && (
-                    <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
-                      {v.category && (
-                        <Badge variant="secondary" className="text-[10px]">{v.category}</Badge>
-                      )}
-                      {v.contact_name && (
-                        <p className="text-muted-foreground">{v.contact_name}</p>
-                      )}
-                      {v.phone && (
-                        <a href={`tel:${v.phone}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
-                          <Phone className="h-3 w-3" /> {v.phone}
-                        </a>
-                      )}
-                      {v.email && (
-                        <a href={`mailto:${v.email}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
-                          <Mail className="h-3 w-3" /> {v.email}
-                        </a>
-                      )}
-                      {v.website && (
-                        <a
-                          href={v.website.startsWith("http") ? v.website : `https://${v.website}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-foreground hover:text-primary"
-                        >
-                          <Globe className="h-3 w-3" /> {v.website}
-                        </a>
-                      )}
-                      {v.address && (
-                        <a
-                          href={`https://maps.google.com/?q=${encodeURIComponent(v.address)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-start gap-1.5 text-foreground hover:text-primary"
-                        >
-                          <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> <span>{v.address}</span>
-                        </a>
-                      )}
-                      {v.notes && <p className="text-muted-foreground">{v.notes}</p>}
-                    </div>
-                  )}
-                </Card>
+                  {items.map((v) => {
+                    const isOpen = expandedId === v.id && !selectMode;
+                    const isSelected = selectedIds.has(v.id);
+                    return (
+                      <Card
+                        key={v.id}
+                        className={`px-3 py-1.5 ${selectMode && isSelected ? "border-primary bg-primary/5" : ""}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {selectMode && (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelected(v.id)}
+                              aria-label={`Select ${v.name}`}
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => selectMode ? toggleSelected(v.id) : setExpandedId(isOpen ? null : v.id)}
+                            className="min-w-0 flex-1 text-left"
+                            aria-expanded={isOpen}
+                          >
+                            <h3 className="truncate text-sm font-medium">{v.name}</h3>
+                            {v.contact_name && (
+                              <p className="truncate text-[11px] text-muted-foreground">{v.contact_name}</p>
+                            )}
+                          </button>
+                          {!selectMode && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={() => downloadVendorContact(v)}
+                                aria-label="Save to phone contacts"
+                                title="Save to contacts"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                              </Button>
+                              {canEdit && (
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(v)} aria-label="Edit">
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(v)} aria-label="Delete">
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                        {isOpen && (
+                          <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
+                            {v.phone && (
+                              <a href={`tel:${v.phone}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
+                                <Phone className="h-3 w-3" /> {v.phone}
+                              </a>
+                            )}
+                            {v.email && (
+                              <a href={`mailto:${v.email}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
+                                <Mail className="h-3 w-3" /> {v.email}
+                              </a>
+                            )}
+                            {v.website && (
+                              <a
+                                href={v.website.startsWith("http") ? v.website : `https://${v.website}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 text-foreground hover:text-primary"
+                              >
+                                <Globe className="h-3 w-3" /> {v.website}
+                              </a>
+                            )}
+                            {v.address && (
+                              <a
+                                href={`https://maps.google.com/?q=${encodeURIComponent(v.address)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-start gap-1.5 text-foreground hover:text-primary"
+                              >
+                                <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> <span>{v.address}</span>
+                              </a>
+                            )}
+                            {v.notes && <p className="text-muted-foreground">{v.notes}</p>}
+                          </div>
+                        )}
+                      </Card>
+                    );
+                  })}
+                </section>
               );
             })
           )}
