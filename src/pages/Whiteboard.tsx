@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Users, Moon, Copy } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Users, Moon, Copy, Truck } from "lucide-react";
 import { CopyForwardDialog } from "@/components/whiteboard/CopyForwardDialog";
 import { format, addDays, startOfWeek, parseISO } from "date-fns";
 import {
@@ -41,6 +41,16 @@ type Tile = {
 
 type Job = { id: string; name: string; job_number: string | null };
 type Profile = { user_id: string; display_name: string | null; is_office: boolean };
+type Dispatch = {
+  id: string;
+  dispatch_date: string;
+  driver_user_id: string | null;
+  driver_name: string | null;
+  truck_number: string | null;
+};
+
+const dateAt = (weekStart: string, dayIdx: number) =>
+  format(addDays(parseISO(weekStart), dayIdx), "yyyy-MM-dd");
 
 const weekStartStr = (d: Date) => format(startOfWeek(d, { weekStartsOn: 1 }), "yyyy-MM-dd");
 
@@ -53,6 +63,7 @@ const Whiteboard = () => {
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [dispatches, setDispatches] = useState<Dispatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [taskDraft, setTaskDraft] = useState<{ day: number; text: string } | null>(null);
@@ -71,11 +82,17 @@ const Whiteboard = () => {
 
   const load = async ({ showLoading = true }: { showLoading?: boolean } = {}) => {
     if (showLoading) setLoading(true);
-    const [tilesRes, jobsRes, profilesRes, rolesRes] = await Promise.all([
+    const weekEnd = format(addDays(parseISO(weekStart), 6), "yyyy-MM-dd");
+    const [tilesRes, jobsRes, profilesRes, rolesRes, dispatchRes] = await Promise.all([
       supabase.from("whiteboard_tiles").select("*").eq("week_start", weekStart).order("sort_order"),
       supabase.from("jobs").select("id,name,job_number").eq("status", "active").order("name"),
       supabase.from("profiles").select("user_id,display_name").eq("is_active", true).order("display_name"),
       supabase.from("user_roles").select("user_id,role"),
+      supabase
+        .from("dispatch_orders")
+        .select("id,dispatch_date,driver_user_id,driver_name,truck_number")
+        .gte("dispatch_date", weekStart)
+        .lte("dispatch_date", weekEnd),
     ]);
     if (tilesRes.error) toast({ title: "Couldn't load board", description: tilesRes.error.message, variant: "destructive" });
 
@@ -99,6 +116,7 @@ const Whiteboard = () => {
         .filter((p) => p.user_id)
         .map((p) => ({ ...p, is_office: isOffice(p.user_id) })),
     );
+    setDispatches(((dispatchRes.data ?? []) as Dispatch[]));
     setLoading(false);
   };
 
@@ -149,15 +167,29 @@ const Whiteboard = () => {
     return map;
   }, [tiles]);
 
-  // Replace with simpler computation
+  const dispatchesByDay = useMemo(() => {
+    const map = new Map<number, Dispatch[]>();
+    for (let d = 0; d < 7; d++) map.set(d, []);
+    dispatches.forEach((d) => {
+      const idx = days.findIndex((x) => format(x, "yyyy-MM-dd") === d.dispatch_date);
+      if (idx >= 0) map.get(idx)!.push(d);
+    });
+    return map;
+  }, [dispatches, days]);
+
   const placedUserIdsByDaySimple = useMemo(() => {
     const map = new Map<number, Set<string>>();
     for (let d = 0; d < 7; d++) map.set(d, new Set());
     tiles.forEach((t) => {
       if (t.kind === "crew" && t.ref_id) map.get(t.day_index)!.add(t.ref_id);
     });
+    dispatchesByDay.forEach((list, idx) => {
+      list.forEach((d) => {
+        if (d.driver_user_id) map.get(idx)!.add(d.driver_user_id);
+      });
+    });
     return map;
-  }, [tiles]);
+  }, [tiles, dispatchesByDay]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -226,11 +258,85 @@ const Whiteboard = () => {
     }
   };
 
+  const optimisticAddDispatch = async (dayIdx: number, userId: string, label: string) => {
+    const date = dateAt(weekStart, dayIdx);
+    if (dispatches.some((d) => d.dispatch_date === date && d.driver_user_id === userId)) return;
+    const tempId = `tmp-disp-${++tempCounter.current}`;
+    const optimistic: Dispatch = {
+      id: tempId,
+      dispatch_date: date,
+      driver_user_id: userId,
+      driver_name: label,
+      truck_number: null,
+    };
+    setDispatches((p) => [...p, optimistic]);
+    const { data, error } = await supabase
+      .from("dispatch_orders")
+      .insert({
+        dispatch_date: date,
+        driver_user_id: userId,
+        driver_name: label,
+        status: "scheduled",
+        created_by: user?.id ?? null,
+      })
+      .select("id,dispatch_date,driver_user_id,driver_name,truck_number")
+      .maybeSingle();
+    if (error || !data) {
+      setDispatches((p) => p.filter((d) => d.id !== tempId));
+      toast({ title: "Couldn't add to dispatch", description: error?.message ?? "Unknown", variant: "destructive" });
+      return;
+    }
+    setDispatches((p) => p.map((d) => (d.id === tempId ? (data as Dispatch) : d)));
+  };
+
+  const optimisticDeleteDispatch = async (id: string) => {
+    const prev = dispatches;
+    setDispatches((p) => p.filter((d) => d.id !== id));
+    if (id.startsWith("tmp-")) return;
+    const { error } = await supabase.from("dispatch_orders").delete().eq("id", id);
+    if (error) {
+      setDispatches(prev);
+      toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+    }
+  };
+
   const onDragEnd = async (e: DragEndEvent) => {
     setActiveId(null);
     const overId = e.over?.id?.toString();
     const dragId = e.active.id.toString();
     if (!overId) return;
+
+    // Trucking drop zone — adds/moves crew into a real dispatch order for that day
+    if (overId.startsWith("truckzone:")) {
+      const day = parseInt(overId.slice("truckzone:".length), 10);
+      let userId: string | null = null;
+      let label = "";
+      if (dragId.startsWith("virtual:")) {
+        const [, dayStr, uid] = dragId.split(":");
+        if (parseInt(dayStr, 10) !== day) {
+          toast({ title: "Drop within the same day", variant: "destructive" });
+          return;
+        }
+        const p = profiles.find((x) => x.user_id === uid);
+        if (!p) return;
+        userId = uid;
+        label = p.display_name ?? "Unknown";
+      } else if (dragId.startsWith("tile:")) {
+        const t = tiles.find((x) => x.id === dragId.slice(5));
+        if (!t || t.kind !== "crew" || !t.ref_id) return;
+        if (t.day_index !== day) {
+          toast({ title: "Drop within the same day", variant: "destructive" });
+          return;
+        }
+        userId = t.ref_id;
+        label = t.label;
+        await optimisticDelete(t.id);
+      } else {
+        return;
+      }
+      await optimisticAddDispatch(day, userId, label);
+      return;
+    }
 
     // Targets
     let target:
@@ -450,7 +556,9 @@ const Whiteboard = () => {
                     idx={idx}
                     tiles={tiles.filter((t) => t.day_index === idx)}
                     unassignedField={unassignedField}
+                    dispatches={dispatchesByDay.get(idx) ?? []}
                     onDelete={optimisticDelete}
+                    onDeleteDispatch={optimisticDeleteDispatch}
                     taskDraft={taskDraft?.day === idx ? taskDraft : null}
                     setTaskDraft={setTaskDraft}
                     onAddTask={addTask}
@@ -497,7 +605,9 @@ const DayColumn = ({
   idx,
   tiles,
   unassignedField,
+  dispatches,
   onDelete,
+  onDeleteDispatch,
   taskDraft,
   setTaskDraft,
   onAddTask,
@@ -506,7 +616,9 @@ const DayColumn = ({
   idx: number;
   tiles: Tile[];
   unassignedField: Profile[];
+  dispatches: Dispatch[];
   onDelete: (id: string) => void;
+  onDeleteDispatch: (id: string) => void;
   taskDraft: { day: number; text: string } | null;
   setTaskDraft: (v: { day: number; text: string } | null) => void;
   onAddTask: (day: number, text: string) => void;
@@ -528,10 +640,10 @@ const DayColumn = ({
       .sort((a, b) => a.sort_order - b.sort_order);
 
   return (
-    <div className="w-[240px] shrink-0">
+    <div className="w-[172px] shrink-0">
       <div
         className={cn(
-          "mb-1 rounded-md border border-border bg-card px-2 py-1.5 text-center",
+          "mb-1 rounded-md border border-border bg-card px-1.5 py-1 text-center",
           isToday && "border-primary bg-primary/5",
         )}
       >
@@ -548,6 +660,8 @@ const DayColumn = ({
           ))}
         </JobsZone>
 
+        <TruckingZone dayIdx={idx} dispatches={dispatches} onDeleteDispatch={onDeleteDispatch} />
+
         <UnassignedCrewZone dayIdx={idx} field={unassignedField} />
 
         <OffWorkZone dayIdx={idx} tiles={offWorkTiles} onDelete={onDelete} />
@@ -560,6 +674,52 @@ const DayColumn = ({
           setTaskDraft={setTaskDraft}
           onAddTask={onAddTask}
         />
+      </div>
+    </div>
+  );
+};
+
+const TruckingZone = ({
+  dayIdx,
+  dispatches,
+  onDeleteDispatch,
+}: {
+  dayIdx: number;
+  dispatches: Dispatch[];
+  onDeleteDispatch: (id: string) => void;
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id: `truckzone:${dayIdx}` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-lg border border-amber-400/40 bg-amber-50/40 p-1.5 transition-colors dark:bg-amber-950/20",
+        isOver && "ring-2 ring-amber-500 border-amber-500",
+      )}
+    >
+      <p className="flex items-center gap-1 px-1 pb-1 text-[9px] font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+        <Truck className="h-3 w-3" /> Trucking
+      </p>
+      <div className="space-y-1">
+        {dispatches.length === 0 ? (
+          <p className="px-1 py-1 text-[10px] text-muted-foreground/60">Drop crew to dispatch</p>
+        ) : (
+          dispatches.map((d) => (
+            <div key={d.id} className="flex items-center gap-1 rounded-md border border-amber-400/30 bg-card px-2 py-1">
+              <span className="min-w-0 flex-1 truncate text-[11px] font-medium">
+                {d.driver_name ?? "Driver"}
+                {d.truck_number ? <span className="text-muted-foreground"> · {d.truck_number}</span> : null}
+              </span>
+              <button
+                onClick={() => onDeleteDispatch(d.id)}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Remove dispatch"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -714,7 +874,7 @@ const VirtualCrewChip = ({
       {...listeners}
       {...attributes}
       className={cn(
-        "max-w-[200px] truncate rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium touch-none cursor-grab active:cursor-grabbing",
+        "max-w-[150px] truncate rounded-md border border-border bg-background px-1.5 py-0.5 text-[11px] font-medium touch-none cursor-grab active:cursor-grabbing",
         isDragging && "opacity-30",
       )}
     >
