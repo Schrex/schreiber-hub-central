@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Users } from "lucide-react";
 import { format, addDays, startOfWeek, parseISO } from "date-fns";
 import {
   DndContext,
@@ -35,16 +35,11 @@ type Tile = {
   label: string;
   color: string | null;
   sort_order: number;
+  parent_tile_id: string | null;
 };
 
 type Job = { id: string; name: string; job_number: string | null };
 type Profile = { user_id: string; display_name: string | null };
-
-const SECTIONS: Array<{ key: Section; label: string; emptyHint: string }> = [
-  { key: "jobs", label: "Jobs", emptyHint: "Drop job here" },
-  { key: "crew", label: "Crew", emptyHint: "Drop crew here" },
-  { key: "tasks", label: "Tasks", emptyHint: "Add task" },
-];
 
 const weekStartStr = (d: Date) => format(startOfWeek(d, { weekStartsOn: 1 }), "yyyy-MM-dd");
 
@@ -60,7 +55,6 @@ const Whiteboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [taskDraft, setTaskDraft] = useState<{ day: number; text: string } | null>(null);
-  
 
   const days = useMemo(() => {
     const start = parseISO(weekStart);
@@ -121,20 +115,48 @@ const Whiteboard = () => {
     const overId = e.over?.id?.toString();
     const dragId = e.active.id.toString();
     if (!overId) return;
-    const m = overId.match(/^zone:(\d+):(jobs|crew|tasks)$/);
-    if (!m) return;
-    const day = parseInt(m[1], 10);
-    const section = m[2] as Section;
-    const maxSort = Math.max(0, ...tiles.filter((t) => t.day_index === day && t.section === section).map((t) => t.sort_order));
+
+    // Drop targets:
+    //   zone:{day}:jobs            – job tile (top of day)
+    //   zone:{day}:tasks           – task tile
+    //   zone:{day}:unassigned-crew – crew not attached to a job
+    //   crewzone:{jobTileId}       – crew under a specific job
+
+    let target:
+      | { kind: "section"; day: number; section: Section; parent: null }
+      | { kind: "crewUnder"; day: number; section: "crew"; parent: string }
+      | null = null;
+
+    const sectionMatch = overId.match(/^zone:(\d+):(jobs|tasks|unassigned-crew)$/);
+    if (sectionMatch) {
+      const day = parseInt(sectionMatch[1], 10);
+      const sec = sectionMatch[2];
+      const section: Section = sec === "jobs" ? "jobs" : sec === "tasks" ? "tasks" : "crew";
+      target = { kind: "section", day, section, parent: null };
+    } else if (overId.startsWith("crewzone:")) {
+      const parent = overId.slice("crewzone:".length);
+      const parentTile = tiles.find((t) => t.id === parent);
+      if (!parentTile) return;
+      target = { kind: "crewUnder", day: parentTile.day_index, section: "crew", parent };
+    }
+    if (!target) return;
+
+    const sortFor = (day: number, section: Section, parent: string | null) =>
+      Math.max(
+        0,
+        ...tiles
+          .filter((t) => t.day_index === day && t.section === section && (t.parent_tile_id ?? null) === parent)
+          .map((t) => t.sort_order),
+      );
 
     if (dragId.startsWith("palette:")) {
       const [, pkind, refId] = dragId.split(":");
-      if (pkind === "job" && section !== "jobs") {
-        toast({ title: "Jobs go in the Jobs row", variant: "destructive" });
+      if (pkind === "job" && target.section !== "jobs") {
+        toast({ title: "Drop jobs into the Jobs row", variant: "destructive" });
         return;
       }
-      if (pkind === "crew" && section !== "crew") {
-        toast({ title: "Crew go in the Crew row", variant: "destructive" });
+      if (pkind === "crew" && target.section !== "crew") {
+        toast({ title: "Drop crew onto a job (or the day's crew area)", variant: "destructive" });
         return;
       }
       let label = "";
@@ -147,14 +169,16 @@ const Whiteboard = () => {
         if (!p) return;
         label = p.display_name ?? "Unknown";
       }
+      const parent = target.kind === "crewUnder" ? target.parent : null;
       const { error } = await supabase.from("whiteboard_tiles").insert({
         week_start: weekStart,
-        day_index: day,
-        section,
+        day_index: target.day,
+        section: target.section,
         kind: pkind as Kind,
         ref_id: refId,
         label,
-        sort_order: maxSort + 10,
+        sort_order: sortFor(target.day, target.section, parent) + 10,
+        parent_tile_id: parent,
         created_by: user?.id ?? null,
       });
       if (error) toast({ title: "Couldn't place tile", description: error.message, variant: "destructive" });
@@ -165,13 +189,24 @@ const Whiteboard = () => {
       const tileId = dragId.slice(5);
       const t = tiles.find((x) => x.id === tileId);
       if (!t) return;
-      if (t.kind === "job" && section !== "jobs") return;
-      if (t.kind === "crew" && section !== "crew") return;
-      if (t.kind === "task" && section !== "tasks") return;
-      if (t.day_index === day && t.section === section) return;
+      if (t.kind === "job" && target.section !== "jobs") return;
+      if (t.kind === "crew" && target.section !== "crew") return;
+      if (t.kind === "task" && target.section !== "tasks") return;
+      const newParent = target.kind === "crewUnder" ? target.parent : null;
+      if (
+        t.day_index === target.day &&
+        t.section === target.section &&
+        (t.parent_tile_id ?? null) === newParent
+      )
+        return;
       const { error } = await supabase
         .from("whiteboard_tiles")
-        .update({ day_index: day, section, sort_order: maxSort + 10 })
+        .update({
+          day_index: target.day,
+          section: target.section,
+          parent_tile_id: newParent,
+          sort_order: sortFor(target.day, target.section, newParent) + 10,
+        })
         .eq("id", t.id);
       if (error) toast({ title: "Move failed", description: error.message, variant: "destructive" });
     }
@@ -188,7 +223,10 @@ const Whiteboard = () => {
       setTaskDraft(null);
       return;
     }
-    const maxSort = Math.max(0, ...tiles.filter((t) => t.day_index === day && t.section === "tasks").map((t) => t.sort_order));
+    const maxSort = Math.max(
+      0,
+      ...tiles.filter((t) => t.day_index === day && t.section === "tasks").map((t) => t.sort_order),
+    );
     const { error } = await supabase.from("whiteboard_tiles").insert({
       week_start: weekStart,
       day_index: day,
@@ -370,8 +408,23 @@ const DayColumn = ({
   onAddTask: (day: number, text: string) => void;
 }) => {
   const isToday = format(new Date(), "yyyy-MM-dd") === format(day, "yyyy-MM-dd");
+  const jobTiles = tiles
+    .filter((t) => t.section === "jobs")
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order);
+  const taskTiles = tiles.filter((t) => t.section === "tasks");
+  const crewByJob = (jobTileId: string) =>
+    tiles
+      .filter((t) => t.section === "crew" && t.parent_tile_id === jobTileId)
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order);
+  const unassignedCrew = tiles
+    .filter((t) => t.section === "crew" && !t.parent_tile_id)
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order);
+
   return (
-    <div className="w-[220px] shrink-0">
+    <div className="w-[240px] shrink-0">
       <div
         className={cn(
           "mb-1 rounded-md border border-border bg-card px-2 py-1.5 text-center",
@@ -383,100 +436,208 @@ const DayColumn = ({
         </p>
         <p className={cn("text-sm font-bold", isToday && "text-primary")}>{format(day, "MMM d")}</p>
       </div>
-      <div className="space-y-1.5">
-        {SECTIONS.map((s) => (
-          <Zone
-            key={s.key}
-            dayIdx={idx}
-            section={s.key}
-            title={s.label}
-            emptyHint={s.emptyHint}
-            tiles={tiles.filter((t) => t.section === s.key)}
-            onRemove={onRemove}
-            footer={
-              s.key === "tasks" ? (
-                taskDraft ? (
-                  <div className="flex gap-1 pt-1">
-                    <Input
-                      autoFocus
-                      value={taskDraft.text}
-                      onChange={(e) => setTaskDraft({ day: idx, text: e.target.value })}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") onAddTask(idx, taskDraft.text);
-                        if (e.key === "Escape") setTaskDraft(null);
-                      }}
-                      placeholder="Task…"
-                      className="h-7 text-xs"
-                    />
-                    <Button size="sm" className="h-7 px-2 text-xs" onClick={() => onAddTask(idx, taskDraft.text)}>
-                      Add
-                    </Button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setTaskDraft({ day: idx, text: "" })}
-                    className="mt-1 w-full rounded-md border border-dashed border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted"
-                  >
-                    <Plus className="mr-1 inline h-3 w-3" />
-                    Task
-                  </button>
-                )
-              ) : null
-            }
-          />
-        ))}
+
+      <div className="space-y-2">
+        {/* Jobs (each with its own crew area) */}
+        <JobsZone dayIdx={idx} hasJobs={jobTiles.length > 0}>
+          {jobTiles.map((j) => (
+            <JobGroup
+              key={j.id}
+              job={j}
+              crew={crewByJob(j.id)}
+              onRemove={onRemove}
+            />
+          ))}
+        </JobsZone>
+
+        {/* Unassigned crew (only visible if used) */}
+        {unassignedCrew.length > 0 ? (
+          <UnassignedCrewZone dayIdx={idx}>
+            {unassignedCrew.map((t) => (
+              <TileCard key={t.id} tile={t} onRemove={onRemove} />
+            ))}
+          </UnassignedCrewZone>
+        ) : (
+          <UnassignedCrewZone dayIdx={idx} compact />
+        )}
+
+        {/* Tasks */}
+        <TaskSection
+          dayIdx={idx}
+          tasks={taskTiles}
+          onRemove={onRemove}
+          taskDraft={taskDraft}
+          setTaskDraft={setTaskDraft}
+          onAddTask={onAddTask}
+        />
       </div>
     </div>
   );
 };
 
-const Zone = ({
+const JobsZone = ({
   dayIdx,
-  section,
-  title,
-  emptyHint,
-  tiles,
-  onRemove,
-  footer,
+  hasJobs,
+  children,
 }: {
   dayIdx: number;
-  section: Section;
-  title: string;
-  emptyHint: string;
-  tiles: Tile[];
-  onRemove: (id: string) => void;
-  footer?: React.ReactNode;
+  hasJobs: boolean;
+  children: React.ReactNode;
 }) => {
-  const { setNodeRef, isOver } = useDroppable({ id: `zone:${dayIdx}:${section}` });
-  const tone =
-    section === "jobs"
-      ? "bg-primary/5 border-primary/20"
-      : section === "crew"
-        ? "bg-secondary/40 border-border"
-        : "bg-muted/40 border-border";
+  const { setNodeRef, isOver } = useDroppable({ id: `zone:${dayIdx}:jobs` });
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "min-h-[60px] rounded-lg border border-dashed p-1.5 transition-colors",
-        tone,
+        "rounded-lg border border-dashed border-primary/20 bg-primary/5 p-1.5 transition-colors",
         isOver && "ring-2 ring-primary border-primary",
       )}
     >
       <p className="px-1 pb-1 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
-        {title}
+        Jobs
+      </p>
+      <div className="space-y-2">
+        {children}
+        {!hasJobs && (
+          <p className="px-1 py-2 text-[10px] text-muted-foreground/60">Drop a job here</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const JobGroup = ({
+  job,
+  crew,
+  onRemove,
+}: {
+  job: Tile;
+  crew: Tile[];
+  onRemove: (id: string) => void;
+}) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `tile:${job.id}` });
+  const drop = useDroppable({ id: `crewzone:${job.id}` });
+  return (
+    <div className={cn("rounded-md border border-primary/30 bg-card overflow-hidden", isDragging && "opacity-40")}>
+      <div className="flex items-center gap-1 bg-primary px-2 py-1 text-primary-foreground">
+        <button
+          ref={setNodeRef}
+          {...listeners}
+          {...attributes}
+          className="min-w-0 flex-1 truncate text-left text-[11px] font-semibold cursor-grab active:cursor-grabbing"
+        >
+          {job.label}
+        </button>
+        <button onClick={() => onRemove(job.id)} className="opacity-70 hover:opacity-100" aria-label="Remove job">
+          <X className="h-3 w-3" />
+        </button>
+      </div>
+      <div
+        ref={drop.setNodeRef}
+        className={cn(
+          "min-h-[44px] space-y-1 px-1.5 py-1.5 transition-colors",
+          drop.isOver && "bg-primary/10 ring-2 ring-primary ring-inset",
+        )}
+      >
+        {crew.length === 0 ? (
+          <p className="px-1 py-1 text-[10px] text-muted-foreground/60">Drop crew here</p>
+        ) : (
+          crew.map((c) => <TileCard key={c.id} tile={c} onRemove={onRemove} />)
+        )}
+      </div>
+    </div>
+  );
+};
+
+const UnassignedCrewZone = ({
+  dayIdx,
+  compact,
+  children,
+}: {
+  dayIdx: number;
+  compact?: boolean;
+  children?: React.ReactNode;
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id: `zone:${dayIdx}:unassigned-crew` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-lg border border-dashed border-border bg-secondary/30 p-1.5 transition-colors",
+        compact ? "min-h-[36px]" : "min-h-[60px]",
+        isOver && "ring-2 ring-primary border-primary",
+      )}
+    >
+      <p className="flex items-center gap-1 px-1 pb-1 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <Users className="h-3 w-3" /> Unassigned crew
       </p>
       <div className="space-y-1">
-        {tiles
+        {children ?? (
+          <p className="px-1 py-1 text-[10px] text-muted-foreground/60">Drop crew here to leave them unassigned</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const TaskSection = ({
+  dayIdx,
+  tasks,
+  onRemove,
+  taskDraft,
+  setTaskDraft,
+  onAddTask,
+}: {
+  dayIdx: number;
+  tasks: Tile[];
+  onRemove: (id: string) => void;
+  taskDraft: { day: number; text: string } | null;
+  setTaskDraft: (v: { day: number; text: string } | null) => void;
+  onAddTask: (day: number, text: string) => void;
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id: `zone:${dayIdx}:tasks` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "min-h-[60px] rounded-lg border border-dashed border-border bg-muted/40 p-1.5 transition-colors",
+        isOver && "ring-2 ring-primary border-primary",
+      )}
+    >
+      <p className="px-1 pb-1 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Tasks</p>
+      <div className="space-y-1">
+        {tasks
           .slice()
           .sort((a, b) => a.sort_order - b.sort_order)
           .map((t) => (
             <TileCard key={t.id} tile={t} onRemove={onRemove} />
           ))}
-        {tiles.length === 0 && !footer && (
-          <p className="px-1 py-2 text-[10px] text-muted-foreground/60">{emptyHint}</p>
+        {taskDraft ? (
+          <div className="flex gap-1 pt-1">
+            <Input
+              autoFocus
+              value={taskDraft.text}
+              onChange={(e) => setTaskDraft({ day: dayIdx, text: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onAddTask(dayIdx, taskDraft.text);
+                if (e.key === "Escape") setTaskDraft(null);
+              }}
+              placeholder="Task…"
+              className="h-7 text-xs"
+            />
+            <Button size="sm" className="h-7 px-2 text-xs" onClick={() => onAddTask(dayIdx, taskDraft.text)}>
+              Add
+            </Button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setTaskDraft({ day: dayIdx, text: "" })}
+            className="mt-1 w-full rounded-md border border-dashed border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted"
+          >
+            <Plus className="mr-1 inline h-3 w-3" />
+            Task
+          </button>
         )}
-        {footer}
       </div>
     </div>
   );
