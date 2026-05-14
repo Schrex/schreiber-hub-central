@@ -313,6 +313,49 @@ const Vendors = () => {
     }
   };
 
+  const toggleSelected = (id: string) => {
+    setSelectedIds((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} vendor${ids.length === 1 ? "" : "s"}?`)) return;
+    const { error } = await supabase.from("vendors").delete().in("id", ids);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Deleted ${ids.length} vendor${ids.length === 1 ? "" : "s"}` });
+      exitSelectMode();
+      load();
+    }
+  };
+
+  const bulkApplyCategory = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const cat = bulkCategory.trim() || null;
+    const { error } = await supabase.from("vendors").update({ category: cat }).in("id", ids);
+    if (error) {
+      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Updated ${ids.length} vendor${ids.length === 1 ? "" : "s"}` });
+      setBulkCategoryOpen(false);
+      setBulkCategory("");
+      exitSelectMode();
+      load();
+    }
+  };
+
   const handleImport = async (file: File) => {
     setImporting(true);
     try {
