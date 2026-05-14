@@ -185,6 +185,10 @@ const Vendors = () => {
   const [reviewQueue, setReviewQueue] = useState<typeof emptyForm[]>([]);
   const [reviewIndex, setReviewIndex] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState("");
 
   const load = async () => {
     setLoading(true);
