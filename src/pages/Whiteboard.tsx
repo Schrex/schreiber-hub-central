@@ -556,7 +556,9 @@ const Whiteboard = () => {
                     idx={idx}
                     tiles={tiles.filter((t) => t.day_index === idx)}
                     unassignedField={unassignedField}
+                    dispatches={dispatchesByDay.get(idx) ?? []}
                     onDelete={optimisticDelete}
+                    onDeleteDispatch={optimisticDeleteDispatch}
                     taskDraft={taskDraft?.day === idx ? taskDraft : null}
                     setTaskDraft={setTaskDraft}
                     onAddTask={addTask}
