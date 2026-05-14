@@ -16,6 +16,21 @@ interface Props {
 const fmtHour = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: "numeric" });
 
+const fmtHourLabel = (iso: string, idx: number, prevIso?: string) => {
+  const d = new Date(iso);
+  const prev = prevIso ? new Date(prevIso) : null;
+  const newDay = !prev || d.getDate() !== prev.getDate();
+  if (idx === 0 || newDay) {
+    return d.toLocaleDateString([], { weekday: "short" }) + " " + d.toLocaleTimeString([], { hour: "numeric" });
+  }
+  return d.toLocaleTimeString([], { hour: "numeric" });
+};
+
+const compass = (deg: number) => {
+  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  return dirs[Math.round(deg / 45) % 8];
+};
+
 const fmtDay = (date: string, idx: number) => {
   if (idx === 0) return "Today";
   // Parse YYYY-MM-DD as local date to avoid UTC->local day shift
@@ -83,23 +98,30 @@ export const WeatherCard = ({ forecast, coords, loading, compact, error, needsPe
       {/* Hourly */}
       <div className="border-t border-border/60 px-2 py-3">
         <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Hourly · next {hourly.length}h
+          Hourly · next {compact ? 12 : hourly.length}h
         </p>
         <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-thin">
-          {hourly.slice(0, compact ? 12 : 24).map((h) => {
+          {hourly.slice(0, compact ? 12 : 48).map((h, idx, arr) => {
             const i = weatherCodeInfo(h.code);
             const hasPrecip = h.precipIn > 0;
+            const label = fmtHourLabel(h.time, idx, arr[idx - 1]?.time);
             return (
-              <div key={h.time} className="flex min-w-14 flex-col items-center gap-1 rounded-lg px-1 py-2">
-                <span className="text-[10px] text-muted-foreground">{fmtHour(h.time)}</span>
+              <div key={h.time} className="flex min-w-[68px] flex-col items-center gap-1 rounded-lg bg-surface/40 px-1.5 py-2">
+                <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">{label}</span>
                 <span className="text-base">{i.emoji}</span>
                 <span className="text-xs font-semibold text-foreground">{h.tempF}°</span>
+                <span className="text-[9px] text-muted-foreground">feels {h.apparentTempF}°</span>
                 <span className={cn("text-[10px]", h.precipProb >= 30 ? "text-primary font-semibold" : "text-muted-foreground")}>
                   {h.precipProb}%
                 </span>
                 <span className={cn("text-[10px] tabular-nums", hasPrecip ? "text-primary font-semibold" : "text-muted-foreground/40")}>
                   {hasPrecip ? `${h.precipIn.toFixed(2)}"` : "—"}
                 </span>
+                <span className="text-[9px] text-muted-foreground tabular-nums whitespace-nowrap">
+                  {h.windMph} {compass(h.windDir)}
+                </span>
+                <span className="text-[9px] text-muted-foreground tabular-nums">💧 {h.humidity}%</span>
+                <span className="text-[9px] text-muted-foreground tabular-nums">☁ {h.cloudCover}%</span>
               </div>
             );
           })}
