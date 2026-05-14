@@ -1,4 +1,5 @@
-import { Cloud, Droplets, Wind, MapPin, Navigation } from "lucide-react";
+import { useState } from "react";
+import { Cloud, Droplets, Wind, MapPin, Navigation, ChevronDown, ChevronUp } from "lucide-react";
 import type { Forecast, Coords } from "@/lib/weather";
 import { weatherCodeInfo } from "@/lib/weather";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,7 @@ const fmtDay = (date: string, idx: number) => {
 };
 
 export const WeatherCard = ({ forecast, coords, loading, compact, error, needsPermission, onRequestLocation }: Props) => {
+  const [expanded, setExpanded] = useState(false);
   if (loading || !forecast) {
     return (
       <div className="rounded-2xl border border-border bg-surface p-4 space-y-2">
@@ -128,13 +130,13 @@ export const WeatherCard = ({ forecast, coords, loading, compact, error, needsPe
         </div>
       </div>
 
-      {/* 7-day */}
+      {/* Daily forecast (collapsible) */}
       <div className="border-t border-border/60 px-4 py-3">
         <p className="pb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          {daily.length}-day forecast
+          {expanded ? `${daily.length}-day forecast` : "Next 2 days"}
         </p>
         <div className="space-y-1.5">
-          {daily.map((d, i) => {
+          {(expanded ? daily : daily.slice(0, 2)).map((d, i) => {
             const info = weatherCodeInfo(d.code);
             return (
               <div key={d.date} className="flex items-center gap-3 text-sm">
@@ -150,6 +152,23 @@ export const WeatherCard = ({ forecast, coords, loading, compact, error, needsPe
             );
           })}
         </div>
+        {daily.length > 2 && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg border border-border/60 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground hover:bg-surface/60 hover:text-foreground"
+          >
+            {expanded ? (
+              <>
+                <ChevronUp className="h-3 w-3" /> Show less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3 w-3" /> Show {daily.length - 2} more days
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
