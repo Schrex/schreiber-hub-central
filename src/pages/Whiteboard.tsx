@@ -258,11 +258,85 @@ const Whiteboard = () => {
     }
   };
 
+  const optimisticAddDispatch = async (dayIdx: number, userId: string, label: string) => {
+    const date = dateAt(weekStart, dayIdx);
+    if (dispatches.some((d) => d.dispatch_date === date && d.driver_user_id === userId)) return;
+    const tempId = `tmp-disp-${++tempCounter.current}`;
+    const optimistic: Dispatch = {
+      id: tempId,
+      dispatch_date: date,
+      driver_user_id: userId,
+      driver_name: label,
+      truck_number: null,
+    };
+    setDispatches((p) => [...p, optimistic]);
+    const { data, error } = await supabase
+      .from("dispatch_orders")
+      .insert({
+        dispatch_date: date,
+        driver_user_id: userId,
+        driver_name: label,
+        status: "scheduled",
+        created_by: user?.id ?? null,
+      })
+      .select("id,dispatch_date,driver_user_id,driver_name,truck_number")
+      .maybeSingle();
+    if (error || !data) {
+      setDispatches((p) => p.filter((d) => d.id !== tempId));
+      toast({ title: "Couldn't add to dispatch", description: error?.message ?? "Unknown", variant: "destructive" });
+      return;
+    }
+    setDispatches((p) => p.map((d) => (d.id === tempId ? (data as Dispatch) : d)));
+  };
+
+  const optimisticDeleteDispatch = async (id: string) => {
+    const prev = dispatches;
+    setDispatches((p) => p.filter((d) => d.id !== id));
+    if (id.startsWith("tmp-")) return;
+    const { error } = await supabase.from("dispatch_orders").delete().eq("id", id);
+    if (error) {
+      setDispatches(prev);
+      toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+    }
+  };
+
   const onDragEnd = async (e: DragEndEvent) => {
     setActiveId(null);
     const overId = e.over?.id?.toString();
     const dragId = e.active.id.toString();
     if (!overId) return;
+
+    // Trucking drop zone — adds/moves crew into a real dispatch order for that day
+    if (overId.startsWith("truckzone:")) {
+      const day = parseInt(overId.slice("truckzone:".length), 10);
+      let userId: string | null = null;
+      let label = "";
+      if (dragId.startsWith("virtual:")) {
+        const [, dayStr, uid] = dragId.split(":");
+        if (parseInt(dayStr, 10) !== day) {
+          toast({ title: "Drop within the same day", variant: "destructive" });
+          return;
+        }
+        const p = profiles.find((x) => x.user_id === uid);
+        if (!p) return;
+        userId = uid;
+        label = p.display_name ?? "Unknown";
+      } else if (dragId.startsWith("tile:")) {
+        const t = tiles.find((x) => x.id === dragId.slice(5));
+        if (!t || t.kind !== "crew" || !t.ref_id) return;
+        if (t.day_index !== day) {
+          toast({ title: "Drop within the same day", variant: "destructive" });
+          return;
+        }
+        userId = t.ref_id;
+        label = t.label;
+        await optimisticDelete(t.id);
+      } else {
+        return;
+      }
+      await optimisticAddDispatch(day, userId, label);
+      return;
+    }
 
     // Targets
     let target:
