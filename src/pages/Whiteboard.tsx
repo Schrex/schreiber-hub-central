@@ -605,7 +605,9 @@ const DayColumn = ({
   idx,
   tiles,
   unassignedField,
+  dispatches,
   onDelete,
+  onDeleteDispatch,
   taskDraft,
   setTaskDraft,
   onAddTask,
@@ -614,7 +616,9 @@ const DayColumn = ({
   idx: number;
   tiles: Tile[];
   unassignedField: Profile[];
+  dispatches: Dispatch[];
   onDelete: (id: string) => void;
+  onDeleteDispatch: (id: string) => void;
   taskDraft: { day: number; text: string } | null;
   setTaskDraft: (v: { day: number; text: string } | null) => void;
   onAddTask: (day: number, text: string) => void;
