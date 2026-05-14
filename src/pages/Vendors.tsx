@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, Globe, MapPin, Contact, Download } from "lucide-react";
+import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, Globe, MapPin, Contact, Download, CheckSquare, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import * as XLSX from "xlsx";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -184,6 +185,10 @@ const Vendors = () => {
   const [reviewQueue, setReviewQueue] = useState<typeof emptyForm[]>([]);
   const [reviewIndex, setReviewIndex] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -223,6 +228,37 @@ const Vendors = () => {
       );
     });
   }, [vendors, search, categoryFilter]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, Vendor[]>();
+    filtered.forEach((v) => {
+      const key = v.category?.trim() || "Uncategorized";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(v);
+    });
+    return Array.from(map.entries()).sort(([a], [b]) => {
+      if (a === "Uncategorized") return 1;
+      if (b === "Uncategorized") return -1;
+      return a.localeCompare(b);
+    });
+  }, [filtered]);
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((v) => selectedIds.has(v.id));
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((v) => v.id)));
+    }
+  };
+  const toggleGroup = (items: Vendor[]) => {
+    const allSel = items.every((v) => selectedIds.has(v.id));
+    setSelectedIds((s) => {
+      const next = new Set(s);
+      items.forEach((v) => (allSel ? next.delete(v.id) : next.add(v.id)));
+      return next;
+    });
+  };
 
   const openAdd = () => {
     setEditing(null);
@@ -304,6 +340,49 @@ const Vendors = () => {
       toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Vendor deleted" });
+      load();
+    }
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} vendor${ids.length === 1 ? "" : "s"}?`)) return;
+    const { error } = await supabase.from("vendors").delete().in("id", ids);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Deleted ${ids.length} vendor${ids.length === 1 ? "" : "s"}` });
+      exitSelectMode();
+      load();
+    }
+  };
+
+  const bulkApplyCategory = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const cat = bulkCategory.trim() || null;
+    const { error } = await supabase.from("vendors").update({ category: cat }).in("id", ids);
+    if (error) {
+      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Updated ${ids.length} vendor${ids.length === 1 ? "" : "s"}` });
+      setBulkCategoryOpen(false);
+      setBulkCategory("");
+      exitSelectMode();
       load();
     }
   };
@@ -528,7 +607,7 @@ const Vendors = () => {
           </div>
         )}
 
-        {canEdit && (
+        {canEdit && !selectMode && (
           <>
             <div className="flex gap-2">
               <Button onClick={openAdd} className="flex-1">
@@ -543,14 +622,24 @@ const Vendors = () => {
                 <Upload className="mr-1 h-4 w-4" /> {importing ? "Importing…" : "Import"}
               </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={importFromContacts}
-              disabled={importing}
-              className="w-full"
-            >
-              <Contact className="mr-1 h-4 w-4" /> Import from Contacts
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={importFromContacts}
+                disabled={importing}
+                className="flex-1"
+              >
+                <Contact className="mr-1 h-4 w-4" /> From Contacts
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSelectMode(true)}
+                disabled={vendors.length === 0}
+                className="flex-1"
+              >
+                <CheckSquare className="mr-1 h-4 w-4" /> Select
+              </Button>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -572,9 +661,39 @@ const Vendors = () => {
               }}
             />
             <p className="text-[11px] text-muted-foreground">
-              Tap "Import from Contacts" to pick directly from your phone (Android Chrome). On iPhone or desktop it falls back to picking a .vcf file.
+              Tap "From Contacts" to pick directly from your phone (Android Chrome). On iPhone or desktop it falls back to picking a .vcf file.
             </p>
           </>
+        )}
+
+        {selectMode && (
+          <div className="sticky top-[57px] z-20 -mx-3 flex flex-wrap items-center gap-2 border-b border-border bg-background/95 px-3 py-2 backdrop-blur">
+            <Button size="sm" variant="ghost" onClick={exitSelectMode} aria-label="Cancel selection">
+              <X className="mr-1 h-4 w-4" /> Cancel
+            </Button>
+            <Button size="sm" variant="outline" onClick={toggleSelectAll}>
+              {allFilteredSelected ? "Clear" : "All"}
+            </Button>
+            <span className="ml-auto text-xs text-muted-foreground">{selectedIds.size} selected</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setBulkCategory(""); setBulkCategoryOpen(true); }}
+              disabled={selectedIds.size === 0}
+            >
+              <Pencil className="mr-1 h-3.5 w-3.5" /> Type
+            </Button>
+            {canDelete && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={bulkDelete}
+                disabled={selectedIds.size === 0}
+              >
+                <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+              </Button>
+            )}
+          </div>
         )}
 
         <div className="space-y-2">
@@ -585,82 +704,116 @@ const Vendors = () => {
               {vendors.length === 0 ? "No vendors yet." : "No matches."}
             </p>
           ) : (
-            filtered.map((v) => {
-              const isOpen = expandedId === v.id;
+            grouped.map(([cat, items]) => {
+              const groupAllSelected = items.every((v) => selectedIds.has(v.id));
               return (
-                <Card key={v.id} className="px-3 py-1.5">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedId(isOpen ? null : v.id)}
-                      className="min-w-0 flex-1 text-left"
-                      aria-expanded={isOpen}
-                    >
-                      <h3 className="truncate text-sm font-medium">{v.name}</h3>
-                    </button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      onClick={() => downloadVendorContact(v)}
-                      aria-label="Save to phone contacts"
-                      title="Save to contacts"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </Button>
-                    {canEdit && (
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(v)} aria-label="Edit">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                    {canDelete && (
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(v)} aria-label="Delete">
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
+                <section key={cat} className="space-y-1.5">
+                  <div className="sticky top-[57px] z-10 -mx-3 flex items-center gap-2 bg-background/95 px-3 py-1 backdrop-blur">
+                    <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {cat}
+                    </h2>
+                    <span className="text-[11px] text-muted-foreground">· {items.length}</span>
+                    {selectMode && (
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(items)}
+                        className="ml-auto text-[11px] font-medium text-primary"
+                      >
+                        {groupAllSelected ? "Clear group" : "Select group"}
+                      </button>
                     )}
                   </div>
-                  {isOpen && (
-                    <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
-                      {v.category && (
-                        <Badge variant="secondary" className="text-[10px]">{v.category}</Badge>
-                      )}
-                      {v.contact_name && (
-                        <p className="text-muted-foreground">{v.contact_name}</p>
-                      )}
-                      {v.phone && (
-                        <a href={`tel:${v.phone}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
-                          <Phone className="h-3 w-3" /> {v.phone}
-                        </a>
-                      )}
-                      {v.email && (
-                        <a href={`mailto:${v.email}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
-                          <Mail className="h-3 w-3" /> {v.email}
-                        </a>
-                      )}
-                      {v.website && (
-                        <a
-                          href={v.website.startsWith("http") ? v.website : `https://${v.website}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-foreground hover:text-primary"
-                        >
-                          <Globe className="h-3 w-3" /> {v.website}
-                        </a>
-                      )}
-                      {v.address && (
-                        <a
-                          href={`https://maps.google.com/?q=${encodeURIComponent(v.address)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-start gap-1.5 text-foreground hover:text-primary"
-                        >
-                          <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> <span>{v.address}</span>
-                        </a>
-                      )}
-                      {v.notes && <p className="text-muted-foreground">{v.notes}</p>}
-                    </div>
-                  )}
-                </Card>
+                  {items.map((v) => {
+                    const isOpen = expandedId === v.id && !selectMode;
+                    const isSelected = selectedIds.has(v.id);
+                    return (
+                      <Card
+                        key={v.id}
+                        className={`px-3 py-1.5 ${selectMode && isSelected ? "border-primary bg-primary/5" : ""}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {selectMode && (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelected(v.id)}
+                              aria-label={`Select ${v.name}`}
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => selectMode ? toggleSelected(v.id) : setExpandedId(isOpen ? null : v.id)}
+                            className="min-w-0 flex-1 text-left"
+                            aria-expanded={isOpen}
+                          >
+                            <h3 className="truncate text-sm font-medium">{v.name}</h3>
+                            {v.contact_name && (
+                              <p className="truncate text-[11px] text-muted-foreground">{v.contact_name}</p>
+                            )}
+                          </button>
+                          {!selectMode && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={() => downloadVendorContact(v)}
+                                aria-label="Save to phone contacts"
+                                title="Save to contacts"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                              </Button>
+                              {canEdit && (
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(v)} aria-label="Edit">
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(v)} aria-label="Delete">
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                        {isOpen && (
+                          <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
+                            {v.phone && (
+                              <a href={`tel:${v.phone}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
+                                <Phone className="h-3 w-3" /> {v.phone}
+                              </a>
+                            )}
+                            {v.email && (
+                              <a href={`mailto:${v.email}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
+                                <Mail className="h-3 w-3" /> {v.email}
+                              </a>
+                            )}
+                            {v.website && (
+                              <a
+                                href={v.website.startsWith("http") ? v.website : `https://${v.website}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 text-foreground hover:text-primary"
+                              >
+                                <Globe className="h-3 w-3" /> {v.website}
+                              </a>
+                            )}
+                            {v.address && (
+                              <a
+                                href={`https://maps.google.com/?q=${encodeURIComponent(v.address)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-start gap-1.5 text-foreground hover:text-primary"
+                              >
+                                <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> <span>{v.address}</span>
+                              </a>
+                            )}
+                            {v.notes && <p className="text-muted-foreground">{v.notes}</p>}
+                          </div>
+                        )}
+                      </Card>
+                    );
+                  })}
+                </section>
               );
             })
           )}
@@ -738,6 +891,32 @@ const Vendors = () => {
                 <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
               </>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkCategoryOpen} onOpenChange={setBulkCategoryOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set type for {selectedIds.size} vendor{selectedIds.size === 1 ? "" : "s"}</DialogTitle>
+            <DialogDescription>Leave blank to clear the type.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="bulk-cat">Type / category</Label>
+            <Input
+              id="bulk-cat"
+              list="bulk-cat-list"
+              placeholder="Materials, Equipment, Subcontractor…"
+              value={bulkCategory}
+              onChange={(e) => setBulkCategory(e.target.value)}
+            />
+            <datalist id="bulk-cat-list">
+              {categories.map((c) => <option key={c} value={c} />)}
+            </datalist>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setBulkCategoryOpen(false)}>Cancel</Button>
+            <Button onClick={bulkApplyCategory}>Apply</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
