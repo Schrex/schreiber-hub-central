@@ -18,7 +18,10 @@ const fmtHour = (iso: string) =>
 
 const fmtDay = (date: string, idx: number) => {
   if (idx === 0) return "Today";
-  return new Date(date).toLocaleDateString([], { weekday: "short" });
+  // Parse YYYY-MM-DD as local date to avoid UTC->local day shift
+  const [y, m, d] = date.split("-").map(Number);
+  const local = new Date(y, (m ?? 1) - 1, d ?? 1);
+  return local.toLocaleDateString([], { weekday: "short" });
 };
 
 export const WeatherCard = ({ forecast, coords, loading, compact, error, needsPermission, onRequestLocation }: Props) => {
