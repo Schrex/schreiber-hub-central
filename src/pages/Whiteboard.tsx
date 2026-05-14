@@ -63,6 +63,7 @@ const Whiteboard = () => {
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [dispatches, setDispatches] = useState<Dispatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [taskDraft, setTaskDraft] = useState<{ day: number; text: string } | null>(null);
