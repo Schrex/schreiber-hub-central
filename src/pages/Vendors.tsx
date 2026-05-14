@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, Globe, MapPin, Contact, Download } from "lucide-react";
+import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, Globe, MapPin, Contact, Download, CheckSquare, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import * as XLSX from "xlsx";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
