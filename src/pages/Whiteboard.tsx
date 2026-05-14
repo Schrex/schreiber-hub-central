@@ -41,6 +41,16 @@ type Tile = {
 
 type Job = { id: string; name: string; job_number: string | null };
 type Profile = { user_id: string; display_name: string | null; is_office: boolean };
+type Dispatch = {
+  id: string;
+  dispatch_date: string;
+  driver_user_id: string | null;
+  driver_name: string | null;
+  truck_number: string | null;
+};
+
+const dateAt = (weekStart: string, dayIdx: number) =>
+  format(addDays(parseISO(weekStart), dayIdx), "yyyy-MM-dd");
 
 const weekStartStr = (d: Date) => format(startOfWeek(d, { weekStartsOn: 1 }), "yyyy-MM-dd");
 
