@@ -253,7 +253,7 @@ const EmployeeContacts = () => {
     if (error) {
       toast({ title: "Couldn't load contacts", description: error.message, variant: "destructive" });
     } else {
-      const list = (data ?? []) as EmployeeContact[];
+      const list = sorted as EmployeeContact[];
       setContacts(list);
       const userIds = list
         .map((c) => c.converted_user_id)
