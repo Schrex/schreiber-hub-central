@@ -71,7 +71,8 @@ type TimeOff = {
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
 const Schedule = () => {
-  const { user, role, displayName } = useAuth();
+  const { user, role: realRole, effectiveRole, displayName } = useAuth();
+  const role = effectiveRole ?? realRole;
   const navigate = useNavigate();
   const canEdit = role === "office" || role === "admin";
   const canEditNotes = canEdit || role === "foreman";
