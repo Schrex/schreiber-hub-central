@@ -121,9 +121,6 @@ const JobDetail = () => {
             </a>
           )}
         </div>
-
-        )}
-
         <DriveTimeFromShop lat={lat} lon={lon} />
 
         {/* Per-job weather */}
