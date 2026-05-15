@@ -17,6 +17,7 @@ import { SafetyInspectionButton } from "@/components/jobs/SafetyInspectionButton
 import { RequestTruckButton } from "@/components/jobs/RequestTruckButton";
 import { ForemanPicker } from "@/components/jobs/ForemanPicker";
 import { JobContactsSection } from "@/components/jobs/JobContactsSection";
+import { DriveTimeFromShop } from "@/components/jobs/DriveTimeFromShop";
 import { ContractSection } from "@/components/jobs/ContractSection";
 import { ScopeOfWorkSection } from "@/components/jobs/ScopeOfWorkSection";
 import { SubmittalsSection } from "@/components/jobs/SubmittalsSection";
@@ -120,6 +121,7 @@ const JobDetail = () => {
             </a>
           )}
         </div>
+        <DriveTimeFromShop lat={lat} lon={lon} />
 
         {/* Per-job weather */}
         {coords ? (
