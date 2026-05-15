@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
 import { downloadVCard } from "@/lib/vcard";
+import { formatPhone } from "@/lib/phone";
 import { getContactPickerUnavailableReason, isContactPickerSupported, pickContactsFromDevice } from "@/lib/contactPicker";
 
 type Vendor = {
@@ -779,7 +780,7 @@ const Vendors = () => {
                           <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
                             {v.phone && (
                               <a href={`tel:${v.phone}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
-                                <Phone className="h-3 w-3" /> {v.phone}
+                                <Phone className="h-3 w-3" /> {formatPhone(v.phone)}
                               </a>
                             )}
                             {v.email && (

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
 import { downloadVCard, downloadVCards } from "@/lib/vcard";
+import { formatPhone } from "@/lib/phone";
 import { fetchCurrentPositions, type CurrentPosition } from "@/lib/currentPositions";
 import { getContactPickerUnavailableReason, isContactPickerSupported, pickContactsFromDevice } from "@/lib/contactPicker";
 import { AddEmployeeWizard } from "@/components/AddEmployeeWizard";
@@ -873,7 +874,7 @@ const EmployeeContacts = () => {
                     <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
                       {c.phone && (
                         <a href={`tel:${c.phone}`} className="flex items-center gap-1 text-foreground hover:text-primary">
-                          <Phone className="h-3 w-3" /> {c.phone}
+                          <Phone className="h-3 w-3" /> {formatPhone(c.phone)}
                         </a>
                       )}
                       {(() => {
