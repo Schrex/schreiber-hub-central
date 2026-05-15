@@ -41,7 +41,8 @@ const fmtDate = (d: string) =>
 
 const MyPosition = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isAdmin = role === "admin";
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [promotions, setPromotions] = useState<PromotionTarget[]>([]);
