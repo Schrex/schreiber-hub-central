@@ -30,9 +30,9 @@ function generateToken(): string {
     .join('')
 }
 
-// Auth note: this function uses verify_jwt = true in config.toml, so Supabase's
-// gateway validates the caller's JWT (anon or service_role) before the request
-// reaches this code. No in-function auth check is needed.
+// Auth: verify_jwt = true gates this function. We additionally enforce that
+// non-service-role callers must have an 'office' or 'admin' role. Server-side
+// edge functions invoking this with the service role key bypass the role check.
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
 
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('Missing required environment variables')
@@ -52,6 +53,54 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
+  }
+
+  // Role enforcement: detect service-role callers (other edge functions)
+  // versus user JWT callers (browser clients). Service-role bypasses the
+  // role check; user callers must have office/admin role.
+  const authHeader = req.headers.get('Authorization') ?? ''
+  const bearer = authHeader.replace(/^Bearer\s+/i, '').trim()
+  const isServiceRoleCall = bearer && bearer === supabaseServiceKey
+
+  if (!isServiceRoleCall) {
+    if (!bearer) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    try {
+      const userClient = createClient(supabaseUrl, supabaseAnonKey ?? supabaseServiceKey, {
+        global: { headers: { Authorization: `Bearer ${bearer}` } },
+      })
+      const { data: userData, error: userErr } = await userClient.auth.getUser()
+      if (userErr || !userData?.user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      const adminClient = createClient(supabaseUrl, supabaseServiceKey)
+      const { data: roles } = await adminClient
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userData.user.id)
+      const allowed = (roles ?? []).some((r: { role: string }) =>
+        r.role === 'office' || r.role === 'admin'
+      )
+      if (!allowed) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: requires office or admin role' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    } catch (e) {
+      console.error('Auth check failed', e)
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
   }
 
   // Parse request body
