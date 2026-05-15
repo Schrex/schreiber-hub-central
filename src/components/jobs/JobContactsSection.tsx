@@ -402,7 +402,7 @@ const ContactRow = ({ c, canEdit, jobName, onEdit, onDelete }: {
         </div>
       </div>
       <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-        {c.phone && <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline"><Phone className="h-3 w-3" /> {c.phone}</a>}
+        {c.phone && <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline"><Phone className="h-3 w-3" /> {formatPhone(c.phone)}</a>}
         {c.email && <a href={`mailto:${c.email}`} className="inline-flex items-center gap-1 text-primary hover:underline truncate max-w-full"><Mail className="h-3 w-3 shrink-0" /> <span className="truncate">{c.email}</span></a>}
         {c.address && (
           <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`} target="_blank" rel="noreferrer"
