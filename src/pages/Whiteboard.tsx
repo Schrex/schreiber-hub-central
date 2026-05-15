@@ -56,7 +56,8 @@ const weekStartStr = (d: Date) => format(startOfWeek(d, { weekStartsOn: 1 }), "y
 
 const Whiteboard = () => {
   const navigate = useNavigate();
-  const { role, user } = useAuth();
+  const { role: realRole, effectiveRole, user } = useAuth();
+  const role = effectiveRole ?? realRole;
   const canUse = role === "office" || role === "admin" || role === "foreman";
 
   const [weekStart, setWeekStart] = useState<string>(weekStartStr(new Date()));
