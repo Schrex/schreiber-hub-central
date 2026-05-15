@@ -41,7 +41,8 @@ const fmtDate = (d: string) =>
 
 const MyPosition = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isAdmin = role === "admin";
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [promotions, setPromotions] = useState<PromotionTarget[]>([]);
@@ -270,21 +271,23 @@ const MyPosition = () => {
                       {p.description && (
                         <p className="mt-0.5 text-xs text-muted-foreground">{p.description}</p>
                       )}
-                      {p.heldBy.length > 0 && (
+                      {isAdmin && p.heldBy.length > 0 && (
                         <p className="mt-1 text-[11px] text-muted-foreground">
                           Currently held by {p.heldBy.join(", ")}
                         </p>
                       )}
                     </div>
-                    <div className="shrink-0 text-right">
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Range</div>
-                      <div className="text-sm font-semibold">
-                        {fmtMoney(p.min_pay_rate)} – {fmtMoney(p.max_pay_rate)}
-                        <span className="ml-0.5 text-[10px] font-normal text-muted-foreground">
-                          {p.is_salaried ? "/yr" : "/hr"}
-                        </span>
+                    {isAdmin && (
+                      <div className="shrink-0 text-right">
+                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Range</div>
+                        <div className="text-sm font-semibold">
+                          {fmtMoney(p.min_pay_rate)} – {fmtMoney(p.max_pay_rate)}
+                          <span className="ml-0.5 text-[10px] font-normal text-muted-foreground">
+                            {p.is_salaried ? "/yr" : "/hr"}
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </Card>
               ))}
