@@ -3137,10 +3137,14 @@ export type Database = {
       list_employee_directory: {
         Args: never
         Returns: {
+          address: string
           converted_user_id: string
           created_at: string
+          created_by: string
           date_of_birth: string
           department: string
+          drivers_license_class: string
+          drivers_license_expires: string
           email: string
           first_name: string
           hire_date: string
@@ -3151,7 +3155,13 @@ export type Database = {
           manager_contact_id: string
           middle_initial: string
           name: string
+          notes: string
+          osha_card_number: string
+          osha_expires: string
+          other_certifications: string
+          personal_email: string
           phone: string
+          termination_date: string
           updated_at: string
           work_email: string
         }[]
