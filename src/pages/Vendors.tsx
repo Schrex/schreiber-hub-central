@@ -780,7 +780,7 @@ const Vendors = () => {
                           <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
                             {v.phone && (
                               <a href={`tel:${v.phone}`} className="flex items-center gap-1.5 text-foreground hover:text-primary">
-                                <Phone className="h-3 w-3" /> {v.phone}
+                                <Phone className="h-3 w-3" /> {formatPhone(v.phone)}
                               </a>
                             )}
                             {v.email && (
