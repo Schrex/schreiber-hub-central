@@ -874,7 +874,7 @@ const EmployeeContacts = () => {
                     <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
                       {c.phone && (
                         <a href={`tel:${c.phone}`} className="flex items-center gap-1 text-foreground hover:text-primary">
-                          <Phone className="h-3 w-3" /> {c.phone}
+                          <Phone className="h-3 w-3" /> {formatPhone(c.phone)}
                         </a>
                       )}
                       {(() => {
