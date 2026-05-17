@@ -72,7 +72,33 @@ const Whiteboard = () => {
   const [copyOpen, setCopyOpen] = useState(false);
   const tempCounter = useRef(0);
   const ignoreRealtimeUntilRef = useRef(0);
-
+  const [showOffice, setShowOffice] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("schedule.showOffice") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "schedule.showOffice") setShowOffice(e.newValue === "1");
+    };
+    const onCustom = (e: Event) => {
+      const detail = (e as CustomEvent<boolean>).detail;
+      if (typeof detail === "boolean") setShowOffice(detail);
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("schedule-show-office-changed", onCustom as EventListener);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("schedule-show-office-changed", onCustom as EventListener);
+    };
+  }, []);
+  const updateShowOffice = (v: boolean) => {
+    setShowOffice(v);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("schedule.showOffice", v ? "1" : "0");
+      window.dispatchEvent(new CustomEvent("schedule-show-office-changed", { detail: v }));
+    }
+  };
   const days = useMemo(() => {
     const start = parseISO(weekStart);
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
