@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { BottomNav } from "@/components/BottomNav";
 import { cn } from "@/lib/utils";
@@ -71,7 +72,33 @@ const Whiteboard = () => {
   const [copyOpen, setCopyOpen] = useState(false);
   const tempCounter = useRef(0);
   const ignoreRealtimeUntilRef = useRef(0);
-
+  const [showOffice, setShowOffice] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("schedule.showOffice") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "schedule.showOffice") setShowOffice(e.newValue === "1");
+    };
+    const onCustom = (e: Event) => {
+      const detail = (e as CustomEvent<boolean>).detail;
+      if (typeof detail === "boolean") setShowOffice(detail);
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("schedule-show-office-changed", onCustom as EventListener);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("schedule-show-office-changed", onCustom as EventListener);
+    };
+  }, []);
+  const updateShowOffice = (v: boolean) => {
+    setShowOffice(v);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("schedule.showOffice", v ? "1" : "0");
+      window.dispatchEvent(new CustomEvent("schedule-show-office-changed", { detail: v }));
+    }
+  };
   const days = useMemo(() => {
     const start = parseISO(weekStart);
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -149,9 +176,12 @@ const Whiteboard = () => {
   const placedJobIds = useMemo(() => new Set(tiles.filter((t) => t.kind === "job").map((t) => t.ref_id)), [tiles]);
   const availableJobs = useMemo(() => jobs.filter((j) => !placedJobIds.has(j.id)), [jobs, placedJobIds]);
 
-  // Field employees only (exclude office staff). These auto-appear as unassigned per day
+  // Field employees (and optionally office staff). These auto-appear as unassigned per day
   // unless they're placed under a job or in Off Work for that day.
-  const fieldEmployees = useMemo(() => profiles.filter((p) => !p.is_office), [profiles]);
+  const fieldEmployees = useMemo(
+    () => (showOffice ? profiles : profiles.filter((p) => !p.is_office)),
+    [profiles, showOffice],
+  );
 
   const placedUserIdsByDay = useMemo(() => {
     const map = new Map<number, Set<string>>();
@@ -551,6 +581,13 @@ const Whiteboard = () => {
         </Button>
         <h1 className="text-lg font-semibold">Whiteboard</h1>
         <div className="ml-auto flex items-center gap-1">
+          <label className="mr-1 hidden cursor-pointer items-center gap-1.5 text-xs text-muted-foreground sm:flex">
+            <Checkbox
+              checked={showOffice}
+              onCheckedChange={(v) => updateShowOffice(v === true)}
+            />
+            Include office staff
+          </label>
           <Button variant="outline" size="sm" className="h-8 gap-1 px-2 text-xs" onClick={() => setCopyOpen(true)}>
             <Copy className="h-3.5 w-3.5" /> Copy forward
           </Button>

@@ -96,8 +96,25 @@ const Schedule = () => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem("schedule.showOffice", showOffice ? "1" : "0");
+      window.dispatchEvent(new CustomEvent("schedule-show-office-changed", { detail: showOffice }));
     }
   }, [showOffice]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "schedule.showOffice") setShowOffice(e.newValue === "1");
+    };
+    const onCustom = (e: Event) => {
+      const detail = (e as CustomEvent<boolean>).detail;
+      if (typeof detail === "boolean") setShowOffice(detail);
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("schedule-show-office-changed", onCustom as EventListener);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("schedule-show-office-changed", onCustom as EventListener);
+    };
+  }, []);
 
   // form
   const [formJob, setFormJob] = useState<string>("");
