@@ -1,0 +1,1 @@
+UPDATE public.jobs SET address = '5992 Ontario Center Rd, Ontario, NY 14519', latitude = 43.23501, longitude = -77.29305 WHERE id = 'bf9e3285-8213-449a-a7d3-72732d4c9f4b';
