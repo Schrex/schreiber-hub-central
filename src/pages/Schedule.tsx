@@ -916,7 +916,14 @@ const Schedule = () => {
             ) : (
               <DayBoard
                 allActiveJobs={jobs as BoardJob[]}
-                jobs={(allByJob.map((g) => g.job).filter(Boolean) as BoardJob[])}
+                jobs={(() => {
+                  const base = allByJob.map((g) => g.job).filter(Boolean) as BoardJob[];
+                  const shop = jobs.find((j) => j.name?.toLowerCase() === "shop");
+                  if (shop && !base.some((b) => b.id === shop.id)) {
+                    return [shop as BoardJob, ...base];
+                  }
+                  return base;
+                })()}
                 extraJobIds={boardExtraJobIds}
                 onAddJob={(id) =>
                   setBoardExtraJobIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
