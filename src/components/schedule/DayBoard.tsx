@@ -455,7 +455,10 @@ export function DayBoard({
 
     if (overId === UNASSIGNED_ID) {
       if (item.kind === "assignment") {
-        await onUnassign(item.id);
+        const ok = window.confirm(
+          `Remove ${item.name} from this job? They'll go back to Available.`,
+        );
+        if (ok) await onUnassign(item.id);
       }
       return;
     }
