@@ -176,9 +176,12 @@ const Whiteboard = () => {
   const placedJobIds = useMemo(() => new Set(tiles.filter((t) => t.kind === "job").map((t) => t.ref_id)), [tiles]);
   const availableJobs = useMemo(() => jobs.filter((j) => !placedJobIds.has(j.id)), [jobs, placedJobIds]);
 
-  // Field employees only (exclude office staff). These auto-appear as unassigned per day
+  // Field employees (and optionally office staff). These auto-appear as unassigned per day
   // unless they're placed under a job or in Off Work for that day.
-  const fieldEmployees = useMemo(() => profiles.filter((p) => !p.is_office), [profiles]);
+  const fieldEmployees = useMemo(
+    () => (showOffice ? profiles : profiles.filter((p) => !p.is_office)),
+    [profiles, showOffice],
+  );
 
   const placedUserIdsByDay = useMemo(() => {
     const map = new Map<number, Set<string>>();
