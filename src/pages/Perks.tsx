@@ -84,7 +84,7 @@ const Perks = () => {
         <ul className="space-y-3">
           {ITEMS.map((item) => {
             const Icon = item.icon;
-            const className = "group flex w-full items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary/40 hover:bg-primary/5";
+            const className = "group flex w-full items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-surface";
             const inner = (
               <>
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -98,17 +98,27 @@ const Perks = () => {
                     {item.hint}
                   </span>
                 </span>
-                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+                {item.comingSoon ? (
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Soon
+                  </span>
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+                )}
               </>
             );
             return (
               <li key={item.key}>
-                {item.href ? (
+                {item.href && !item.comingSoon ? (
                   <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
                     {inner}
                   </a>
                 ) : (
-                  <button onClick={() => item.to && navigate(item.to)} className={className}>
+                  <button
+                    onClick={() => !item.comingSoon && item.to && navigate(item.to)}
+                    disabled={item.comingSoon}
+                    className={className}
+                  >
                     {inner}
                   </button>
                 )}
