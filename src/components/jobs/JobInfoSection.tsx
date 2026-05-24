@@ -507,28 +507,5 @@ const ScopeCard = ({ notes, exclusions, jobId }: { notes: Note[]; exclusions: No
         </div>
       </div>
     )}
-
-    {pricing.length > 0 && (
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-stone-100 flex items-center gap-2">
-          <DollarSign size={15} className="text-emerald-700" />
-          <h3 className="font-black text-stone-900 text-sm tracking-tight uppercase">Change Order Rates</h3>
-        </div>
-        <div className="divide-y divide-stone-100">
-          {pricing.map((u) => (
-            <div key={u.id} className="px-4 py-2.5 flex items-baseline justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="text-[10px] font-mono font-bold text-stone-400 tabular-nums">{u.code}</div>
-                <div className="text-[13px] font-semibold text-stone-900 leading-tight">{u.name}</div>
-              </div>
-              <div className="text-right flex-shrink-0">
-                <div className="text-base font-black text-stone-900 tabular-nums">{fmtMoney(Number(u.price))}</div>
-                <div className="text-[10px] uppercase tracking-wider text-stone-400 font-bold">per {u.unit}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
   </div>
 );
