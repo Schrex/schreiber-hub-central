@@ -1719,6 +1719,7 @@ export type Database = {
           created_by: string | null
           customer: string | null
           end_date: string | null
+          foreman_brief: string | null
           foreman_id: string | null
           gc: string | null
           id: string
@@ -1743,6 +1744,7 @@ export type Database = {
           created_by?: string | null
           customer?: string | null
           end_date?: string | null
+          foreman_brief?: string | null
           foreman_id?: string | null
           gc?: string | null
           id?: string
@@ -1767,6 +1769,7 @@ export type Database = {
           created_by?: string | null
           customer?: string | null
           end_date?: string | null
+          foreman_brief?: string | null
           foreman_id?: string | null
           gc?: string | null
           id?: string
