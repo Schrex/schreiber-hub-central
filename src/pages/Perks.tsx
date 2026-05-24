@@ -9,6 +9,8 @@ type PerkItem = {
   icon: typeof ShoppingBag;
   to?: string;
   href?: string;
+  comingSoon?: boolean;
+
 };
 
 const ITEMS: PerkItem[] = [
