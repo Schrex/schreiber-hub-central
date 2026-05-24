@@ -16,6 +16,7 @@ const ITEMS = [
     hint: "Create, send & track reviews",
     icon: ClipboardCheck,
     to: "/tools/performance-reviews",
+    comingSoon: true,
   },
   {
     key: "positions",
