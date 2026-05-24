@@ -24,6 +24,7 @@ const ITEMS = [
     hint: "Roles, ranges & assignments",
     icon: DollarSign,
     to: "/admin/positions",
+    comingSoon: true,
   },
   {
     key: "timeoff",
