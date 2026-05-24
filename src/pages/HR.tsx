@@ -16,6 +16,7 @@ const ITEMS = [
     hint: "Create, send & track reviews",
     icon: ClipboardCheck,
     to: "/tools/performance-reviews",
+    comingSoon: true,
   },
   {
     key: "positions",
@@ -68,8 +69,9 @@ const HR = () => {
             return (
               <li key={item.key}>
                 <button
-                  onClick={() => navigate(item.to)}
-                  className="group flex w-full items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  onClick={() => !item.comingSoon && navigate(item.to)}
+                  disabled={item.comingSoon}
+                  className="group flex w-full items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border disabled:hover:bg-surface"
                 >
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Icon className="h-6 w-6" />
@@ -82,7 +84,13 @@ const HR = () => {
                       {item.hint}
                     </span>
                   </span>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+                  {item.comingSoon ? (
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Soon
+                    </span>
+                  ) : (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+                  )}
                 </button>
               </li>
             );

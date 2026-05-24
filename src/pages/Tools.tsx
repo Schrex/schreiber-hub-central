@@ -19,6 +19,7 @@ const TOOLS: Tool[] = [
     hint: "Estimate haul cost by load, distance, and rate",
     icon: Truck,
     to: "/tools/trucking",
+    comingSoon: true,
   },
   {
     key: "reviews",
@@ -26,6 +27,7 @@ const TOOLS: Tool[] = [
     hint: "View and manage employee reviews",
     icon: ClipboardCheck,
     to: "/tools/performance-reviews",
+    comingSoon: true,
   },
   {
     key: "handbook",
@@ -33,6 +35,7 @@ const TOOLS: Tool[] = [
     hint: "Company policies & procedures",
     icon: BookOpen,
     to: "/tools/handbook",
+    comingSoon: true,
   },
 ];
 

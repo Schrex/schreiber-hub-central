@@ -42,6 +42,7 @@ type Item = {
   to?: string;
   href?: string;
   match?: string[]; // additional path prefixes that should mark active
+  disabled?: boolean;
 };
 
 const ITEMS: Item[] = [
@@ -51,7 +52,7 @@ const ITEMS: Item[] = [
   { key: "trucking", label: "Trucking", icon: DumpTruck, to: "/dispatch" },
   { key: "perks", label: "Perks", icon: Sparkles, to: "/perks", match: ["/time-off", "/apparel", "/referrals"] },
   { key: "tools", label: "Tools", icon: Wrench, to: "/tools", match: ["/tools/performance-reviews", "/tools/handbook", "/tools/trucking"] },
-  { key: "position", label: "Position", icon: IdCard, to: "/my-position" },
+  { key: "position", label: "Position", icon: IdCard, to: "/my-position", disabled: true },
   { key: "receipts", label: "Receipts", icon: Receipt },
 ];
 
@@ -106,9 +107,11 @@ export const BottomNav = () => {
               <li key={item.key} className="shrink-0">
                 <button
                   onClick={handleClick}
+                  disabled={item.disabled}
                   className={cn(
                     "flex w-16 flex-col items-center justify-center gap-1 px-1 py-2 text-[9px] font-semibold uppercase tracking-tight transition-colors",
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                    item.disabled && "cursor-not-allowed opacity-50 hover:text-muted-foreground",
                   )}
                   aria-current={active ? "page" : undefined}
                 >
