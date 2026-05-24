@@ -19,6 +19,7 @@ import { ForemanPicker } from "@/components/jobs/ForemanPicker";
 import { JobContactsSection } from "@/components/jobs/JobContactsSection";
 import { DriveTimeFromShop } from "@/components/jobs/DriveTimeFromShop";
 import { ContractSection } from "@/components/jobs/ContractSection";
+import { ForemanBriefSection } from "@/components/jobs/ForemanBriefSection";
 import { ScopeOfWorkSection } from "@/components/jobs/ScopeOfWorkSection";
 import { SubmittalsSection } from "@/components/jobs/SubmittalsSection";
 import { SwpppSection } from "@/components/jobs/SwpppSection";
@@ -178,7 +179,10 @@ const JobDetail = () => {
           <JobContactsSection jobId={job.id} jobName={job.name} foremanId={job.foreman_id} />
         )}
 
-        <ContractSection jobId={job.id} />
+        {(role === "office" || role === "admin") && (
+          <ContractSection jobId={job.id} />
+        )}
+        {canSeePrivate && <ForemanBriefSection jobId={job.id} />}
         <ScopeOfWorkSection jobId={job.id} />
         <SubmittalsSection jobId={job.id} />
         <SwpppSection jobId={job.id} jobNumber={job.job_number} />

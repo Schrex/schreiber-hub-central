@@ -276,7 +276,7 @@ const ForemanReport = ({ jobNumber, open }: { jobNumber: string; open: boolean }
           )}
         </div>
       ) : (
-        <ScopeCard notes={notes} exclusions={exclusions} pricing={pricing} jobId={jobId} />
+        <ScopeCard notes={notes} exclusions={exclusions} jobId={jobId} />
       )}
 
       {/* Bottom tabs */}
@@ -462,7 +462,7 @@ const BidItemCard = ({ item, expanded, onToggle, totalManHrs }: { item: BidItem;
   );
 };
 
-const ScopeCard = ({ notes, exclusions, pricing, jobId }: { notes: Note[]; exclusions: Note[]; pricing: UnitPrice[]; jobId: string | null }) => (
+const ScopeCard = ({ notes, exclusions, jobId }: { notes: Note[]; exclusions: Note[]; jobId: string | null }) => (
   <div className="px-3 py-3 space-y-3">
     <div className="bg-stone-900 text-white rounded-2xl p-4 shadow-md">
       <div className="flex items-center gap-2 mb-1">
@@ -472,7 +472,6 @@ const ScopeCard = ({ notes, exclusions, pricing, jobId }: { notes: Note[]; exclu
       <p className="text-[12px] text-stone-300 leading-tight">When the GC asks for something, check here first. If it's in <span className="font-bold text-amber-400">Exclusions</span>, it's a change order.</p>
     </div>
 
-    {jobId && <EstimateUploads jobId={jobId} />}
 
     {notes.length > 0 && (
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -503,29 +502,6 @@ const ScopeCard = ({ notes, exclusions, pricing, jobId }: { notes: Note[]; exclu
             <div key={e.id} className="flex items-start gap-2 py-1 border-b border-stone-100 last:border-0">
               <X size={14} className="text-red-500 flex-shrink-0 mt-0.5" strokeWidth={3} />
               <div className="text-[13px] text-stone-800 leading-snug font-medium">{e.body}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-
-    {pricing.length > 0 && (
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-stone-100 flex items-center gap-2">
-          <DollarSign size={15} className="text-emerald-700" />
-          <h3 className="font-black text-stone-900 text-sm tracking-tight uppercase">Change Order Rates</h3>
-        </div>
-        <div className="divide-y divide-stone-100">
-          {pricing.map((u) => (
-            <div key={u.id} className="px-4 py-2.5 flex items-baseline justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="text-[10px] font-mono font-bold text-stone-400 tabular-nums">{u.code}</div>
-                <div className="text-[13px] font-semibold text-stone-900 leading-tight">{u.name}</div>
-              </div>
-              <div className="text-right flex-shrink-0">
-                <div className="text-base font-black text-stone-900 tabular-nums">{fmtMoney(Number(u.price))}</div>
-                <div className="text-[10px] uppercase tracking-wider text-stone-400 font-bold">per {u.unit}</div>
-              </div>
             </div>
           ))}
         </div>
