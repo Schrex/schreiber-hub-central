@@ -276,7 +276,7 @@ const ForemanReport = ({ jobNumber, open }: { jobNumber: string; open: boolean }
           )}
         </div>
       ) : (
-        <ScopeCard notes={notes} exclusions={exclusions} pricing={pricing} jobId={jobId} />
+        <ScopeCard notes={notes} exclusions={exclusions} jobId={jobId} />
       )}
 
       {/* Bottom tabs */}
