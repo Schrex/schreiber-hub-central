@@ -20,6 +20,7 @@ const ITEMS: PerkItem[] = [
     hint: "Shirts, hats, vests",
     icon: ShoppingBag,
     to: "/apparel",
+    comingSoon: true,
   },
   {
     key: "timeoff",
