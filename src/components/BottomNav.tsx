@@ -42,6 +42,7 @@ type Item = {
   to?: string;
   href?: string;
   match?: string[]; // additional path prefixes that should mark active
+  disabled?: boolean;
 };
 
 const ITEMS: Item[] = [
