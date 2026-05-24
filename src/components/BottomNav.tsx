@@ -107,9 +107,11 @@ export const BottomNav = () => {
               <li key={item.key} className="shrink-0">
                 <button
                   onClick={handleClick}
+                  disabled={item.disabled}
                   className={cn(
                     "flex w-16 flex-col items-center justify-center gap-1 px-1 py-2 text-[9px] font-semibold uppercase tracking-tight transition-colors",
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                    item.disabled && "cursor-not-allowed opacity-50 hover:text-muted-foreground",
                   )}
                   aria-current={active ? "page" : undefined}
                 >
