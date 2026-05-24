@@ -462,7 +462,7 @@ const BidItemCard = ({ item, expanded, onToggle, totalManHrs }: { item: BidItem;
   );
 };
 
-const ScopeCard = ({ notes, exclusions, pricing, jobId }: { notes: Note[]; exclusions: Note[]; pricing: UnitPrice[]; jobId: string | null }) => (
+const ScopeCard = ({ notes, exclusions, jobId }: { notes: Note[]; exclusions: Note[]; jobId: string | null }) => (
   <div className="px-3 py-3 space-y-3">
     <div className="bg-stone-900 text-white rounded-2xl p-4 shadow-md">
       <div className="flex items-center gap-2 mb-1">
@@ -472,7 +472,6 @@ const ScopeCard = ({ notes, exclusions, pricing, jobId }: { notes: Note[]; exclu
       <p className="text-[12px] text-stone-300 leading-tight">When the GC asks for something, check here first. If it's in <span className="font-bold text-amber-400">Exclusions</span>, it's a change order.</p>
     </div>
 
-    {jobId && <EstimateUploads jobId={jobId} />}
 
     {notes.length > 0 && (
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
