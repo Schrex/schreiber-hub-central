@@ -23,7 +23,8 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [hasContract, setHasContract] = useState(false);
-  const progress = useDelayedProgress(generating);
+  const progress = useDelayedProgress();
+  useEffect(() => { if (generating) progress.start(); else progress.stop(); }, [generating]);
 
   const load = async () => {
     const { data } = await supabase
