@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { ClipboardList, Pencil, Save, X } from "lucide-react";
+import { ClipboardList, Pencil, Save, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { useDelayedProgress } from "@/hooks/useDelayedProgress";
 import { toast } from "sonner";
 
 interface Props {
@@ -19,16 +21,21 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
   const [draft, setDraft] = useState<string>("");
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [hasContract, setHasContract] = useState(false);
+  const progress = useDelayedProgress(generating);
 
   const load = async () => {
     const { data } = await supabase
       .from("jobs")
-      .select("foreman_brief")
+      .select("foreman_brief, contract_file_path")
       .eq("id", jobId)
       .maybeSingle();
-    const value = ((data as { foreman_brief: string | null } | null)?.foreman_brief) ?? "";
+    const row = data as { foreman_brief: string | null; contract_file_path: string | null } | null;
+    const value = row?.foreman_brief ?? "";
     setBrief(value);
     setDraft(value);
+    setHasContract(!!row?.contract_file_path);
   };
 
   useEffect(() => { load(); }, [jobId]);
@@ -51,24 +58,62 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
     }
   };
 
+  const generate = async () => {
+    if (brief && !confirm("Replace the existing briefing with one generated from the contract?")) return;
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("extract-foreman-brief", {
+        body: { jobId, save: true },
+      });
+      if (error) throw error;
+      const next = (data as { brief?: string })?.brief ?? "";
+      setBrief(next);
+      setDraft(next);
+      setEditing(false);
+      toast.success("Briefing generated from contract");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Generation failed");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <section className="space-y-2 rounded-2xl border border-border bg-surface p-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
           <ClipboardList className="h-3.5 w-3.5" />
           Foreman Briefing
         </h2>
         {canEdit && !editing && (
-          <button
-            type="button"
-            onClick={() => { setDraft(brief); setEditing(true); }}
-            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:border-primary/40"
-          >
-            <Pencil className="h-3 w-3" />
-            {brief ? "Edit" : "Add"}
-          </button>
+          <div className="flex items-center gap-1.5">
+            {hasContract && (
+              <button
+                type="button"
+                onClick={generate}
+                disabled={generating}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:border-primary/40 disabled:opacity-50"
+                title="Pull relevant pieces from the uploaded contract"
+              >
+                <Sparkles className="h-3 w-3" />
+                {generating ? "Generating…" : brief ? "Regenerate" : "Generate from contract"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => { setDraft(brief); setEditing(true); }}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:border-primary/40"
+            >
+              <Pencil className="h-3 w-3" />
+              {brief ? "Edit" : "Add"}
+            </button>
+          </div>
         )}
       </div>
+
+      {generating && progress.show && (
+        <Progress value={progress.value} className="h-1" />
+      )}
 
       {editing ? (
         <div className="space-y-2">
@@ -98,7 +143,9 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
       ) : (
         <p className="text-xs text-muted-foreground">
           {canEdit
-            ? "No briefing yet. Add the relevant pieces of the contract for the foreman."
+            ? hasContract
+              ? "No briefing yet. Click \"Generate from contract\" to pull the relevant pieces automatically."
+              : "Upload a contract to auto-generate a briefing, or add one manually."
             : "No briefing posted yet."}
         </p>
       )}
