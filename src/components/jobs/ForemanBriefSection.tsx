@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { useDelayedProgress } from "@/hooks/useDelayedProgress";
+import { ForemanBriefView } from "./ForemanBriefView";
 import { toast } from "sonner";
 
 interface Props {
@@ -140,7 +141,7 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
           </div>
         </div>
       ) : brief ? (
-        <p className="whitespace-pre-wrap text-sm text-foreground">{brief}</p>
+        <ForemanBriefView markdown={brief} />
       ) : (
         <p className="text-xs text-muted-foreground">
           {canEdit
