@@ -373,15 +373,12 @@ const ContactRow = ({ c, canEdit, jobName, onEdit, onDelete }: {
     <li className="rounded-lg border border-border bg-background p-2.5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          {label && <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}{subLabel ? ` · ${subLabel}` : ""}</p>}
-          {c.name && <p className="font-semibold text-sm truncate">{c.name}</p>}
-          {c.title && c.title !== label && <p className="text-xs text-muted-foreground truncate">{c.title}</p>}
           {c.company && (
             <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
               <Building2 className="h-3 w-3 shrink-0" /> {c.company}
             </p>
           )}
-          {c.manager && <p className="text-xs text-muted-foreground truncate">Manager: <span className="text-primary">{c.manager}</span></p>}
+          {c.name && <p className="font-semibold text-sm truncate">{c.name}</p>}
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={downloadOne} title="Save to phone">
@@ -404,14 +401,7 @@ const ContactRow = ({ c, canEdit, jobName, onEdit, onDelete }: {
       <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs">
         {c.phone && <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline"><Phone className="h-3 w-3" /> {formatPhone(c.phone)}</a>}
         {c.email && <a href={`mailto:${c.email}`} className="inline-flex items-center gap-1 text-primary hover:underline truncate max-w-full"><Mail className="h-3 w-3 shrink-0" /> <span className="truncate">{c.email}</span></a>}
-        {c.address && (
-          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`} target="_blank" rel="noreferrer"
-             className="inline-flex items-center gap-1 text-primary hover:underline truncate max-w-full">
-            <MapPin className="h-3 w-3 shrink-0" /> <span className="truncate">{c.address}</span>
-          </a>
-        )}
       </div>
-      {c.notes && <p className="mt-1 text-xs text-muted-foreground whitespace-pre-wrap">{c.notes}</p>}
     </li>
   );
 };
