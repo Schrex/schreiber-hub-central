@@ -319,20 +319,11 @@ export const JobContactsSection = ({ jobId, jobName, foremanId }: Props) => {
                 </Select>
               </div>
 
+              <Field label="Company" value={editing.company ?? ""} onChange={(v) => setEditing({ ...editing, company: v })} />
               <Field label="Name" value={editing.name ?? ""} onChange={(v) => setEditing({ ...editing, name: v })} />
-              <div className="grid grid-cols-2 gap-2">
-                <Field label="Title" value={editing.title ?? ""} onChange={(v) => setEditing({ ...editing, title: v })} />
-                <Field label="Company" value={editing.company ?? ""} onChange={(v) => setEditing({ ...editing, company: v })} />
-              </div>
               <div className="grid grid-cols-2 gap-2">
                 <Field label="Phone" type="tel" value={editing.phone ?? ""} onChange={(v) => setEditing({ ...editing, phone: v })} />
                 <Field label="Email" type="email" value={editing.email ?? ""} onChange={(v) => setEditing({ ...editing, email: v })} />
-              </div>
-              <Field label="Address" value={editing.address ?? ""} onChange={(v) => setEditing({ ...editing, address: v })} />
-              <Field label="Manager" value={editing.manager ?? ""} onChange={(v) => setEditing({ ...editing, manager: v })} />
-              <div>
-                <Label className="text-xs">Notes</Label>
-                <Textarea rows={2} value={editing.notes ?? ""} onChange={(e) => setEditing({ ...editing, notes: e.target.value })} />
               </div>
             </div>
           )}
