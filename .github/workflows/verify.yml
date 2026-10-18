@@ -29,16 +29,16 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
-          cache: npm
-      - name: Use tested npm version
-        run: npm install --global npm@11.19.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
       - name: Install locked dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
       - name: Build disposable backend from migrations and synthetic seed
         if: matrix.group == 'backend'
-        run: npm run local:start
+        run: bun run local:start
       - name: Run verification
-        run: npm run verify:${{ matrix.group }}
+        run: bun run verify:${{ matrix.group }}
       - name: Stop disposable backend
         if: always() && matrix.group == 'backend'
-        run: npm run local:stop
+        run: bun run local:stop

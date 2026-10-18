@@ -9,12 +9,16 @@
 
 - Read DEVELOPMENT_PROGRESS.md and local/README.md before infrastructure work.
   Record verified results and remaining gaps in the progress file after a milestone.
-- Use npm with package-lock.json for checks, Node from .nvmrc, and npm 11.19.1.
-- Use `npm run dev:local` for development. Plain `dev` uses existing environment
+- Use Bun 1.3.14 (packageManager in package.json) and bun.lock for dependencies.
+  Install with `bun install --frozen-lockfile`; use `bun run test` to run Vitest,
+  not the separate Bun test runner. Keep Node from .nvmrc for Node-based scripts.
+  The pinned Supabase CLI uses npx as a tooling exception; do not use npm install
+  for application dependencies.
+- Use `bun run dev:local` for development. Plain `dev` uses existing environment
   files and can target production. Never use real employee data for routine tests.
-- Start the disposable backend with `npm run local:start`. `local:reset` destroys
+- Start the disposable backend with `bun run local:start`. `local:reset` destroys
   synthetic local state; use it deliberately when checking a fresh migration replay.
-- Run relevant `verify:app`, `verify:backend`, and `verify:lint` groups. `npm run verify`
+- Run relevant `verify:app`, `verify:backend`, and `verify:lint` groups. `bun run verify`
   runs all groups and reports failures. Existing lint debt is documented, not waived.
 - Keep applied production migration history intact. local/hr-bootstrap.sql is only
   for local reconstruction and must not be deployed against existing production tables.

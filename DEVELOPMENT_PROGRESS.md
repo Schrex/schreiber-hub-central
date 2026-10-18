@@ -26,11 +26,11 @@ schema. Current status: **partial local proof; not ready for staging or release*
 | --- | --- | --- |
 | Repository/build baseline | Verified locally | Build + TypeScript pass; lint now has 53 errors / 30 warnings |
 | Isolated local Auth/database | Verified for limited scope | Synthetic accounts; API on 55321; `dev:local` |
-| Time-off happy path and cross-user isolation | Verified locally | `npm run test:local`; prior manual browser submission |
+| Time-off happy path and cross-user isolation | Verified locally | `bun run test:local`; prior manual browser submission |
 | Targeted HR schema reconstruction | Verified locally; full parity pending | Supplied export incorporated; `local:audit-schema`: 60/60 tables and column names |
 | Permission state transitions | Fixed and verified locally; NOT deployed | Forward migration `20261016210000`; permission + happy-path tests pass |
 | External functions/Realtime | Not implemented locally | Explicitly disabled, not silently considered tested |
-| Verification command and CI definition | Implemented and checked locally | `npm run verify`: 7 checks pass, lint fails; GitHub execution pending |
+| Verification command and CI definition | Implemented and checked locally | `bun run verify`: 7 checks pass, lint fails; GitHub execution pending |
 | Branch protection | Not configured | Required remote checks await first GitHub run and lint cleanup |
 | Staging | Not established | Separate backend and integration credentials needed |
 | Production release | Not started | All seven release steps below remain pending |
@@ -75,6 +75,20 @@ schema. Current status: **partial local proof; not ready for staging or release*
 - [ ] Production errors and service health reviewed.
 
 ## Change log
+
+- 2026-10-18 Bun alignment: adopted the user-confirmed Bun 1.3.14 and existing
+  text bun.lock. Added packageManager metadata; CI reads that version and runs
+  frozen installs. Verification and local preparation scripts now use bun run;
+  existing Node runtimes and pinned npx Supabase CLI remain explicit tooling
+  dependencies. Updated setup/verification/agent docs. Fresh temporary install
+  using only bun.lock passed app type/unit/build checks without changing the lock.
+  All four backend checks also passed using the fresh Bun dependency installation
+  against the existing disposable Docker instance (no reset).
+  Removed package-lock.json and bun.lockb after that validation; their prior
+  contents remain in Git history. Lint remains 53 errors / 30 warnings.
+  Bun was not present on this Mac's PATH; validation used an isolated temporary
+  1.3.14 installation, not a global installation. No dependency update was made
+  to bun.lock, so the source-map-js update from PR #1 remains a separate task.
 
 - 2026-10-18 review correction: tightened the local smoke, permission, and HR
   tests. Authorization failures require SQLSTATE 42501; reversed dates require

@@ -10,9 +10,9 @@ For the combined verification command and CI status, see [VERIFICATION.md](VERIF
 Additional diagnostic commands:
 
 ```sh
-npm run local:audit-schema
-npm run test:local:permissions
-npm run test:local:hr
+bun run local:audit-schema
+bun run test:local:permissions
+bun run test:local:hr
 ```
 
 These checks now pass after the supplied schema reconciliation and local permission
@@ -21,15 +21,21 @@ fix. They do not certify complete production parity. See
 
 ## Start
 
-Prerequisites: installed npm dependencies (`npm ci` on a fresh checkout), Node,
+Prerequisites: Bun 1.3.14, dependencies (`bun install --frozen-lockfile` on a fresh checkout), Node from `.nvmrc`,
 Docker Desktop running, and network access for the initial CLI/container downloads.
-The first validation used Node 26.8.2, npm 11.19.1, Supabase CLI 2.121.0 and local
+The original validation used Node 26.8.2, npm 11.19.1, Supabase CLI 2.121.0 and local
 Postgres 17. The supplied Cloud export reports Postgres 17.6 (same major version).
 
+Bun and `bun.lock` are now the dependency standard; `packageManager` records the
+version and CI installs it explicitly. Node/npx remain for the pinned Supabase CLI
+and existing Node scripts. The packageManager field alone does not install Bun
+or force an already-installed Bun binary to change version; check `bun --version`.
+
 ```sh
-npm run local:start
-npm run test:local
-npm run dev:local
+bun install --frozen-lockfile
+bun run local:start
+bun run test:local
+bun run dev:local
 ```
 
 - Frontend: http://127.0.0.1:8080
@@ -53,9 +59,9 @@ which may point at production. `build` likewise uses existing build settings.
 ## Stop or recreate
 
 ```sh
-npm run local:stop
+bun run local:stop
 # Only when you want to discard all disposable local data:
-npm run local:reset
+bun run local:reset
 ```
 
 Start preserves existing local data. Reset rebuilds the local database and seeds it

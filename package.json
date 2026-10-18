@@ -11,9 +11,9 @@
     "dev": "vite",
     "dev:local": "node scripts/local-dev.mjs",
     "local:prepare": "node scripts/prepare-local.mjs",
-    "local:start": "npm run local:prepare && npx --yes supabase@2.121.0 start --workdir .local-backend",
+    "local:start": "bun run local:prepare && npx --yes supabase@2.121.0 start --workdir .local-backend",
     "local:stop": "npx --yes supabase@2.121.0 stop --workdir .local-backend",
-    "local:reset": "npm run local:prepare && npx --yes supabase@2.121.0 db reset --local --workdir .local-backend",
+    "local:reset": "bun run local:prepare && npx --yes supabase@2.121.0 db reset --local --workdir .local-backend",
     "test:local": "node scripts/local-smoke.mjs",
     "test:local:permissions": "node scripts/local-permissions.mjs",
     "test:local:hr": "node scripts/local-hr.mjs",
@@ -109,5 +109,6 @@
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19",
     "vitest": "^3.2.4"
-  }
+  },
+  "packageManager": "bun@1.3.14"
 }

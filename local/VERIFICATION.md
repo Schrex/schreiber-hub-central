@@ -1,26 +1,29 @@
 # Verification gate
 
-Use Node 26.8.2 (`.nvmrc`) and npm 11.19.1 for this initial baseline. npm and
-package-lock.json are the verification dependency source; the existing Bun lockfile
-has not been removed or updated. The Supabase CLI is pinned to 2.121.0 in commands.
+Use Bun 1.3.14 (`packageManager` in `package.json`) with `bun.lock`, and Node
+26.8.2 (`.nvmrc`) for existing Node scripts. CI installs the declared Bun version;
+check `bun --version` locally. `packageManager` does not itself install Bun.
+Use `bun run test` to invoke Vitest; bare `bun test` is a different test runner.
+The Supabase CLI remains pinned to 2.121.0 and launched with npx as an isolated
+CLI tooling exception. npm must not install application dependencies.
 
 ```sh
-npm ci
-npm run local:start
-npm run verify
+bun install --frozen-lockfile
+bun run local:start
+bun run verify
 ```
 
 `verify` collects results from all groups rather than hiding checks after the first
 failure. It exits nonzero if any check fails. It never starts, resets, migrates, or
 deploys a backend. After migration changes, rebuild disposable local state with
-`npm run local:reset` before verification (this deletes synthetic local data).
+`bun run local:reset` before verification (this deletes synthetic local data).
 
 | Command | Checks | Docker required |
 | --- | --- | --- |
-| `npm run verify:app` | TypeScript, Vitest, production build | No |
-| `npm run verify:backend` | Catalog inventory, time-off workflow, permission regressions, HR workflow | Yes; local backend must be running |
-| `npm run verify:lint` | All ESLint rules | No |
-| `npm run verify` | All three groups, with final summary | Yes |
+| `bun run verify:app` | TypeScript, Vitest, production build | No |
+| `bun run verify:backend` | Catalog inventory, time-off workflow, permission regressions, HR workflow | Yes; local backend must be running |
+| `bun run verify:lint` | All ESLint rules | No |
+| `bun run verify` | All three groups, with final summary | Yes |
 
 Verification builds override the existing .env with loopback URL/test placeholders.
 The resulting dist is a verification artifact, **not a production release artifact**.
@@ -30,14 +33,15 @@ rows may remain. Avoid concurrent runs of backend tests on the same local instan
 
 ## Current evidence
 
-- Combined local run: seven checks pass, lint fails (128 errors, 30 warnings after baseline synchronization).
-- Clean npm dependency installation tested in a temporary directory, leaving the
-  running checkout and pre-existing lockfile changes untouched. TypeScript, Vitest,
-  and build also passed using that clean install.
-- Workflow YAML parsed locally. GitHub-hosted Linux execution remains unverified
-  until the workflow and supporting files are pushed and the first run is observed.
-- Unit suite still contains a placeholder. Real behavior coverage comes from the
-  local API tests; automated browser coverage and external integrations are pending.
+- Bun 1.3.14 clean frozen installation verified in a temporary directory using
+  only `bun.lock`; the lockfile remained byte-for-byte unchanged.
+- TypeScript, nine Vitest cases, and build passed with those fresh dependencies.
+- Lint still fails with the existing 53 errors and 30 warnings; no rule was waived.
+- Backend verification results are recorded in DEVELOPMENT_PROGRESS.md.
+- The verification used a temporary Bun installation because Bun was absent from
+  this Mac's PATH. Install Bun 1.3.14 before using these commands in a new shell.
+- GitHub-hosted Linux execution remains unverified. Browser and external integration
+  coverage remain pending; passing unit tests do not certify those workflows.
 
 ## GitHub workflow
 
@@ -53,4 +57,4 @@ been configured; a workflow file by itself does not enforce merge restrictions.
 
 Activation: review the diff, commit/push all required setup files on a feature branch,
 open a PR, inspect all three jobs, resolve failures, and then configure required
-checks for the agreed branch policy. No commit or push was performed in this phase.
+checks for the agreed branch policy. Local checkpoint commits exist; no workflow push or hosted execution has occurred.

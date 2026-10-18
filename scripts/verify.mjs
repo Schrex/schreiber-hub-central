@@ -15,7 +15,7 @@ if (group !== 'all' && !Object.hasOwn(groups, group)) {
 const results = [];
 for (const task of group === 'all' ? Object.values(groups).flat() : groups[group]) {
   console.log(`\nRunning ${task}`);
-  const result = spawnSync('npm', ['run', task], {
+  const result = spawnSync('bun', ['run', task], {
     cwd: root, stdio: 'inherit',
     // Verification builds must not accidentally embed the Cloud .env defaults.
     // API test scripts separately obtain their keys from the exact local backend.
