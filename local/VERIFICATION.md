@@ -22,9 +22,10 @@ deploys a backend. After migration changes, rebuild disposable local state with
 | --- | --- | --- |
 | `bun run verify:app` | TypeScript, Vitest, production build | No |
 | `bun run verify:backend` | Catalog inventory, time-off workflow, permission regressions, HR workflow | Yes; local backend must be running |
+| `bun run verify:browser` | Chromium time-off workflow against synthetic accounts | Yes; also install Playwright Chromium |
 | `bun run verify:edge` | Deno type checks for the 15 edited Edge Function entry points and their imports | No |
 | `bun run verify:lint` | All ESLint rules | No |
-| `bun run verify` | All four groups, with final summary | Yes |
+| `bun run verify` | All five groups, with final summary | Yes |
 
 Verification builds override the existing .env with loopback URL/test placeholders.
 The resulting dist is a verification artifact, **not a production release artifact**.
@@ -51,7 +52,7 @@ rows may remain. Avoid concurrent runs of backend tests on the same local instan
 ## GitHub workflow
 
 `.github/workflows/verify.yml` runs on pull requests, pushes to main/develop/codex branches, and
-manual dispatch. Independent app/backend/lint/edge matrix jobs report their own results.
+manual dispatch. Independent app/backend/lint/edge/browser matrix jobs report their own results.
 The backend job recreates the disposable schema and synthetic seed on a fresh runner.
 Cleanup runs even if checks fail. Jobs have read-only repository permissions and
 perform no publishing or remote database operations.
@@ -73,3 +74,9 @@ It checks the 15 edited entry points and their imports, not every legacy functio
 Deno dependencies follow the existing function import versions; this does not yet
 provide a separately locked Edge Function dependency graph. Network access is needed
 on the first run. Handlers are not executed and delivery integrations remain untested.
+
+The browser group requires a one-time `bunx --no-install playwright install chromium`
+locally. CI uses `--with-deps` on its disposable Linux runner. `bun run verify`
+includes browser verification; a missing browser binary is a failure, not a skip.
+For manual integration, check all five CI groups for the exact PR head. GitHub
+branch protection is unavailable on the current plan; it does not enforce this rule.

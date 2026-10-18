@@ -3,8 +3,8 @@
 - `main` is production. Do not commit to, merge into, or push to main. Work on
   `codex/*` feature branches and target `develop` for integration. A future production
   release requires an explicit user instruction; general continuation is not authorization.
-- Before edits, check the current branch. The consolidated foundation is now on
-  `codex/verification-cleanup` (PR #7); the original foundation branch is retained. Uncommitted changes are not branch-isolated
+- Before edits, check the current branch. The foundation was merged into develop through PR #7. Start new feature
+  branches from develop; browser-test work is on codex/time-off-browser-test. Uncommitted changes are not branch-isolated
   until committed; preserve them when switching and do not switch back to main to edit.
 
 - Read DEVELOPMENT_PROGRESS.md and local/README.md before infrastructure work.
@@ -18,7 +18,7 @@
   files and can target production. Never use real employee data for routine tests.
 - Start the disposable backend with `bun run local:start`. `local:reset` destroys
   synthetic local state; use it deliberately when checking a fresh migration replay.
-- Run relevant `verify:app`, `verify:backend`, and `verify:lint`, and `verify:edge` groups. `bun run verify`
+- Run relevant `verify:app`, `verify:backend`, and `verify:lint`, and `verify:edge`, and `verify:browser` groups. `bun run verify`
   runs all groups and reports failures. Existing lint debt is documented, not waived.
 - Keep unapplied release candidates in local/candidate-migrations; promotion into
   supabase/migrations requires separate release review and explicit authorization.

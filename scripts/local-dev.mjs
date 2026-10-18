@@ -3,7 +3,8 @@ import { localStatus, root } from './local-backend.mjs';
 
 const status = localStatus();
 console.log('Local frontend → http://127.0.0.1:55321 (synthetic data; outbound functions unavailable).');
-const child = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '8080', '--strictPort'], {
+const port = process.argv.includes('--browser-test') ? '8082' : '8080';
+const child = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', port, '--strictPort'], {
   cwd: root, stdio: 'inherit',
   env: {
     ...process.env,

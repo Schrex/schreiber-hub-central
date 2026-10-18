@@ -127,3 +127,27 @@ the entire local directory. Historical production migrations remain unchanged. D
 not deploy the local HR bootstrap to production: those HR tables already exist there.
 A local reset invalidates prior local sessions and clears the old browser test request;
 sign in again if needed.
+
+## Automated time-off browser smoke
+
+With the synthetic local backend running:
+
+```sh
+bunx --no-install playwright install chromium
+bun run verify:browser
+```
+
+The test starts its own guarded frontend on 127.0.0.1:8082 and refuses to reuse an
+existing server. Your normal dev:local app on 8080 can remain open. Three isolated
+browser contexts use the seeded employee, other employee and admin accounts. The
+workflow submits a unique vacation request, checks Pending, approves through the
+admin UI, reloads the employee view to verify Approved, and checks the other user
+cannot see that request. Existing API tests remain the authorization check.
+
+Each run deletes only its own uniquely labelled request in finally; notification
+rows can remain in the disposable database. Browser HTTP requests are restricted
+to the frontend and local API. External email delivery and Realtime are not tested.
+No production credentials are passed to the browser; the local service key stays
+in the Node test process for cleanup. Traces are disabled to avoid capturing auth
+payloads. Failure artifacts are ignored by Git and are not uploaded to CI artifacts.
+The browser CI job creates its own fresh backend and installs Chromium automatically.

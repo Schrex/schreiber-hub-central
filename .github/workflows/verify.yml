@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [app, backend, lint, edge]
+        group: [app, backend, lint, edge, browser]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,10 +35,13 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
       - name: Build disposable backend from migrations and synthetic seed
-        if: matrix.group == 'backend'
+        if: matrix.group == 'backend' || matrix.group == 'browser'
         run: bun run local:start
+      - name: Install Chromium for browser test
+        if: matrix.group == 'browser'
+        run: bunx --no-install playwright install --with-deps chromium
       - name: Run verification
         run: bun run verify:${{ matrix.group }}
       - name: Stop disposable backend
-        if: always() && matrix.group == 'backend'
+        if: always() && (matrix.group == 'backend' || matrix.group == 'browser')
         run: bun run local:stop

@@ -100,6 +100,17 @@ Remaining review findings before integration/release:
 
 ## Change log
 
+- 2026-10-18 browser automation: new codex/time-off-browser-test branch from develop
+  merge 48ac1c9 (PR #7). Added pinned Playwright, isolated Chromium sessions and a
+  time-off workflow test. Dedicated guarded frontend uses 8082; normal 8080 remains
+  available. Each test cleans up only its unique synthetic request. CI adds a fifth
+  browser job with a fresh disposable backend. Local workflow passed. Disabling the Approve action made the test fail at
+  the pending-request assertion; restoring the app passed again. App/type/unit/build
+  and lint checks pass (19 unit tests, zero lint errors, 30 warnings). All five hosted groups passed for 3c9866d in run 39165379937, including the
+  browser workflow on a fresh Linux backend. PR #8 targets develop; not merged. Branch protection is unavailable
+  on the private repository's current plan; the user selected manual PR/check review.
+  No production changes or new integration merge occurred.
+
 - 2026-10-18 combined local smoke test at aa6b03a: installed the exact frozen
   Bun lockfile in the actual checkout (Vite 6.4.4 / Vitest 5.0.5), started the
   disposable backend without reset, and launched guarded dev:local on 8080.
