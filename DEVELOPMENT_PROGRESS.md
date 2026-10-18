@@ -16,8 +16,9 @@ main. Existing lockfile changes are preserved separately in `772e995`; lint clea
 is in `e6b454d`; this infrastructure checkpoint contains the remaining foundation.
 Switch back to the feature branch before resuming foundation work. These checkpoints
 are not release approval: the last verification still has 53 lint errors / 30 warnings.
-No push or merge is part of this operation. Neither new branch has been published;
-GitHub branch protection remains unconfigured.
+Those checkpoint commits did not change main. Subsequently, develop and all four
+feature branches were published (see dependency publication entry below). GitHub
+branch protection remains unconfigured. No merge or deployment has occurred.
 
 Complete the local backend foundation and reconcile it with an authoritative Cloud
 schema. Current status: **partial local proof; not ready for staging or release**.
@@ -75,6 +76,31 @@ schema. Current status: **partial local proof; not ready for staging or release*
 - [ ] Production errors and service health reviewed.
 
 ## Change log
+
+- 2026-10-18 dependency replacement publication: published develop at 5a81add and
+  the foundation/source-map/brace/Vitest feature branches. Opened draft PRs
+  [#4](https://github.com/Schrex/schreiber-hub-central/pull/4),
+  [#5](https://github.com/Schrex/schreiber-hub-central/pull/5), and
+  [#6](https://github.com/Schrex/schreiber-hub-central/pull/6), all targeting develop.
+  These branches are cumulative: review foundation first, then source-map, brace,
+  and Vitest. Their current full diffs include the unintegrated foundation and its
+  forward permission migration; do not treat them as dependency-only release diffs.
+  Linked and closed original npm PRs #1/#2/#3 as superseded. No production alert
+  is considered resolved by closing those proposals. Remote main remains 5a81add;
+  local main remains 37284f0. No merge or deployment occurred.
+  Initial GitHub checks are absent, despite Actions being enabled; the reason has
+  not been established. Hosted verification and lint cleanup remain required.
+
+- 2026-10-18 remaining dependency validation: brace commit 2e7d88c updates the two
+  locked lines to 1.1.21 and 2.1.7 without changing parent major requirements.
+  Fresh frozen install, type checks, nine unit tests and build passed; parent
+  resolution and ordinary expansion behavior passed for both versions.
+  Vitest commit 557a7b3 upgrades Vitest to 5.0.5 and Vite to compatible 6.4.4;
+  tinypool is absent from the resulting lock. Fresh frozen install, app checks
+  and all four local backend checks passed. Synthetic employee browser login
+  passed on an isolated Vite 6 server. Both branches retain 53 lint errors and
+  30 warnings. Tests used temporary dependency installs; the existing port-8080
+  server was not upgraded by these checks. External integrations remain untested.
 
 - 2026-10-18 PR #1 Bun equivalent: created codex/bun-source-map-js-update from
   foundation commit bc8f85e. Added a targeted source-map-js 1.2.2 override and
