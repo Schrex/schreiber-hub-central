@@ -22,8 +22,9 @@ deploys a backend. After migration changes, rebuild disposable local state with
 | --- | --- | --- |
 | `bun run verify:app` | TypeScript, Vitest, production build | No |
 | `bun run verify:backend` | Catalog inventory, time-off workflow, permission regressions, HR workflow | Yes; local backend must be running |
+| `bun run verify:edge` | Deno type checks for the 15 edited Edge Function entry points and their imports | No |
 | `bun run verify:lint` | All ESLint rules | No |
-| `bun run verify` | All three groups, with final summary | Yes |
+| `bun run verify` | All four groups, with final summary | Yes |
 
 Verification builds override the existing .env with loopback URL/test placeholders.
 The resulting dist is a verification artifact, **not a production release artifact**.
@@ -50,7 +51,7 @@ rows may remain. Avoid concurrent runs of backend tests on the same local instan
 ## GitHub workflow
 
 `.github/workflows/verify.yml` runs on pull requests, pushes to main/develop/codex branches, and
-manual dispatch. Independent app/backend/lint matrix jobs report their own results.
+manual dispatch. Independent app/backend/lint/edge matrix jobs report their own results.
 The backend job recreates the disposable schema and synthetic seed on a fresh runner.
 Cleanup runs even if checks fail. Jobs have read-only repository permissions and
 perform no publishing or remote database operations.
@@ -64,7 +65,11 @@ Feature push CI was observed after adding the codex/** trigger. Previous PR even
 had no runs; their exact cause remains unconfirmed. No default-branch change was
 needed. All verification jobs are test-only and do not deploy.
 
-Additional one-off static validation: Deno 2.5.6 check with --no-lock and
---node-modules-dir=none passed for the 15 edited Edge Function entry points. This
-uses Deno's dependency cache and does not modify Bun's install. It is not yet a CI
-job, does not execute handlers, and does not validate external integrations.
+Edge Function static validation is now a CI matrix job and part of bun run verify.
+The script scripts/check-edge.mjs pins Deno 2.5.6 via npx as an isolated tooling
+exception, alongside the Supabase CLI. It does not install application dependencies.
+The --no-lock / --node-modules-dir=none options preserve the Bun installation.
+It checks the 15 edited entry points and their imports, not every legacy function.
+Deno dependencies follow the existing function import versions; this does not yet
+provide a separately locked Edge Function dependency graph. Network access is needed
+on the first run. Handlers are not executed and delivery integrations remain untested.

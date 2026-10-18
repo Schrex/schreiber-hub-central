@@ -27,6 +27,10 @@ for (const name of (await readdir(path.join(root, 'supabase/migrations'))).sort(
     ? '-- Local-only: omit historical employee account/password seed.\n'
     : localSource);
 }
+// Explicit local-only candidate: excluded from the production migration directory.
+// Promotion requires a separate reviewed release; never deploy this directory.
+await copyFile(path.join(root, 'local/candidate-migrations/20261016210000_time_off_request_permissions.sql'),
+  path.join(target, 'migrations/20261016210000_time_off_request_permissions.sql'));
 await copyFile(path.join(root, 'local/config.toml'), path.join(target, 'config.toml'));
 await copyFile(path.join(root, 'local/seed.sql'), path.join(target, 'seed.sql'));
 await copyFile(path.join(root, 'local/hr-bootstrap.sql'),

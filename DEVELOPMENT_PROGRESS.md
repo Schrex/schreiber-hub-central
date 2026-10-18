@@ -47,10 +47,10 @@ runner successfully rebuilt the local database and passed the four backend check
 
 Remaining review findings before integration/release:
 
-- The foundation and all cumulative dependency PRs still include the forward
-  time-off permission migration in supabase/migrations. A comment saying “deploy
-  separately” is not a deployment control. Separate or explicitly review its release
-  scope before any production promotion; never deploy local/hr-bootstrap.sql.
+- Resolved on the consolidation branch: the new time-off candidate now lives in
+  local/candidate-migrations, outside normal production migration discovery.
+  local:prepare copies this exact file only for disposable tests. Its eventual
+  production promotion remains a separate explicitly authorized release.
 - Local replay deliberately differs from production in four documented ways.
   The 60-table/column inventory does not validate full ACL/function/trigger parity.
 - External functions and Realtime are disabled in the disposable backend. Static
@@ -99,6 +99,15 @@ Remaining review findings before integration/release:
 - [ ] Production errors and service health reviewed.
 
 ## Change log
+
+- 2026-10-18 consolidation: moved the unapplied time-off candidate out of
+  supabase/migrations into local/candidate-migrations without changing its SQL.
+  Local preparation still copies it explicitly into the disposable replay.
+  Added verify:edge/typecheck:edge and a fourth CI group using Deno 2.5.6, checking
+  the 15 edited entry points and imported modules without executing handlers.
+  PR #7 will represent the combined development foundation; #4–#6 are fully
+  contained predecessors and will be closed after the updated checks pass.
+  No merge or production deployment is part of this work. Verification pending.
 
 - 2026-10-18 verification cleanup: isolated follow-up branch codex/verification-cleanup
   based on the Vitest replacement. Added codex/** push triggering; GitHub run

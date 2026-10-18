@@ -6,10 +6,11 @@ const groups = {
   app: ['typecheck', 'test', 'build'],
   backend: ['local:audit-schema', 'test:local', 'test:local:permissions', 'test:local:hr'],
   lint: ['lint'],
+  edge: ['typecheck:edge'],
 };
 const group = process.argv[2] ?? 'all';
 if (group !== 'all' && !Object.hasOwn(groups, group)) {
-  console.error('Usage: node scripts/verify.mjs [all|app|backend|lint]');
+  console.error('Usage: node scripts/verify.mjs [all|app|backend|lint|edge]');
   process.exit(2);
 }
 const results = [];

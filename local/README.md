@@ -119,8 +119,11 @@ tests, verify live-schema parity through an approved read-only audit, and establ
 CI/staging/release controls. Do not use a successful local smoke test as production
 release approval.
 
-The new forward migration `20261016210000_time_off_request_permissions.sql` is applied
-locally only. It is a candidate production fix, not a reconstruction migration. Do
+The candidate `local/candidate-migrations/20261016210000_time_off_request_permissions.sql` is applied
+locally only by an explicit copy in local:prepare. It is outside supabase/migrations
+and cannot enter the normal migration replay from this PR. A future production fix
+requires explicit release approval and a separately reviewed migration; do not copy
+the entire local directory. Historical production migrations remain unchanged. Do
 not deploy the local HR bootstrap to production: those HR tables already exist there.
 A local reset invalidates prior local sessions and clears the old browser test request;
 sign in again if needed.

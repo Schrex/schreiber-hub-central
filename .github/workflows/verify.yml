@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [app, backend, lint]
+        group: [app, backend, lint, edge]
     steps:
       - uses: actions/checkout@v4
         with:
