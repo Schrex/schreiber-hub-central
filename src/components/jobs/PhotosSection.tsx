@@ -26,7 +26,7 @@ const readExifDate = async (file: File): Promise<Date | null> => {
   return null;
 };
 
-const SUPABASE_URL = "https://bitogpfplcquovpdjprk.supabase.co";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const RESUMABLE_THRESHOLD = 6 * 1024 * 1024;
 
 const toLocalDate = (d = new Date()) => {

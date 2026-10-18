@@ -1066,7 +1066,7 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const resp = await fetch(
-        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/speak-toolbox-talk`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/speak-toolbox-talk`,
         {
           method: "POST",
           headers: {

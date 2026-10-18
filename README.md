@@ -16,6 +16,10 @@ Continue developing this project in the [Lovable editor](https://lovable.dev/pro
 
 ## Development
 
+For isolated development with synthetic data, follow [the local backend guide](local/README.md).
+Use `npm run dev:local` after starting that backend. The original commands below
+use the existing environment configuration, which can connect to the live backend.
+
 Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
 
 ```sh
