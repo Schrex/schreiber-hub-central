@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, X, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -137,9 +138,9 @@ export const AccidentReportDialog = ({ open, onOpenChange, presetJob }: Props) =
       toast.success("Accident report submitted. Office has been notified.");
       reset();
       onOpenChange(false);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      toast.error(e?.message ?? "Failed to submit report");
+      toast.error(errorMessage(e, "Failed to submit report"));
     } finally {
       setSubmitting(false);
     }

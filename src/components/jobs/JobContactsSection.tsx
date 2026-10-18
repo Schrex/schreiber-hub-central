@@ -1,3 +1,4 @@
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { useEffect, useMemo, useState } from "react";
 import { Phone, Mail, MapPin, Plus, Pencil, Trash2, Download, Building2, ContactRound, ChevronDown, ChevronRight, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -127,7 +128,7 @@ export const JobContactsSection = ({ jobId, jobName, foremanId }: Props) => {
     if (!editing) return;
     if (!editing.name?.trim() && !editing.is_template_slot) { toast.error("Name is required"); return; }
     setSaving(true);
-    const payload: any = {
+    const payload: TablesInsert<"job_contacts"> = {
       job_id: jobId,
       name: editing.name?.trim() || "",
       title: editing.title?.trim() || null,

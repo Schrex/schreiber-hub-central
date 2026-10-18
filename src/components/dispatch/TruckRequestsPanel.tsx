@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Truck, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ interface TruckRequest {
   load_quantity: number | null;
   requester_name: string | null;
   requester_notes: string | null;
-  status: "pending" | "approved" | "declined" | "cancelled";
+  status: string;
   jobs: { id: string; job_number: string | null; name: string; address: string | null } | null;
 }
 
@@ -45,7 +46,7 @@ export const TruckRequestsPanel = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      setRequests((data ?? []) as any);
+      setRequests(data ?? []);
     }
     setLoading(false);
   };
@@ -95,8 +96,8 @@ export const TruckRequestsPanel = () => {
       toast.success(mode === "approve" ? "Approved — dispatch order created" : "Request declined");
       close();
       load();
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Failed"));
     } finally {
       setBusy(false);
     }

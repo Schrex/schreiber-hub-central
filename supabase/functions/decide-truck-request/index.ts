@@ -1,3 +1,4 @@
+import type { Database } from "../../../src/integrations/supabase/types.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -22,7 +23,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
-    const userClient = createClient(
+    const userClient = createClient<Database>(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } },
@@ -31,7 +32,7 @@ Deno.serve(async (req) => {
     if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
     const { data: roles } = await userClient.from('user_roles').select('role').eq('user_id', user.id)
-    const allowed = (roles ?? []).some((r: any) => ['office', 'admin'].includes(r.role))
+    const allowed = (roles ?? []).some((r: { role: string }) => ['office', 'admin'].includes(r.role))
     if (!allowed) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -44,7 +45,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'truckNumber is required to approve' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const admin = createClient<Database>(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
     const { data: request, error: reqErr } = await admin
       .from('truck_requests')
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: `Already ${request.status}` }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const job = (request as any).jobs
+    const job = request.jobs
     let dispatchOrderId: string | null = null
 
     if (body.decision === 'approved') {

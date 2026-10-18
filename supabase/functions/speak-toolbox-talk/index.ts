@@ -1,4 +1,5 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import type { Database } from '../../../src/integrations/supabase/types.ts'
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +11,7 @@ const corsHeaders = {
 const DEFAULT_DEEPGRAM_VOICE = 'aura-2-zeus-en'
 const DEFAULT_ELEVEN_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'
 
-async function resolveVoice(supabase: any): Promise<{ deepgram: string; eleven: string }> {
+async function resolveVoice(supabase: SupabaseClient<Database>): Promise<{ deepgram: string; eleven: string }> {
   try {
     const { data } = await supabase
       .from('app_settings')
@@ -18,10 +19,10 @@ async function resolveVoice(supabase: any): Promise<{ deepgram: string; eleven: 
       .eq('key', 'safety_talk_voice_id')
       .maybeSingle()
     const v = data?.value
-    const obj = typeof v === 'object' && v !== null ? v : {}
+    const obj = typeof v === 'object' && v !== null && !Array.isArray(v) ? v : {}
     return {
-      deepgram: (obj.deepgram_voice || DEFAULT_DEEPGRAM_VOICE).trim(),
-      eleven: (obj.voice_id || DEFAULT_ELEVEN_VOICE_ID).trim(),
+      deepgram: (typeof obj.deepgram_voice === 'string' && obj.deepgram_voice || DEFAULT_DEEPGRAM_VOICE).trim(),
+      eleven: (typeof obj.voice_id === 'string' && obj.voice_id || DEFAULT_ELEVEN_VOICE_ID).trim(),
     }
   } catch {
     return { deepgram: DEFAULT_DEEPGRAM_VOICE, eleven: DEFAULT_ELEVEN_VOICE_ID }
@@ -100,7 +101,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
-    const supabase = createClient(
+    const supabase = createClient<Database>(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }

@@ -1,3 +1,5 @@
+import type { TablesUpdate } from "@/integrations/supabase/types";
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { FileText, Plus, Trash2, Download, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -107,15 +109,15 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
         notes: form.notes.trim() || null,
         file_path, file_name, file_size, mime_type,
         uploaded_by: user.id,
-        uploaded_by_name: (prof as any)?.display_name ?? null,
+        uploaded_by_name: prof?.display_name ?? null,
       });
       if (error) throw error;
       toast.success("Submittal added");
       reset();
       setOpen(false);
       await load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to add");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to add"));
     } finally {
       setBusy(false);
     }
@@ -129,7 +131,7 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
   };
 
   const updateStatus = async (id: string, status: Status) => {
-    const patch: any = { status };
+    const patch: TablesUpdate<"job_submittals"> = { status };
     if (status === "submitted") patch.submitted_at = new Date().toISOString().slice(0, 10);
     if (status === "approved") patch.approved_at = new Date().toISOString().slice(0, 10);
     const { error } = await supabase.from("job_submittals").update(patch).eq("id", id);
@@ -151,7 +153,7 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
     const t = toast.loading(`Uploading ${files.length} file${files.length > 1 ? "s" : ""}…`);
     try {
       const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
-      const uploaderName = (prof as any)?.display_name ?? null;
+      const uploaderName = prof?.display_name ?? null;
       let aiHits = 0;
       for (const f of files) {
         const path = `${jobId}/${Date.now()}-${f.name}`;
@@ -165,10 +167,10 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
         let category: string | null = null;
         let aiCategorized = false;
         try {
-          const { data: ai } = await supabase.functions.invoke("categorize-document", {
+          const { data: ai } = await supabase.functions.invoke<{ fields?: { confidence?: number; title?: string; category?: string } }>("categorize-document", {
             body: { kind: "submittal", bucket: "job-submittals", path, fileName: f.name },
           });
-          const fields = (ai as any)?.fields;
+          const fields = ai?.fields;
           if (fields && (fields.confidence ?? 0) >= 0.55) {
             if (fields.title) title = String(fields.title);
             if (fields.category) category = String(fields.category);
@@ -197,8 +199,8 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
         { id: t },
       );
       await load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Upload failed", { id: t });
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Upload failed"), { id: t });
     } finally {
       setBusy(false);
     }

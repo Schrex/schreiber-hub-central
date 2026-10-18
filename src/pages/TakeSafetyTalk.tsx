@@ -1,3 +1,5 @@
+import type { TablesUpdate } from "@/integrations/supabase/types";
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, XCircle, ShieldCheck } from "lucide-react";
@@ -7,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SignaturePad } from "@/components/safety/SignaturePad";
 import { toast } from "sonner";
 
-interface QuizQ { question: string; options: string[]; correct_index: number; }
+type QuizQ = { question: string; options: string[]; correct_index: number; };
 
 interface Attendee {
   id: string; session_id: string; user_id: string | null;
@@ -51,7 +53,7 @@ const TakeSafetyTalk = () => {
     (async () => {
       const { data: attRows, error: attErr } = await supabase
         .rpc("get_attendee_by_token", { _token: token });
-      const att = Array.isArray(attRows) ? attRows[0] : (attRows as any);
+      const att = attRows?.[0];
       if (attErr || !att) { setErr("This link is invalid or expired."); setLoading(false); return; }
       if (att.user_id && att.user_id !== user.id) {
         setErr("This link belongs to another team member. Please log in as them.");
@@ -67,8 +69,7 @@ const TakeSafetyTalk = () => {
         setSession(sess as Session);
         const { data: t } = await supabase.from("toolbox_talks").select("*").eq("id", sess.talk_id).maybeSingle();
         if (t) {
-          const tt = t as any;
-          tt.quiz_questions = Array.isArray(tt.quiz_questions) ? tt.quiz_questions : [];
+          const tt = { ...t, quiz_questions: (Array.isArray(t.quiz_questions) ? t.quiz_questions : []) as QuizQ[] };
           setTalk(tt as Talk);
           setAnswers((tt.quiz_questions as QuizQ[]).map(() => -1));
           setRevealed((tt.quiz_questions as QuizQ[]).map(() => false));
@@ -111,7 +112,7 @@ const TakeSafetyTalk = () => {
     setBusy(true);
     try {
       const isFirstAttempt = (attendee.quiz_attempts ?? 0) === 0;
-      const payload: any = {
+      const payload: TablesUpdate<"toolbox_talk_attendees"> = {
         quiz_attempts: (attendee.quiz_attempts ?? 0) + 1,
         quiz_answers: answers,
         quiz_score: score,
@@ -129,8 +130,8 @@ const TakeSafetyTalk = () => {
       setAttendee({ ...attendee, ...payload });
       if (all) toast.success("All correct! Sign to complete.");
       else toast.message(`${score}/${questions.length} correct — review the wrong ones and retry.`);
-    } catch (e: any) {
-      toast.error(e.message ?? "Could not save");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Could not save"));
     } finally { setBusy(false); }
   };
 
@@ -149,8 +150,8 @@ const TakeSafetyTalk = () => {
       if (error) throw error;
       setStep("done");
       toast.success("Signed! You're all set.");
-    } catch (e: any) {
-      toast.error(e.message ?? "Could not save signature");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Could not save signature"));
     } finally { setBusy(false); }
   };
 

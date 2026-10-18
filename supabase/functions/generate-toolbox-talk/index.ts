@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
     const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
-    const isAdmin = (roles ?? []).some((r: any) => r.role === 'admin')
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === 'admin')
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }

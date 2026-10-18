@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useState } from "react";
 import { Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -57,8 +58,8 @@ export const RequestTruckButton = ({ jobId, jobAddress }: Props) => {
       toast.success("Truck request sent to office");
       setOpen(false);
       setForm({ ...form, material: "", pickupLocation: "", loadQuantity: "", notes: "" });
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed to send request");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Failed to send request"));
     } finally {
       setBusy(false);
     }

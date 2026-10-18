@@ -16,11 +16,20 @@ Continue developing this project in the [Lovable editor](https://lovable.dev/pro
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Use Bun **1.3.14**, pinned in `package.json`, and Node from `.nvmrc`.
+`bun.lock` is the authoritative dependency lockfile. Install Bun using its
+[installation instructions](https://bun.com/docs/installation), then confirm
+`bun --version` reports `1.3.14`.
+
+For isolated development with synthetic data, follow [the local backend guide](local/README.md).
+Docker must be running before starting the backend.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+bun install --frozen-lockfile
+bun run local:start
+bun run dev:local
 ```
+
+Use `bun run test` for Vitest and `bun run verify` for the complete local checks.
+Plain `bun run dev` uses existing environment configuration and can connect to the
+live backend. Work on feature branches; main is reserved for explicitly approved releases.

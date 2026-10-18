@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useRef, useState } from "react";
 import { FileUp, FileText, Trash2, Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,7 +45,7 @@ export const EstimateUploads = ({ jobId }: { jobId: string }) => {
       if (!user) return;
       const { data: roles } = await supabase.from("user_roles")
         .select("role").eq("user_id", user.id);
-      const r = (roles ?? []).map((x: any) => x.role);
+      const r = (roles ?? []).map((x) => x.role);
       setCanEdit(r.includes("admin") || r.includes("office"));
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -75,8 +76,8 @@ export const EstimateUploads = ({ jobId }: { jobId: string }) => {
       }
       toast.success("Estimate uploaded");
       load();
-    } catch (e: any) {
-      toast.error(e.message ?? "Upload failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Upload failed"));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

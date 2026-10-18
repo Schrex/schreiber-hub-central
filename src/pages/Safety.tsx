@@ -1,3 +1,5 @@
+import type { Json } from "@/integrations/supabase/types";
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShieldAlert, BookOpen, Mic, Plus, Sparkles, Settings as SettingsIcon, Play, Square, Users, CheckCircle2, Volume2, Pause } from "lucide-react";
@@ -16,8 +18,8 @@ import { AccidentReportButton } from "@/components/safety/AccidentReportDialog";
 import { SafetyViolationButton } from "@/components/safety/SafetyViolationDialog";
 
 interface SafetyRule { id: string; title: string; body: string; category: string | null; sort_order: number; is_active: boolean; }
-interface ToolboxTalk { id: string; title: string; category: string | null; content: string; quiz_questions: any; created_with_ai: boolean; is_active: boolean; image_url?: string | null; video_url?: string | null; voice_script?: string | null; }
-interface QuizQ { question: string; options: string[]; correct_index: number; }
+interface ToolboxTalk { id: string; title: string; category: string | null; content: string; quiz_questions: Json; created_with_ai: boolean; is_active: boolean; image_url?: string | null; video_url?: string | null; voice_script?: string | null; }
+type QuizQ = { question: string; options: string[]; correct_index: number; };
 interface SessionRow { id: string; talk_id: string; foreman_id: string; foreman_name: string | null; status: string; started_at: string; recording_started_at: string | null; recording_stopped_at: string | null; audio_path: string | null; transcript: string | null; }
 interface Attendee { id: string; session_id: string; user_id: string | null; attendee_name: string; signature_data: string | null; signed_at: string | null; quiz_score: number | null; quiz_total: number | null; quiz_completed_at: string | null; }
 
@@ -170,8 +172,8 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
         video_url: "",
       });
       toast.success("AI draft ready — review and save");
-    } catch (e: any) {
-      toast.error(e.message ?? "AI generation failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "AI generation failed"));
     } finally {
       setAiBusy(false);
     }
@@ -183,7 +185,7 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
       title: form.title.trim(),
       category: form.category.trim() || null,
       content: form.content,
-      quiz_questions: form.quiz_questions as any,
+      quiz_questions: form.quiz_questions.map(q => ({ ...q })),
       created_with_ai: true,
       image_url: form.image_url || null,
       voice_script: form.voice_script || null,
@@ -314,7 +316,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
         .eq("assignment_date", today);
       const seen = new Set<string>();
       const list: { id: string; name: string }[] = [];
-      (data ?? []).forEach((r: any) => {
+      (data ?? []).forEach((r) => {
         const j = r.jobs;
         if (j && !seen.has(j.id)) { seen.add(j.id); list.push({ id: j.id, name: j.name }); }
       });
@@ -333,17 +335,17 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
         .select("user_id, role_on_job")
         .eq("job_id", pickedJobId)
         .eq("assignment_date", today);
-      const userIds = Array.from(new Set((rows ?? []).map((r: any) => r.user_id))).filter((u) => u !== userId);
+      const userIds = Array.from(new Set((rows ?? []).map((r) => r.user_id))).filter((u) => u !== userId);
       if (userIds.length === 0) { setCrew([]); setIncludeIds(new Set()); return; }
       const { data: profs } = await supabase
         .from("profiles")
         .select("user_id, display_name")
         .in("user_id", userIds);
       const nameMap = new Map<string, string>();
-      (profs ?? []).forEach((p: any) => nameMap.set(p.user_id, p.display_name ?? "Crew member"));
+      (profs ?? []).forEach((p) => nameMap.set(p.user_id, p.display_name ?? "Crew member"));
       const out: ScheduledCrew[] = (rows ?? [])
-        .filter((r: any) => r.user_id !== userId)
-        .reduce((acc: ScheduledCrew[], r: any) => {
+        .filter((r) => r.user_id !== userId)
+        .reduce((acc: ScheduledCrew[], r) => {
           if (acc.find(a => a.user_id === r.user_id)) return acc;
           acc.push({ user_id: r.user_id, display_name: nameMap.get(r.user_id) ?? "Crew member", role_on_job: r.role_on_job });
           return acc;
@@ -370,8 +372,8 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
       } else {
         setAiHint("No suggestion available.");
       }
-    } catch (e: any) {
-      toast.error(e.message ?? "Suggestion failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Suggestion failed"));
     } finally { setAiBusy(false); }
   };
 
@@ -403,8 +405,8 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
 
       setActiveSession(sess as SessionRow);
       load();
-    } catch (e: any) {
-      toast.error(e.message ?? "Could not start session");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Could not start session"));
     } finally { setStarting(false); }
   };
 
@@ -590,8 +592,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
       setRecording(true);
       await supabase.from("toolbox_talk_sessions").update({ recording_started_at: new Date().toISOString() }).eq("id", session.id);
       toast.success("Recording…");
-    } catch (e: any) {
-      toast.error("Mic error: " + (e.message ?? "unknown"));
+    } catch (e: unknown) {
+      toast.error("Mic error: " + (errorMessage(e, "unknown")));
     } finally { setRecBusy(false); }
   };
 
@@ -620,12 +622,12 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
       if (error) throw error;
       if (data?.transcript) setTranscript(data.transcript);
       toast.success("Transcript ready");
-    } catch (e: any) {
-      toast.error(e.message ?? "Stop/upload failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Stop/upload failed"));
     } finally { setRecBusy(false); }
   };
 
-  const hasQuiz = !!talk && Array.isArray(talk.quiz_questions) && (talk.quiz_questions as any[]).length > 0;
+  const hasQuiz = !!talk && Array.isArray(talk.quiz_questions) && talk.quiz_questions.length > 0;
   const totalAttendees = attendees.length;
   const signedCount = attendees.filter(a => !!a.signed_at).length;
   const quizDoneCount = attendees.filter(a => !!a.quiz_completed_at).length;
@@ -642,8 +644,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
         body: { sessionId: session.id, extraRecipients: extras },
       });
       if (error) {
-        const ctx = (error as any)?.context;
-        const body = ctx ? await ctx.json?.().catch(() => null) : null;
+        const ctx: unknown = error.context;
+        const body = ctx instanceof Response ? await ctx.json().catch(() => null) : null;
         if (body?.error === "incomplete_attendees") {
           toast.error(`Still waiting on: ${(body.missing ?? []).join(", ")}`);
           return;
@@ -652,8 +654,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
       }
       toast.success(`Talk completed — emailed ${data?.recipientCount ?? 0} recipient(s)`);
       onExit();
-    } catch (e: any) {
-      toast.error(e.message ?? "Could not complete talk");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Could not complete talk"));
     } finally { setCompleting(false); }
   };
 
@@ -930,14 +932,14 @@ const QuizDialog = ({ attendee, questions, onClose, onSaved }: { attendee: Atten
     try {
       const score = answers.reduce((acc, a, i) => acc + (a === questions[i].correct_index ? 1 : 0), 0);
       const { error } = await supabase.from("toolbox_talk_attendees").update({
-        quiz_answers: answers as any, quiz_score: score, quiz_total: questions.length,
+        quiz_answers: answers, quiz_score: score, quiz_total: questions.length,
         quiz_completed_at: new Date().toISOString(),
       }).eq("id", attendee.id);
       if (error) throw error;
       toast.success(`Scored ${score}/${questions.length}`);
       onSaved();
-    } catch (e: any) {
-      toast.error(e.message ?? "Save failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Save failed"));
     } finally { setSaving(false); }
   };
 
@@ -982,8 +984,9 @@ const AdminSettings = () => {
     if (!open) return;
     supabase.from("app_settings").select("key,value").in("key", ["york_safety_email", "safety_talk_voice_id"]).then(({ data }) => {
       for (const row of data ?? []) {
-        const v = (row as any).value;
-        const str = typeof v === "string" ? v : (v?.email ?? v?.voice_id ?? "");
+        const v = row.value;
+        const candidate = typeof v === "string" ? v : (v && typeof v === "object" && !Array.isArray(v) ? v.email ?? v.voice_id : "");
+        const str = typeof candidate === "string" ? candidate : "";
         if (row.key === "york_safety_email") setEmail(str);
         if (row.key === "safety_talk_voice_id") setVoiceId(str);
       }
@@ -1001,7 +1004,7 @@ const AdminSettings = () => {
       if (error) throw error;
       toast.success("Saved");
       setOpen(false);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) { toast.error(errorMessage(e, "Request failed")); }
     finally { setBusy(false); }
   };
 
@@ -1059,13 +1062,13 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
       return;
     }
     if (audioRef.current && urlRef.current) {
-      try { await audioRef.current.play(); setPlaying(true); return; } catch {}
+      try { await audioRef.current.play(); setPlaying(true); return; } catch { /* Retry by generating fresh audio below. */ }
     }
     setBusy(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const resp = await fetch(
-        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/speak-toolbox-talk`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/speak-toolbox-talk`,
         {
           method: "POST",
           headers: {
@@ -1113,8 +1116,8 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
       audioRef.current = audio;
       await audio.play();
       setPlaying(true);
-    } catch (e: any) {
-      toast.error(e.message ?? "Voice playback failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Voice playback failed"));
     } finally { setBusy(false); }
   };
 

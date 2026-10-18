@@ -4,13 +4,29 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "verify": "node scripts/verify.mjs",
+    "verify:app": "node scripts/verify.mjs app",
+    "verify:backend": "node scripts/verify.mjs backend",
+    "verify:lint": "node scripts/verify.mjs lint",
     "dev": "vite",
+    "dev:local": "node scripts/local-dev.mjs",
+    "local:prepare": "node scripts/prepare-local.mjs",
+    "local:start": "bun run local:prepare && npx --yes supabase@2.121.0 start --workdir .local-backend",
+    "local:stop": "npx --yes supabase@2.121.0 stop --workdir .local-backend",
+    "local:reset": "bun run local:prepare && npx --yes supabase@2.121.0 db reset --local --workdir .local-backend",
+    "test:local": "node scripts/local-smoke.mjs",
+    "test:local:permissions": "node scripts/local-permissions.mjs",
+    "test:local:hr": "node scripts/local-hr.mjs",
+    "local:audit-schema": "node scripts/schema-audit.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify:edge": "node scripts/verify.mjs edge",
+    "typecheck:edge": "node scripts/check-edge.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -93,7 +109,11 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19",
-    "vitest": "^3.2.4"
+    "vite": "6.4.4",
+    "vitest": "5.0.5"
+  },
+  "packageManager": "bun@1.3.14",
+  "overrides": {
+    "source-map-js": "1.2.2"
   }
 }

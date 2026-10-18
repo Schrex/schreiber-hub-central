@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,8 +45,8 @@ const Auth = () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-    } catch (err: any) {
-      toast.error(err.message ?? "Authentication failed");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Authentication failed"));
     } finally {
       setBusy(false);
     }
@@ -78,10 +79,13 @@ const Auth = () => {
           variant="outline"
           className="w-full"
           onClick={handleGoogle}
-          disabled={busy}
+          disabled={busy || import.meta.env.VITE_LOCAL_BACKEND === "true"}
         >
           Continue with Google
         </Button>
+        {import.meta.env.VITE_LOCAL_BACKEND === "true" && (
+          <p className="text-xs text-muted-foreground">Local test environment. Use a synthetic email account below.</p>
+        )}
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">

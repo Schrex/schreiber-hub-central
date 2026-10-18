@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchForecast, ONTARIO_NY, type Coords, type Forecast } from "@/lib/weather";
 
@@ -49,13 +50,13 @@ export const useWeather = (override?: Coords | null) => {
           needsPermission: options?.needsPermission ?? false,
         });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (!cancelledRef.current) {
         setState({
           forecast: null,
           coords: c,
           loading: false,
-          error: options?.error ?? e.message ?? "Failed",
+          error: options?.error ?? errorMessage(e, "Failed"),
           needsPermission: options?.needsPermission ?? false,
         });
       }
@@ -116,7 +117,7 @@ export const useWeather = (override?: Coords | null) => {
         return;
       }
       try {
-        const perm = await (navigator as any).permissions?.query?.({ name: "geolocation" });
+        const perm = await navigator.permissions?.query?.({ name: "geolocation" });
         if (perm?.state === "granted") {
           requestLocation();
           return;
