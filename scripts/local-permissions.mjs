@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { localStatus } from './local-backend.mjs';
 
@@ -7,39 +8,41 @@ const options = { auth: { persistSession: false, autoRefreshToken: false } };
 const employee = createClient(status.API_URL, status.ANON_KEY, options);
 const service = createClient(status.API_URL, status.SERVICE_ROLE_KEY, options);
 const created = [];
-const failures = [];
+function ok(result) {
+  assert.equal(result.error, null, result.error?.message);
+  return result.data;
+}
+async function rejectInsert(row) {
+  const id = randomUUID();
+  created.push(id); // Clean up even if a regression inserts a row without returning it.
+  const result = await employee.from('time_off_requests').insert({ ...row, id });
+  assert.equal(result.error?.code, '42501', 'Expected an authorization rejection.');
+  assert.deepEqual(ok(await service.from('time_off_requests').select('id').eq('id', id)), [], 'Rejected insert must not persist a row.');
+}
 try {
-  const login = await employee.auth.signInWithPassword({email:'employee@example.test', password:'LocalOnly-12345!'});
-  assert.equal(login.error, null, login.error?.message);
-  const base = {user_id:login.data.user.id, start_date:'2031-06-10', end_date:'2031-06-11', reason:'Local permission regression'};
-  const forged = await employee.from('time_off_requests').insert({...base, status:'approved'}).select('id').single();
-  if (forged.data) created.push(forged.data.id);
-  if (!forged.error) failures.push('Employee can create their own request already approved.');
-  else console.log('PASS: employee cannot create an already-approved request.');
+  const login = ok(await employee.auth.signInWithPassword({email:'employee@example.test', password:'LocalOnly-12345!'}));
+  const base = {user_id:login.user.id, start_date:'2031-06-10', end_date:'2031-06-11', reason:'Local permission regression'};
+  await rejectInsert({...base, status:'approved'});
+  await rejectInsert({...base, decided_by:login.user.id});
+  console.log('PASS: pre-approved requests and fabricated decision metadata are rejected without storing rows.');
 
-  const pending = await employee.from('time_off_requests').insert(base).select('id').single();
-  assert.equal(pending.error, null, pending.error?.message);
-  created.push(pending.data.id);
-  const escalation = await employee.from('time_off_requests').update({status:'approved'}).eq('id', pending.data.id).select('id');
-  if (escalation.data?.length) failures.push('Employee can approve their own pending request.');
-  else assert.equal(escalation.error?.code, '42501', 'Self-approval must fail with an authorization error.');
-  const tampered = await employee.from('time_off_requests').update({status:'cancelled', reason:'Unauthorized rewrite'}).eq('id', pending.data.id).select('id');
-  if (tampered.data?.length) failures.push('Cancellation permits changing request content.');
-  else assert.equal(tampered.error?.code, '42501', 'Content tampering must fail with an authorization error.');
-  const cancelled = await employee.from('time_off_requests').update({status:'cancelled'}).eq('id', pending.data.id).select('status').single();
-  if (cancelled.error || cancelled.data?.status !== 'cancelled') failures.push('Employee cannot cancel their own pending request as the UI promises.');
-  else console.log('PASS: employee can cancel their own pending request.');
-  const fabricated = await employee.from('time_off_requests').insert({...base, decided_by:login.data.user.id}).select('id').single();
-  if (fabricated.data) created.push(fabricated.data.id);
-  if (!fabricated.error) failures.push('Employee can fabricate decision metadata on insert.');
-  else assert.equal(fabricated.error.code, '42501');
-  if (!failures.length) console.log('PASS: self-approval, decision metadata fabrication and cancellation content tampering are blocked.');
-} finally {
-  if (created.length) {
-    const cleanup = await service.from('time_off_requests').delete().in('id', created);
-    assert.equal(cleanup.error, null, cleanup.error?.message);
+  const id = randomUUID();
+  created.push(id);
+  const pending = ok(await employee.from('time_off_requests').insert({...base, id}).select().single());
+  for (const patch of [{status:'approved'}, {status:'cancelled', reason:'Unauthorized rewrite'}]) {
+    const result = await employee.from('time_off_requests').update(patch).eq('id', id).select('id');
+    assert.equal(result.error?.code, '42501', 'Self-approval and cancellation tampering must fail authorization.');
+    assert.deepEqual(ok(await service.from('time_off_requests').select().eq('id', id).single()), pending, 'Rejected update must leave the entire pending request unchanged.');
   }
+  const cancelled = ok(await employee.from('time_off_requests').update({status:'cancelled'}).eq('id', id).select().single());
+  assert.equal(cancelled.status, 'cancelled');
+  const persisted = ok(await service.from('time_off_requests').select().eq('id', id).single());
+  assert.deepEqual(persisted, cancelled);
+  const { status: oldStatus, updated_at: oldUpdated, ...oldContent } = pending;
+  const { status: newStatus, updated_at: newUpdated, ...newContent } = persisted;
+  assert.deepEqual(newContent, oldContent, 'Cancellation may change only status and updated_at.');
+  console.log('PASS: self-approval and tampering leave requests unchanged; legitimate cancellation persists only permitted changes.');
+} finally {
+  if (created.length) ok(await service.from('time_off_requests').delete().in('id', created));
   await employee.auth.signOut();
 }
-for (const failure of failures) console.error(`FAIL: ${failure}`);
-if (failures.length) process.exitCode = 1;

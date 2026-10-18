@@ -76,6 +76,19 @@ schema. Current status: **partial local proof; not ready for staging or release*
 
 ## Change log
 
+- 2026-10-18 review correction: tightened the local smoke, permission, and HR
+  tests. Authorization failures require SQLSTATE 42501; reversed dates require
+  23514 and the time_off_dates_valid constraint; negative benefit values require
+  P0001 and the specific validation message. RLS-filtered compensation updates
+  must succeed with zero affected rows, not an arbitrary error. Service-account
+  read-back confirms rejected inserts are absent and rejected updates preserve
+  the entire row. Valid cancellation may change only status and updated_at.
+  Attempted insert IDs are registered for cleanup before each write, including
+  failure paths. All four verify:backend checks and targeted ESLint pass.
+  Initial date-test expectation was corrected after checking the actual constraint;
+  no schema or application behavior was changed. Main remains 37284f0; no push,
+  merge, or deployment. The migration/infrastructure packaging review remains open.
+
 - First lint cleanup batch: removed 75 errors (128 -> 53); 30 warnings remain.
   Replaced frontend caught `any` values with `unknown` and a checked error-message
   reader; preserved API/native error messages and workflow fallback text. Added

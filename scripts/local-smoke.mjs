@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { localStatus } from './local-backend.mjs';
 
@@ -14,6 +15,8 @@ function ok(result) {
   return result.data;
 }
 let requestId;
+const forgedId = randomUUID();
+const invalidId = randomUUID();
 try {
   const first = ok(await employee.auth.signInWithPassword({ email: 'employee@example.test', password: 'LocalOnly-12345!' }));
   ok(await other.auth.signInWithPassword({ email: 'other@example.test', password: 'LocalOnly-12345!' }));
@@ -30,15 +33,18 @@ try {
 
   assert.equal(ok(await other.from('time_off_requests').select('id').eq('id', requestId)).length, 0);
   const forged = await other.from('time_off_requests').insert({
-    user_id: first.user.id, start_date: '2030-07-10', end_date: '2030-07-11',
+    id: forgedId, user_id: first.user.id, start_date: '2030-07-10', end_date: '2030-07-11',
   });
-  assert.ok(forged.error, 'Another employee must not submit on behalf of this employee.');
+  assert.equal(forged.error?.code, '42501', 'Forged ownership must fail authorization.');
+  assert.deepEqual(ok(await service.from('time_off_requests').select('id').eq('id', forgedId)), []);
   console.log('PASS: another employee cannot read or forge the request.');
 
   const invalid = await employee.from('time_off_requests').insert({
-    user_id: first.user.id, start_date: '2030-07-11', end_date: '2030-07-10',
+    id: invalidId, user_id: first.user.id, start_date: '2030-07-11', end_date: '2030-07-10',
   });
-  assert.ok(invalid.error, 'Invalid dates must be rejected by the database.');
+  assert.equal(invalid.error?.code, '23514', 'Expected a check-constraint violation.');
+  assert.match(invalid.error?.message ?? '', /check constraint "time_off_dates_valid"/);
+  assert.deepEqual(ok(await service.from('time_off_requests').select('id').eq('id', invalidId)), []);
   console.log('PASS: database rejects reversed dates.');
 
   ok(await admin.from('time_off_requests').update({
@@ -48,6 +54,6 @@ try {
   console.log('PASS: admin approves; employee reads approved status.');
   console.log('Database/API workflow passed. Email delivery and browser behavior are not covered.');
 } finally {
-  if (requestId) ok(await service.from('time_off_requests').delete().eq('id', requestId));
+  ok(await service.from('time_off_requests').delete().in('id', [requestId, forgedId, invalidId].filter(Boolean)));
   await Promise.all([employee.auth.signOut(), other.auth.signOut(), admin.auth.signOut()]);
 }

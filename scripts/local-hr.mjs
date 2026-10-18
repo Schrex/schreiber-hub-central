@@ -15,8 +15,9 @@ function ok(result) {
   return result.data;
 }
 async function insert(client, table, row) {
-  const result = await client.from(table).insert(row).select().single();
-  if (result.data) cleanup.unshift([table, result.data.id]);
+  const id = randomUUID();
+  cleanup.unshift([table, id]);
+  const result = await client.from(table).insert({ ...row, id }).select().single();
   return result;
 }
 try {
@@ -30,8 +31,11 @@ try {
   assert.equal(ok(await other.from('employee_benefits').select('id').eq('id', benefit.id)).length, 0);
   const unauthorized = await insert(employee, 'employee_benefits', row);
   assert.equal(unauthorized.error?.code, '42501', 'Employee benefit writes must be rejected by authorization.');
+  assert.deepEqual(ok(await service.from('employee_benefits').select('id').eq('id', cleanup[0][1])), []);
   const negative = await insert(admin, 'employee_benefits', { ...row, annual_value: -1 });
-  assert.match(negative.error?.message ?? '', /annual_value cannot be negative/);
+  assert.equal(negative.error?.code, 'P0001');
+  assert.equal(negative.error?.message, 'annual_value cannot be negative');
+  assert.deepEqual(ok(await service.from('employee_benefits').select('id').eq('id', cleanup[0][1])), []);
   console.log('PASS: admin manages benefits; employees read only their own; negative values rejected.');
 
   const comp = ok(await insert(admin, 'employee_compensation_history', {
@@ -42,7 +46,9 @@ try {
   assert.equal(ok(await employee.from('employee_compensation_history').select('total_compensation').eq('id', comp.id).single()).total_compensation, 53200);
   assert.equal(ok(await other.from('employee_compensation_history').select('id').eq('id', comp.id)).length, 0);
   const unauthorizedUpdate = await employee.from('employee_compensation_history').update({base_salary:999999}).eq('id', comp.id).select('id');
-  assert.ok(unauthorizedUpdate.error || unauthorizedUpdate.data.length === 0);
+  assert.equal(unauthorizedUpdate.error, null, 'RLS should filter this update without an API error.');
+  assert.deepEqual(unauthorizedUpdate.data, [], 'Employee must update zero rows.');
+  assert.deepEqual(ok(await service.from('employee_compensation_history').select().eq('id', comp.id).single()), comp, 'Denied update must leave the entire compensation record unchanged.');
   const updated = ok(await admin.from('employee_compensation_history').update({bonus:3000}).eq('id', comp.id).select().single());
   assert.equal(updated.total_compensation, 54200);
   const audit = ok(await admin.from('pay_audit_log').select('action').eq('record_id', comp.id));
