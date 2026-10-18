@@ -15,7 +15,8 @@ On 2026-10-18 the user requested local checkpoint commits and a return to clean
 main. Existing lockfile changes are preserved separately in `772e995`; lint cleanup
 is in `e6b454d`; this infrastructure checkpoint contains the remaining foundation.
 Switch back to the feature branch before resuming foundation work. These checkpoints
-are not release approval: the last verification still has 53 lint errors / 30 warnings.
+are not release approval: that checkpoint had 53 lint errors / 30 warnings; the follow-up cleanup now has
+zero errors / 30 warnings.
 Those checkpoint commits did not change main. Subsequently, develop and all four
 feature branches were published (see dependency publication entry below). GitHub
 branch protection remains unconfigured. No merge or deployment has occurred.
@@ -31,7 +32,7 @@ schema. Current status: **partial local proof; not ready for staging or release*
 | Targeted HR schema reconstruction | Verified locally; full parity pending | Supplied export incorporated; `local:audit-schema`: 60/60 tables and column names |
 | Permission state transitions | Fixed and verified locally; NOT deployed | Forward migration `20261016210000`; permission + happy-path tests pass |
 | External functions/Realtime | Not implemented locally | Explicitly disabled, not silently considered tested |
-| Verification command and CI definition | Implemented and checked locally | First hosted app/backend checks pass; cleanup lint passes locally; hosted cleanup pending |
+| Verification command and CI definition | Implemented and checked locally | First hosted app/backend checks pass; all three hosted groups pass at dbc66c1 |
 | Branch protection | Not configured | Required remote checks await first GitHub run and lint cleanup |
 | Staging | Not established | Separate backend and integration credentials needed |
 | Production release | Not started | All seven release steps below remain pending |
@@ -82,8 +83,8 @@ Remaining review findings before integration/release:
 1. Review the targeted reconstruction and forward permission migration. Obtain complete
    grants/default privileges and canonical generated-column metadata before declaring
    production parity; the current supplied export only lists `sandbox_exec` grants.
-2. Review/push the drafted verification workflow in a feature PR and observe its first
-   GitHub run. Fix the documented lint backlog before declaring the gate green.
+2. Review draft cleanup PR #7 alongside dependency PRs #4–#6. All three hosted
+   verification groups pass at dbc66c1; 30 lint warnings and branch protection remain.
 3. Expand safe integration and browser coverage; Edge Functions/Realtime remain disabled.
 4. Establish staging, then rehearse deployment/backup/recovery before any live release.
 
@@ -108,7 +109,9 @@ Remaining review findings before integration/release:
   pass for all 15 edited Edge Function entry points. Scoped query/response contracts
   replace explicit any; these are not blanket runtime validation. Notification
   recipient extraction handles object and array profile embeds and has regression
-  coverage. No services were invoked or deployed. Hosted cleanup validation pending.
+  coverage. No services were invoked or deployed. Hosted cleanup validation passed at dbc66c1: run 39162075252 reports app, backend
+  and lint success. This includes a fresh database replay on GitHub. Follow-up
+  documentation commits do not change the tested code. PR #7 tracks this cleanup.
 
 
 - 2026-10-18 dependency replacement publication: published develop at 5a81add and

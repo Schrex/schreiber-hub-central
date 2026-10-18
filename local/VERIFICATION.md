@@ -43,8 +43,8 @@ rows may remain. Avoid concurrent runs of backend tests on the same local instan
   need to be reopened. The actual checkout frozen install and all seven non-lint
   checks pass. Browser sign-in as the synthetic employee and navigation to Time Off
   were verified. Main and production were unchanged.
-- The first GitHub-hosted Linux run passed app and fresh-backend checks; its lint
-  job failed on the pre-cleanup code. The updated cleanup run is pending. Browser
+- GitHub-hosted run 39162075252 passed app, fresh-backend and lint checks for
+  code commit dbc66c1. The initial baseline run failed lint as expected. Browser
   automation and external integration coverage remain pending.
 
 ## GitHub workflow
