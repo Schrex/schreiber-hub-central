@@ -24,3 +24,7 @@ supabase/.temp/
 *.njsproj
 *.sln
 *.sw?
+
+# Browser test artifacts (synthetic sessions)
+/test-results/
+/playwright-report/
