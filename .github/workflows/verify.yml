@@ -3,7 +3,7 @@ name: Verification
 on:
   pull_request:
   push:
-    branches: [main, develop]
+    branches: [main, develop, "codex/**"]
   workflow_dispatch:
 
 permissions:
