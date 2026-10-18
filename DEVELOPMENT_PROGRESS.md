@@ -105,9 +105,11 @@ Remaining review findings before integration/release:
   Local preparation still copies it explicitly into the disposable replay.
   Added verify:edge/typecheck:edge and a fourth CI group using Deno 2.5.6, checking
   the 15 edited entry points and imported modules without executing handlers.
-  PR #7 will represent the combined development foundation; #4–#6 are fully
-  contained predecessors and will be closed after the updated checks pass.
-  No merge or production deployment is part of this work. Verification pending.
+  PR #7 is the combined development foundation; fully contained predecessors
+  #4–#6 were closed with supersession links after verification. GitHub run
+  39163074345 at 0e07a7e passed all four groups: app, fresh backend replay, lint,
+  and Edge Function types. Local checks also passed and candidate SQL is unchanged.
+  No merge or production deployment occurred. Predecessor branches remain retained.
 
 - 2026-10-18 verification cleanup: isolated follow-up branch codex/verification-cleanup
   based on the Vitest replacement. Added codex/** push triggering; GitHub run
