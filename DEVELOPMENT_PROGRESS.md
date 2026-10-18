@@ -106,7 +106,8 @@ Remaining review findings before integration/release:
   available. Each test cleans up only its unique synthetic request. CI adds a fifth
   browser job with a fresh disposable backend. Local workflow passed. Disabling the Approve action made the test fail at
   the pending-request assertion; restoring the app passed again. App/type/unit/build
-  and lint checks pass (19 unit tests, zero lint errors, 30 warnings). Hosted checks pending. Branch protection is unavailable
+  and lint checks pass (19 unit tests, zero lint errors, 30 warnings). All five hosted groups passed for 3c9866d in run 39165379937, including the
+  browser workflow on a fresh Linux backend. PR #8 targets develop; not merged. Branch protection is unavailable
   on the private repository's current plan; the user selected manual PR/check review.
   No production changes or new integration merge occurred.
 
