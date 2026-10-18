@@ -100,6 +100,22 @@ Remaining review findings before integration/release:
 
 ## Change log
 
+- 2026-10-18 combined local smoke test at aa6b03a: installed the exact frozen
+  Bun lockfile in the actual checkout (Vite 6.4.4 / Vitest 5.0.5), started the
+  disposable backend without reset, and launched guarded dev:local on 8080.
+  Browser: employee login, Nov 9 synthetic vacation request submission (Pending),
+  admin login and approval, other employee login with no visible requests, and
+  original employee re-login showing Approved all passed. The single synthetic
+  browser request was retained for inspection, labelled
+  "Synthetic combined PR7 browser smoke 2026-10-18". Screenshot is temporary at
+  /tmp/schreiber-combined-smoke-approved.png; the local tab remains open.
+  Separate test:local and test:local:permissions passed, confirming cross-user
+  reads/forged ownership are blocked, reversed dates rejected, self-approval and
+  cancellation tampering rejected, and legitimate cancellation allowed. API test
+  records were cleaned up by the scripts. No real employee data was used.
+  Email delivery and Realtime remain untested. No branch protection changes,
+  merge into develop/main, or production deployment occurred.
+
 - 2026-10-18 consolidation: moved the unapplied time-off candidate out of
   supabase/migrations into local/candidate-migrations without changing its SQL.
   Local preparation still copies it explicitly into the disposable replay.
