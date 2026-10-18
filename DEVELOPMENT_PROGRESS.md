@@ -76,6 +76,17 @@ schema. Current status: **partial local proof; not ready for staging or release*
 
 ## Change log
 
+- 2026-10-18 local toolchain activation: installed verified Bun 1.3.14 at
+  ~/.bun/bin/bun, added duplicate-safe PATH setup to .zprofile/.zshrc, and backed
+  up pre-existing startup files with .before-schreiber-bun suffixes. A fresh
+  interactive login shell resolves Bun correctly. Frozen install in the actual
+  checkout succeeded without changing bun.lock. Confirmed local Docker startup
+  without resetting data. Replaced two old repo Vite processes with one guarded
+  dev:local server on 127.0.0.1:8080. All seven non-lint verification checks pass;
+  existing 53 lint errors / 30 warnings remain. Browser login with the synthetic
+  employee succeeded, and the Time Off screen loaded. Screenshot evidence saved
+  to /tmp/schreiber-local-bun-verified.png (temporary). No production operations.
+
 - 2026-10-18 Bun alignment: adopted the user-confirmed Bun 1.3.14 and existing
   text bun.lock. Added packageManager metadata; CI reads that version and runs
   frozen installs. Verification and local preparation scripts now use bun run;

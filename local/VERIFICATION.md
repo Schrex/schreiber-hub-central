@@ -38,8 +38,11 @@ rows may remain. Avoid concurrent runs of backend tests on the same local instan
 - TypeScript, nine Vitest cases, and build passed with those fresh dependencies.
 - Lint still fails with the existing 53 errors and 30 warnings; no rule was waived.
 - Backend verification results are recorded in DEVELOPMENT_PROGRESS.md.
-- The verification used a temporary Bun installation because Bun was absent from
-  this Mac's PATH. Install Bun 1.3.14 before using these commands in a new shell.
+- Bun 1.3.14 is now installed at `~/.bun/bin/bun` on this Mac. Fresh interactive
+  login shells resolve it through `.zprofile` / `.zshrc`; existing terminals may
+  need to be reopened. The actual checkout frozen install and all seven non-lint
+  checks pass. Browser sign-in as the synthetic employee and navigation to Time Off
+  were verified. Main and production were unchanged.
 - GitHub-hosted Linux execution remains unverified. Browser and external integration
   coverage remain pending; passing unit tests do not certify those workflows.
 
