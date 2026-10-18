@@ -76,6 +76,21 @@ schema. Current status: **partial local proof; not ready for staging or release*
 
 ## Change log
 
+- 2026-10-18 PR #1 Bun equivalent: created codex/bun-source-map-js-update from
+  foundation commit bc8f85e. Added a targeted source-map-js 1.2.2 override and
+  regenerated bun.lock with Bun 1.3.14. No other resolved package changed.
+  A plain bun update initially added a direct dependency while retaining the old
+  PostCSS copy; those intermediate changes were discarded before the override.
+  Fresh isolated frozen install, type checks, nine unit tests, and build pass.
+  Verified PostCSS resolves 1.2.2 and generates a readable source map with the
+  original CSS location. This is a compatibility check, not a vulnerability exploit
+  test. Lint remains 53 errors / 30 warnings. Backend checks were not rerun for
+  this build-dependency-only change. Existing running app dependencies were not
+  replaced; verification used a separate temporary install.
+  This branch depends on the unpublished Bun foundation; review its incremental
+  diff against codex/local-development-foundation. PR #1 remains open; no new PR,
+  push, merge, or production deployment was performed. Main remains 37284f0.
+
 - 2026-10-18 local toolchain activation: installed verified Bun 1.3.14 at
   ~/.bun/bin/bun, added duplicate-safe PATH setup to .zprofile/.zshrc, and backed
   up pre-existing startup files with .before-schreiber-bun suffixes. A fresh
