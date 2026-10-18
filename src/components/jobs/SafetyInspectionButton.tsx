@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,8 +27,8 @@ export const SafetyInspectionButton = ({ jobId }: { jobId: string }) => {
       toast.success(`Safety inspection requested${data?.recipient ? ` → ${data.recipient}` : ""}`);
       setOpen(false);
       setNotes("");
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed to send");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Failed to send"));
     } finally {
       setBusy(false);
     }

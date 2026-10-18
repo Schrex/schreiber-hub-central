@@ -82,10 +82,10 @@ const AdminPositions = () => {
 
     // Unify: every active contact + any active profile that has no contact link yet
     const linkedUserIds = new Set(
-      ((contacts ?? []) as any[]).map((c) => c.converted_user_id).filter((x): x is string => !!x),
+      (contacts ?? []).map((c) => c.converted_user_id).filter((x): x is string => !!x),
     );
-    const profsByUser = new Map(((profs ?? []) as any[]).map((p) => [p.user_id, p] as const));
-    const fromContacts: Profile[] = ((contacts ?? []) as any[]).map((c) => {
+    const profsByUser = new Map((profs ?? []).map((p) => [p.user_id, p] as const));
+    const fromContacts: Profile[] = (contacts ?? []).map((c) => {
       const p = c.converted_user_id ? profsByUser.get(c.converted_user_id) : null;
       return {
         contact_id: c.id,
@@ -95,7 +95,7 @@ const AdminPositions = () => {
         has_login: !!c.converted_user_id,
       };
     });
-    const orphanProfiles: Profile[] = ((profs ?? []) as any[])
+    const orphanProfiles: Profile[] = (profs ?? [])
       .filter((p) => !p.contact_id && !linkedUserIds.has(p.user_id))
       .map((p) => ({
         contact_id: null,

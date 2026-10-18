@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { ClipboardList, Pencil, Save, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,8 +54,8 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
       setBrief(draft);
       setEditing(false);
       toast.success("Foreman briefing saved");
-    } catch (err: any) {
-      toast.error(err?.message ?? "Save failed");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Save failed"));
     } finally {
       setSaving(false);
     }
@@ -73,8 +74,8 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
       setDraft(next);
       setEditing(false);
       toast.success("Briefing generated from contract");
-    } catch (err: any) {
-      toast.error(err?.message ?? "Generation failed");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Generation failed"));
     } finally {
       setGenerating(false);
     }

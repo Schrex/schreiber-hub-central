@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useMemo, useState } from "react";
 import { format, addDays, parseISO } from "date-fns";
 import { Copy, Loader2 } from "lucide-react";
@@ -275,8 +276,8 @@ export function CopyForwardDialog({
       });
       onCopied();
       onOpenChange(false);
-    } catch (e: any) {
-      toast({ title: "Copy failed", description: e?.message ?? String(e), variant: "destructive" });
+    } catch (e: unknown) {
+      toast({ title: "Copy failed", description: errorMessage(e, String(e)), variant: "destructive" });
     } finally {
       setBusy(false);
     }

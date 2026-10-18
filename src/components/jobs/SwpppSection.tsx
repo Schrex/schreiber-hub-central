@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Cloud, Plus, Trash2, Download, Mail, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,15 +87,15 @@ export const SwpppSection = ({ jobId, jobNumber }: { jobId: string; jobNumber: s
         file_path, file_name, file_size, mime_type,
         source: "upload",
         uploaded_by: user.id,
-        uploaded_by_name: (prof as any)?.display_name ?? null,
+        uploaded_by_name: prof?.display_name ?? null,
       });
       if (error) throw error;
       toast.success("SWPPP report added");
       reset();
       setOpen(false);
       await load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to add");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to add"));
     } finally {
       setBusy(false);
     }
@@ -127,7 +128,7 @@ export const SwpppSection = ({ jobId, jobNumber }: { jobId: string; jobNumber: s
     setBusy(true);
     try {
       const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
-      const uploaderName = (prof as any)?.display_name ?? null;
+      const uploaderName = prof?.display_name ?? null;
       const week = isoMonday();
       for (const f of files) {
         const path = `${jobId}/${week}/${Date.now()}-${f.name}`;
@@ -148,8 +149,8 @@ export const SwpppSection = ({ jobId, jobNumber }: { jobId: string; jobNumber: s
       }
       toast.success(`${files.length} report${files.length > 1 ? "s" : ""} added`);
       await load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Upload failed");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Upload failed"));
     } finally {
       setBusy(false);
     }

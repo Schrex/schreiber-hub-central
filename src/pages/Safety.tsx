@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShieldAlert, BookOpen, Mic, Plus, Sparkles, Settings as SettingsIcon, Play, Square, Users, CheckCircle2, Volume2, Pause } from "lucide-react";
@@ -170,8 +171,8 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
         video_url: "",
       });
       toast.success("AI draft ready — review and save");
-    } catch (e: any) {
-      toast.error(e.message ?? "AI generation failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "AI generation failed"));
     } finally {
       setAiBusy(false);
     }
@@ -314,7 +315,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
         .eq("assignment_date", today);
       const seen = new Set<string>();
       const list: { id: string; name: string }[] = [];
-      (data ?? []).forEach((r: any) => {
+      (data ?? []).forEach((r) => {
         const j = r.jobs;
         if (j && !seen.has(j.id)) { seen.add(j.id); list.push({ id: j.id, name: j.name }); }
       });
@@ -333,17 +334,17 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
         .select("user_id, role_on_job")
         .eq("job_id", pickedJobId)
         .eq("assignment_date", today);
-      const userIds = Array.from(new Set((rows ?? []).map((r: any) => r.user_id))).filter((u) => u !== userId);
+      const userIds = Array.from(new Set((rows ?? []).map((r) => r.user_id))).filter((u) => u !== userId);
       if (userIds.length === 0) { setCrew([]); setIncludeIds(new Set()); return; }
       const { data: profs } = await supabase
         .from("profiles")
         .select("user_id, display_name")
         .in("user_id", userIds);
       const nameMap = new Map<string, string>();
-      (profs ?? []).forEach((p: any) => nameMap.set(p.user_id, p.display_name ?? "Crew member"));
+      (profs ?? []).forEach((p) => nameMap.set(p.user_id, p.display_name ?? "Crew member"));
       const out: ScheduledCrew[] = (rows ?? [])
-        .filter((r: any) => r.user_id !== userId)
-        .reduce((acc: ScheduledCrew[], r: any) => {
+        .filter((r) => r.user_id !== userId)
+        .reduce((acc: ScheduledCrew[], r) => {
           if (acc.find(a => a.user_id === r.user_id)) return acc;
           acc.push({ user_id: r.user_id, display_name: nameMap.get(r.user_id) ?? "Crew member", role_on_job: r.role_on_job });
           return acc;
@@ -370,8 +371,8 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
       } else {
         setAiHint("No suggestion available.");
       }
-    } catch (e: any) {
-      toast.error(e.message ?? "Suggestion failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Suggestion failed"));
     } finally { setAiBusy(false); }
   };
 
@@ -403,8 +404,8 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
 
       setActiveSession(sess as SessionRow);
       load();
-    } catch (e: any) {
-      toast.error(e.message ?? "Could not start session");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Could not start session"));
     } finally { setStarting(false); }
   };
 
@@ -590,8 +591,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
       setRecording(true);
       await supabase.from("toolbox_talk_sessions").update({ recording_started_at: new Date().toISOString() }).eq("id", session.id);
       toast.success("Recording…");
-    } catch (e: any) {
-      toast.error("Mic error: " + (e.message ?? "unknown"));
+    } catch (e: unknown) {
+      toast.error("Mic error: " + (errorMessage(e, "unknown")));
     } finally { setRecBusy(false); }
   };
 
@@ -620,12 +621,12 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
       if (error) throw error;
       if (data?.transcript) setTranscript(data.transcript);
       toast.success("Transcript ready");
-    } catch (e: any) {
-      toast.error(e.message ?? "Stop/upload failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Stop/upload failed"));
     } finally { setRecBusy(false); }
   };
 
-  const hasQuiz = !!talk && Array.isArray(talk.quiz_questions) && (talk.quiz_questions as any[]).length > 0;
+  const hasQuiz = !!talk && Array.isArray(talk.quiz_questions) && talk.quiz_questions.length > 0;
   const totalAttendees = attendees.length;
   const signedCount = attendees.filter(a => !!a.signed_at).length;
   const quizDoneCount = attendees.filter(a => !!a.quiz_completed_at).length;
@@ -652,8 +653,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
       }
       toast.success(`Talk completed — emailed ${data?.recipientCount ?? 0} recipient(s)`);
       onExit();
-    } catch (e: any) {
-      toast.error(e.message ?? "Could not complete talk");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Could not complete talk"));
     } finally { setCompleting(false); }
   };
 
@@ -930,14 +931,14 @@ const QuizDialog = ({ attendee, questions, onClose, onSaved }: { attendee: Atten
     try {
       const score = answers.reduce((acc, a, i) => acc + (a === questions[i].correct_index ? 1 : 0), 0);
       const { error } = await supabase.from("toolbox_talk_attendees").update({
-        quiz_answers: answers as any, quiz_score: score, quiz_total: questions.length,
+        quiz_answers: answers, quiz_score: score, quiz_total: questions.length,
         quiz_completed_at: new Date().toISOString(),
       }).eq("id", attendee.id);
       if (error) throw error;
       toast.success(`Scored ${score}/${questions.length}`);
       onSaved();
-    } catch (e: any) {
-      toast.error(e.message ?? "Save failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Save failed"));
     } finally { setSaving(false); }
   };
 
@@ -1001,7 +1002,7 @@ const AdminSettings = () => {
       if (error) throw error;
       toast.success("Saved");
       setOpen(false);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) { toast.error(errorMessage(e, "Request failed")); }
     finally { setBusy(false); }
   };
 
@@ -1113,8 +1114,8 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
       audioRef.current = audio;
       await audio.play();
       setPlaying(true);
-    } catch (e: any) {
-      toast.error(e.message ?? "Voice playback failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Voice playback failed"));
     } finally { setBusy(false); }
   };
 

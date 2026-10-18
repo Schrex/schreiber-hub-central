@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +34,7 @@ export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
       supabase.from("jobs").select("contract_file_path").eq("id", jobId).maybeSingle(),
     ]);
     setItems((scopeRes.data as ScopeItem[]) ?? []);
-    setHasContract(!!(jobRes.data as any)?.contract_file_path);
+    setHasContract(!!jobRes.data?.contract_file_path);
   };
 
   useEffect(() => { load(); }, [jobId]);
@@ -50,8 +51,8 @@ export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
       if (error) throw error;
       setDraft("");
       await load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to add");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to add"));
     } finally {
       setBusy(false);
     }
@@ -77,8 +78,8 @@ export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
       const count = (data as any)?.inserted ?? 0;
       toast.success(count ? `Added ${count} scope item${count === 1 ? "" : "s"}` : "No scope items found");
       await load();
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to extract scope");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to extract scope"));
     } finally {
       setExtracting(false);
     }

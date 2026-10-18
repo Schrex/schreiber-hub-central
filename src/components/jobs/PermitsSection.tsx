@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Plus, FileCheck, Trash2, Paperclip, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -202,8 +203,8 @@ export const PermitsSection = ({ jobId }: Props) => {
       reset();
       setOpen(false);
       load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to save");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to save"));
     } finally {
       setBusy(false);
     }

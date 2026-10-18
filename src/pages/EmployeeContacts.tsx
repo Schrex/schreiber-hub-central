@@ -248,7 +248,7 @@ const EmployeeContacts = () => {
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase.rpc("list_employee_directory");
-    const sorted = (data ?? []).slice().sort((a: any, b: any) =>
+    const sorted = (data ?? []).slice().sort((a, b) =>
       (a?.name ?? "").localeCompare(b?.name ?? "")
     );
     if (error) {

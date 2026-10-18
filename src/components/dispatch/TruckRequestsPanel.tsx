@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Truck, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -95,8 +96,8 @@ export const TruckRequestsPanel = () => {
       toast.success(mode === "approve" ? "Approved — dispatch order created" : "Request declined");
       close();
       load();
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Failed"));
     } finally {
       setBusy(false);
     }

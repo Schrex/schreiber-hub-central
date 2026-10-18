@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Plus, UserPlus, Briefcase, DollarSign, Phone, Mail, User } from "lucide-react";
@@ -114,8 +115,8 @@ const Referrals = () => {
       resetForm();
       setOpen(false);
       load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to submit");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to submit"));
     } finally {
       setBusy(false);
     }

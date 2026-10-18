@@ -28,7 +28,7 @@ export async function fetchCurrentPositions(
     .or(`end_date.is.null,end_date.gte.${today}`)
     .order("effective_date", { ascending: false });
   if (error || !data) return map;
-  for (const row of data as any[]) {
+  for (const row of data) {
     if (map.has(row.user_id)) continue; // first row wins (most recent)
     map.set(row.user_id, {
       user_id: row.user_id,
