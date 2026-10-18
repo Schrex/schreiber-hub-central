@@ -1,3 +1,4 @@
+import type { Database } from "../../../src/integrations/supabase/types.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -40,7 +41,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
-    const supabase = createClient(
+    const supabase = createClient<Database>(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
@@ -82,11 +83,11 @@ Deno.serve(async (req) => {
       if (c.converted_user_id) phoneByUser.set(c.converted_user_id, c.phone ?? null)
     }
 
-    const talkTitle = (session.talks as unknown as { title: string } | null)?.title ?? 'Toolbox talk'
+    const talkTitle = session.talks?.title ?? 'Toolbox talk'
     const results: { attendee_id: string; name: string; channel: string }[] = []
 
     // Use service role to insert notifications + update attendees regardless of RLS quirks
-    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const admin = createClient<Database>(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
     for (const a of attendees ?? []) {
       if (!a.user_id) continue
