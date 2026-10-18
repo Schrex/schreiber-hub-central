@@ -25,16 +25,38 @@ schema. Current status: **partial local proof; not ready for staging or release*
 
 | Work item | Status | Evidence / next action |
 | --- | --- | --- |
-| Repository/build baseline | Verified locally | Build + TypeScript pass; lint now has 53 errors / 30 warnings |
+| Repository/build baseline | Verified locally | Build + TypeScript pass; cleanup branch lint has 0 errors / 30 warnings |
 | Isolated local Auth/database | Verified for limited scope | Synthetic accounts; API on 55321; `dev:local` |
 | Time-off happy path and cross-user isolation | Verified locally | `bun run test:local`; prior manual browser submission |
 | Targeted HR schema reconstruction | Verified locally; full parity pending | Supplied export incorporated; `local:audit-schema`: 60/60 tables and column names |
 | Permission state transitions | Fixed and verified locally; NOT deployed | Forward migration `20261016210000`; permission + happy-path tests pass |
 | External functions/Realtime | Not implemented locally | Explicitly disabled, not silently considered tested |
-| Verification command and CI definition | Implemented and checked locally | `bun run verify`: 7 checks pass, lint fails; GitHub execution pending |
+| Verification command and CI definition | Implemented and checked locally | First hosted app/backend checks pass; cleanup lint passes locally; hosted cleanup pending |
 | Branch protection | Not configured | Required remote checks await first GitHub run and lint cleanup |
 | Staging | Not established | Separate backend and integration credentials needed |
 | Production release | Not started | All seven release steps below remain pending |
+
+## Foundation review — 2026-10-18
+
+Reviewed local preparation/startup, verification workflow, permission migration,
+API assertions, and release packaging. The fixed-loopback backend guard, synthetic
+fixtures, unchanged historical migrations, exact authorization/constraint assertions,
+and read-only CI permissions support continued isolated development. A fresh GitHub
+runner successfully rebuilt the local database and passed the four backend checks.
+
+Remaining review findings before integration/release:
+
+- The foundation and all cumulative dependency PRs still include the forward
+  time-off permission migration in supabase/migrations. A comment saying “deploy
+  separately” is not a deployment control. Separate or explicitly review its release
+  scope before any production promotion; never deploy local/hr-bootstrap.sql.
+- Local replay deliberately differs from production in four documented ways.
+  The 60-table/column inventory does not validate full ACL/function/trigger parity.
+- External functions and Realtime are disabled in the disposable backend. Static
+  checks of edited functions do not establish live behavior or delivery success.
+- CI is now running, but branch protection and staging/recovery are still absent.
+  Draft dependency PRs include foundation changes and must not be treated as small,
+  standalone production updates. Main was not changed in this review.
 
 ## Latest findings
 
@@ -76,6 +98,18 @@ schema. Current status: **partial local proof; not ready for staging or release*
 - [ ] Production errors and service health reviewed.
 
 ## Change log
+
+- 2026-10-18 verification cleanup: isolated follow-up branch codex/verification-cleanup
+  based on the Vitest replacement. Added codex/** push triggering; GitHub run
+  39161662623 passed app and fresh-backend checks, while lint failed on its original
+  53-error baseline. Earlier PR-trigger absence remains unexplained; Actions is enabled.
+  Cleanup now passes local lint (0 errors / 30 warnings), frozen Bun install,
+  TypeScript, 19 Vitest tests, build and four backend checks. Deno 2.5.6 static checks
+  pass for all 15 edited Edge Function entry points. Scoped query/response contracts
+  replace explicit any; these are not blanket runtime validation. Notification
+  recipient extraction handles object and array profile embeds and has regression
+  coverage. No services were invoked or deployed. Hosted cleanup validation pending.
+
 
 - 2026-10-18 dependency replacement publication: published develop at 5a81add and
   the foundation/source-map/brace/Vitest feature branches. Opened draft PRs

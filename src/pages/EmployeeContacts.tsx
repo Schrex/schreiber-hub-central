@@ -678,7 +678,7 @@ const EmployeeContacts = () => {
       return;
     }
     setConverting(true);
-    const { data, error } = await supabase.functions.invoke("convert-employee-contact", {
+    const { data, error } = await supabase.functions.invoke<{ error?: string }>("convert-employee-contact", {
       body: {
         contactId: convertTarget.id,
         email: convertEmail.trim(),
@@ -688,10 +688,10 @@ const EmployeeContacts = () => {
       },
     });
     setConverting(false);
-    if (error || (data as any)?.error) {
+    if (error || data?.error) {
       toast({
         title: "Couldn't create login",
-        description: (data as any)?.error ?? error?.message ?? "Unknown error",
+        description: data?.error ?? error?.message ?? "Unknown error",
         variant: "destructive",
       });
       return;

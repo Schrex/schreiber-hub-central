@@ -167,10 +167,10 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
         let category: string | null = null;
         let aiCategorized = false;
         try {
-          const { data: ai } = await supabase.functions.invoke("categorize-document", {
+          const { data: ai } = await supabase.functions.invoke<{ fields?: { confidence?: number; title?: string; category?: string } }>("categorize-document", {
             body: { kind: "submittal", bucket: "job-submittals", path, fileName: f.name },
           });
-          const fields = (ai as any)?.fields;
+          const fields = ai?.fields;
           if (fields && (fields.confidence ?? 0) >= 0.55) {
             if (fields.title) title = String(fields.title);
             if (fields.category) category = String(fields.category);

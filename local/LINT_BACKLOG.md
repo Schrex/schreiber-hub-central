@@ -5,13 +5,19 @@ branch with origin/main at 5a81add: **128 errors and 30 warnings**; the incoming
 previewAuthStorage.ts adds one prefer-const error. The table below retains the initial snapshot. Lint remains a failing verification
 job; no rule was disabled and no continue-on-error was added to CI.
 
-Latest cleanup: **53 errors and 30 warnings** remain (75 errors removed).
-Current errors: 49 explicit-any, two regex escapes, one generated preview-auth
-prefer-const, and one empty audio retry catch. Frontend error handling, inferred
-query types, several typed writes, props aliases, schedule declarations, and
-Tailwind import have been cleaned up. Eight error-message regression tests added;
-full local verification passes all seven non-lint checks. No rules were disabled.
-Generated files and backend function code remain unchanged in this batch.
+Latest cleanup (2026-10-18, codex/verification-cleanup): **0 errors and 30 warnings**.
+No lint rule was disabled and CI still treats errors as failures. Remaining warnings
+cover hook dependencies and React refresh/module exports; they still need semantic
+review. This does not mean every input is runtime-validated: existing JSON/relationship
+contracts retain scoped type assertions. Edge Function behavior with external providers
+is not certified by lint or static checks.
+
+The second batch declares response and query shapes, narrows error/settings values,
+fixes preview-auth timer declaration and regex escapes, and documents audio retry.
+Deno 2.5.6 static checks pass for all 15 edited Edge Function entry points. Notification
+recipient extraction now accepts both object and array embeds, with regression tests.
+The shared Edge Function error reader is tested with native/API errors and malformed
+values. Fresh Bun install, TypeScript, 19 unit tests, build and local backend checks pass.
 
 The category and file tables below are historical, not the current remaining count.
 

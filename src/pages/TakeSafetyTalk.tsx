@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SignaturePad } from "@/components/safety/SignaturePad";
 import { toast } from "sonner";
 
-interface QuizQ { question: string; options: string[]; correct_index: number; }
+type QuizQ = { question: string; options: string[]; correct_index: number; };
 
 interface Attendee {
   id: string; session_id: string; user_id: string | null;
@@ -69,8 +69,7 @@ const TakeSafetyTalk = () => {
         setSession(sess as Session);
         const { data: t } = await supabase.from("toolbox_talks").select("*").eq("id", sess.talk_id).maybeSingle();
         if (t) {
-          const tt = t as any;
-          tt.quiz_questions = Array.isArray(tt.quiz_questions) ? tt.quiz_questions : [];
+          const tt = { ...t, quiz_questions: (Array.isArray(t.quiz_questions) ? t.quiz_questions : []) as QuizQ[] };
           setTalk(tt as Talk);
           setAnswers((tt.quiz_questions as QuizQ[]).map(() => -1));
           setRevealed((tt.quiz_questions as QuizQ[]).map(() => false));

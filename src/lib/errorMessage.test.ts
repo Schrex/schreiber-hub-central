@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { errorMessage } from "./errorMessage";
+import { errorMessage as frontendErrorMessage } from "./errorMessage";
+import { errorMessage as edgeErrorMessage } from "../../supabase/functions/_shared/errorMessage";
 
-describe("errorMessage", () => {
+describe.each([["frontend", frontendErrorMessage], ["edge", edgeErrorMessage]] as const)("%s errorMessage", (_, errorMessage) => {
   it("preserves native and API error messages", () => {
     expect(errorMessage(new Error("Upload failed"), "Fallback")).toBe("Upload failed");
     expect(errorMessage({ message: "Permission denied", code: "42501" }, "Fallback")).toBe("Permission denied");

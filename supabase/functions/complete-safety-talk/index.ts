@@ -1,3 +1,4 @@
+import type { Tables } from "../../../src/integrations/supabase/types.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -66,7 +67,7 @@ Deno.serve(async (req) => {
 
     // Authz: foreman of session OR admin
     const { data: roles } = await admin.from('user_roles').select('role').eq('user_id', user.id)
-    const isAdmin = (roles ?? []).some((r: any) => r.role === 'admin')
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === 'admin')
     if (session.foreman_id !== user.id && !isAdmin) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -85,8 +86,8 @@ Deno.serve(async (req) => {
       .order('attendee_name')
 
     const list = attendees ?? []
-    const hasQuiz = Array.isArray(talk?.quiz_questions) && (talk?.quiz_questions as any[]).length > 0
-    const missing = list.filter((a: any) => {
+    const hasQuiz = Array.isArray(talk?.quiz_questions) && talk.quiz_questions.length > 0
+    const missing = list.filter((a: Pick<Tables<"toolbox_talk_attendees">, "signed_at" | "quiz_completed_at" | "attendee_name" | "quiz_score" | "quiz_total">) => {
       if (!a.signed_at) return true
       if (hasQuiz && !a.quiz_completed_at) return true
       return false
@@ -101,12 +102,12 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         error: 'incomplete_attendees',
         message: 'Every attendee must sign and complete the quiz before completing the talk.',
-        missing: missing.map((m: any) => m.attendee_name),
+        missing: missing.map((m: { attendee_name: string }) => m.attendee_name),
       }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     // Job details for the email
-    let job: any = null
+    let job: Pick<Tables<"jobs">, "job_number" | "name" | "address" | "customer" | "gc"> | null = null
     if (session.job_id) {
       const { data } = await admin
         .from('jobs')
@@ -120,10 +121,10 @@ Deno.serve(async (req) => {
       .from('user_roles')
       .select('user_id, role')
       .in('role', ['office', 'admin'])
-    const officeIds = Array.from(new Set((officeUsers ?? []).map((r: any) => r.user_id)))
+    const officeIds = Array.from(new Set((officeUsers ?? []).map((r: { user_id: string }) => r.user_id)))
     const { data: officeProfiles } = officeIds.length
       ? await admin.from('profiles').select('email').in('user_id', officeIds).eq('is_active', true)
-      : { data: [] as any[] }
+      : { data: [] as { email: string | null }[] }
 
     const recipients = new Set<string>()
     for (const p of officeProfiles ?? []) {
@@ -156,7 +157,7 @@ Deno.serve(async (req) => {
       gc: job?.gc ?? '',
       foremanName: session.foreman_name ?? 'Foreman',
       heldAt: fmtDate(session.started_at),
-      attendees: list.map((a: any) => ({
+      attendees: list.map((a: Pick<Tables<"toolbox_talk_attendees">, "signed_at" | "quiz_completed_at" | "attendee_name" | "quiz_score" | "quiz_total">) => ({
         name: a.attendee_name,
         signed: !!a.signed_at,
         quizScore: a.quiz_score,

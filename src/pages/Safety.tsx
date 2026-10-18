@@ -1,3 +1,4 @@
+import type { Json } from "@/integrations/supabase/types";
 import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -17,8 +18,8 @@ import { AccidentReportButton } from "@/components/safety/AccidentReportDialog";
 import { SafetyViolationButton } from "@/components/safety/SafetyViolationDialog";
 
 interface SafetyRule { id: string; title: string; body: string; category: string | null; sort_order: number; is_active: boolean; }
-interface ToolboxTalk { id: string; title: string; category: string | null; content: string; quiz_questions: any; created_with_ai: boolean; is_active: boolean; image_url?: string | null; video_url?: string | null; voice_script?: string | null; }
-interface QuizQ { question: string; options: string[]; correct_index: number; }
+interface ToolboxTalk { id: string; title: string; category: string | null; content: string; quiz_questions: Json; created_with_ai: boolean; is_active: boolean; image_url?: string | null; video_url?: string | null; voice_script?: string | null; }
+type QuizQ = { question: string; options: string[]; correct_index: number; };
 interface SessionRow { id: string; talk_id: string; foreman_id: string; foreman_name: string | null; status: string; started_at: string; recording_started_at: string | null; recording_stopped_at: string | null; audio_path: string | null; transcript: string | null; }
 interface Attendee { id: string; session_id: string; user_id: string | null; attendee_name: string; signature_data: string | null; signed_at: string | null; quiz_score: number | null; quiz_total: number | null; quiz_completed_at: string | null; }
 
@@ -184,7 +185,7 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
       title: form.title.trim(),
       category: form.category.trim() || null,
       content: form.content,
-      quiz_questions: form.quiz_questions as any,
+      quiz_questions: form.quiz_questions.map(q => ({ ...q })),
       created_with_ai: true,
       image_url: form.image_url || null,
       voice_script: form.voice_script || null,
@@ -643,8 +644,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
         body: { sessionId: session.id, extraRecipients: extras },
       });
       if (error) {
-        const ctx = (error as any)?.context;
-        const body = ctx ? await ctx.json?.().catch(() => null) : null;
+        const ctx: unknown = error.context;
+        const body = ctx instanceof Response ? await ctx.json().catch(() => null) : null;
         if (body?.error === "incomplete_attendees") {
           toast.error(`Still waiting on: ${(body.missing ?? []).join(", ")}`);
           return;
@@ -983,8 +984,9 @@ const AdminSettings = () => {
     if (!open) return;
     supabase.from("app_settings").select("key,value").in("key", ["york_safety_email", "safety_talk_voice_id"]).then(({ data }) => {
       for (const row of data ?? []) {
-        const v = (row as any).value;
-        const str = typeof v === "string" ? v : (v?.email ?? v?.voice_id ?? "");
+        const v = row.value;
+        const candidate = typeof v === "string" ? v : (v && typeof v === "object" && !Array.isArray(v) ? v.email ?? v.voice_id : "");
+        const str = typeof candidate === "string" ? candidate : "";
         if (row.key === "york_safety_email") setEmail(str);
         if (row.key === "safety_talk_voice_id") setVoiceId(str);
       }
@@ -1060,7 +1062,7 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
       return;
     }
     if (audioRef.current && urlRef.current) {
-      try { await audioRef.current.play(); setPlaying(true); return; } catch {}
+      try { await audioRef.current.play(); setPlaying(true); return; } catch { /* Retry by generating fresh audio below. */ }
     }
     setBusy(true);
     try {

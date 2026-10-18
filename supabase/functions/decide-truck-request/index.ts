@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
     const { data: roles } = await userClient.from('user_roles').select('role').eq('user_id', user.id)
-    const allowed = (roles ?? []).some((r: any) => ['office', 'admin'].includes(r.role))
+    const allowed = (roles ?? []).some((r: { role: string }) => ['office', 'admin'].includes(r.role))
     if (!allowed) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: `Already ${request.status}` }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const job = (request as any).jobs
+    const job = (request.jobs as unknown as { id: string; job_number: string | null; name: string; address: string | null; customer: string | null; gc: string | null } | null)
     let dispatchOrderId: string | null = null
 
     if (body.decision === 'approved') {

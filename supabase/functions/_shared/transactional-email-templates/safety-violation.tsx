@@ -41,7 +41,7 @@ const SafetyViolationEmail: React.FC<Props> = (p) => {
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>{urgent ? 'URGENT — ' : ''}Safety violation issued to {p.employeeName} ({p.jobLabel || ''})</Preview>
+      <Preview>{urgent ? 'URGENT — ' : ''}Safety violation issued to {p.employeeName ?? ''} ({p.jobLabel || ''})</Preview>
       <Body style={main}>
         <Container style={container}>
           {urgent && (

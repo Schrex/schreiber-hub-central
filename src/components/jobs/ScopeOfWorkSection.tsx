@@ -71,11 +71,11 @@ export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
       : false;
     setExtracting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("extract-scope-from-contract", {
+      const { data, error } = await supabase.functions.invoke<{ inserted?: number }>("extract-scope-from-contract", {
         body: { jobId, replace },
       });
       if (error) throw error;
-      const count = (data as any)?.inserted ?? 0;
+      const count = data?.inserted ?? 0;
       toast.success(count ? `Added ${count} scope item${count === 1 ? "" : "s"}` : "No scope items found");
       await load();
     } catch (err: unknown) {

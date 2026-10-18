@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     if (!session) return new Response(JSON.stringify({ error: 'Session not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
     const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
-    const isAdmin = (roles ?? []).some((r: any) => r.role === 'admin')
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === 'admin')
     if (session.foreman_id !== user.id && !isAdmin) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -70,20 +70,20 @@ Deno.serve(async (req) => {
       .select('id, user_id, attendee_name, access_token, signed_at, notified_at')
       .eq('session_id', sessionId)
 
-    const userIds = (attendees ?? []).map((a: any) => a.user_id).filter(Boolean)
+    const userIds = (attendees ?? []).map((a: { user_id: string | null }) => a.user_id).filter(Boolean)
     const { data: contacts } = userIds.length
       ? await supabase
           .from('employee_contacts')
           .select('phone, converted_user_id')
           .in('converted_user_id', userIds)
-      : { data: [] as any[] }
+      : { data: [] as { converted_user_id: string | null; phone: string | null }[] }
     const phoneByUser = new Map<string, string | null>()
     for (const c of contacts ?? []) {
       if (c.converted_user_id) phoneByUser.set(c.converted_user_id, c.phone ?? null)
     }
 
-    const talkTitle = (session as any).talks?.title ?? 'Toolbox talk'
-    const results: any[] = []
+    const talkTitle = (session.talks as unknown as { title: string } | null)?.title ?? 'Toolbox talk'
+    const results: { attendee_id: string; name: string; channel: string }[] = []
 
     // Use service role to insert notifications + update attendees regardless of RLS quirks
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)

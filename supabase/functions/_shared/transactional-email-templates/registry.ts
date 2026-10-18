@@ -9,8 +9,8 @@ import { template as accidentReport } from './accident-report.tsx'
 import { template as safetyViolation } from './safety-violation.tsx'
 
 export interface TemplateEntry {
-  component: React.ComponentType<any>
-  subject: string | ((data: any) => string)
+  component: React.ComponentType<Record<string, unknown>>
+  subject: string | ((data: Record<string, unknown>) => string)
   displayName?: string
   previewData?: Record<string, unknown>
   to?: string

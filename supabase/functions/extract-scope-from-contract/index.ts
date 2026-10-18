@@ -1,3 +1,4 @@
+import { errorMessage } from "../_shared/errorMessage.ts";
 // Extract scope-of-work bullet items from an uploaded job contract using Lovable AI.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -38,7 +39,7 @@ Deno.serve(async (req) => {
     // Only office/admin may read contracts and write job scope. Replace requires admin.
     const { data: roles } = await admin
       .from("user_roles").select("role").eq("user_id", userData.user.id);
-    const roleSet = new Set((roles ?? []).map((r: any) => r.role));
+    const roleSet = new Set((roles ?? []).map((r: { role: string }) => r.role));
     const isOffice = roleSet.has("office") || roleSet.has("admin");
     const isAdmin = roleSet.has("admin");
     if (!isOffice) return json(403, { error: "forbidden" });
@@ -127,7 +128,7 @@ Deno.serve(async (req) => {
     if (insErr) return json(500, { error: insErr.message });
 
     return json(200, { inserted: rows.length, items });
-  } catch (err: any) {
-    return json(500, { error: err?.message ?? "unknown error" });
+  } catch (err: unknown) {
+    return json(500, { error: errorMessage(err, "unknown error") });
   }
 });

@@ -1,3 +1,4 @@
+import { profileEmails } from "../_shared/profileEmails.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
 
     // Authz: only the reporter, or office/admin, can trigger notifications
     const { data: roles } = await admin.from('user_roles').select('role').eq('user_id', user.id)
-    const isPrivileged = (roles ?? []).some((r: any) => r.role === 'office' || r.role === 'admin')
+    const isPrivileged = (roles ?? []).some((r: { role: string }) => r.role === 'office' || r.role === 'admin')
     if (report.reported_by !== user.id && !isPrivileged) {
       return json({ error: 'Forbidden' }, 403)
     }
@@ -43,8 +44,7 @@ Deno.serve(async (req) => {
 
     const emails = Array.from(new Set(
       (recipients ?? [])
-        .map((r: any) => r.profiles?.email)
-        .filter((e: string | null | undefined): e is string => !!e && e.includes('@'))
+        .flatMap(r => profileEmails(r.profiles))
     ))
 
     if (emails.length === 0) {

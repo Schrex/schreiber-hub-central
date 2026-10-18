@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     // Admin only
     const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
-    const isAdmin = (roles ?? []).some((r: any) => r.role === 'admin')
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === 'admin')
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
 
     // Resolve recipient email from app_settings, fall back to default
     const { data: setting } = await admin.from('app_settings').select('value').eq('key', 'york_safety_email').maybeSingle()
-    const settingValue = setting?.value as any
+    const settingValue = setting?.value as string | { email?: string } | null
     const recipient =
       (typeof settingValue === 'string' && settingValue) ||
       (settingValue && typeof settingValue === 'object' && settingValue.email) ||
