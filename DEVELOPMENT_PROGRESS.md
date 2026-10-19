@@ -3,6 +3,25 @@
 Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Database export captured — 2026-10-19
+
+Rechecked authenticated Lovable Cloud storage and downloaded the completed export
+from the private `database_export_19_10_26` bucket. The original ZIP and extracted
+PostgreSQL custom archive are in `/Users/sumanththota/Schrex/archive/database-2026-10-19`
+outside git (directory 0700, files 0600). ZIP integrity passes; archive size is
+30,196,291 bytes. SHA-256 and the full catalog are recorded only in the private folder.
+
+Read-only `pg_restore --list` using the existing local PostgreSQL tool succeeds:
+1,666 catalog entries, 60 public table-data sections, 27 Auth table-data sections
+including users and identities, and eight storage table-data sections. Two cron
+data sections include execution history. Preserve the original; exclude destination
+scheduler execution history during reviewed restore, leaving the source untouched.
+These counts establish catalog presence, not row completeness, hash preservation,
+or restore success. No SQL was executed or database restored; synthetic staging
+was not loaded with real data. Next: privately inspect restore selection and schema,
+reconcile counts and file metadata, then perform the restricted independent rehearsal.
+DNS is still pending. No production configuration or data was changed.
+
 ## Review packaging and current scope — 2026-10-19
 
 DNS verification and the full database export remain blocked on access. The accepted

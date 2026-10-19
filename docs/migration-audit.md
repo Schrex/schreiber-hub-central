@@ -16,7 +16,8 @@ Read-only audit of GitHub `main` at `5a81add` ("Lovable update"), compared with 
 See [private export and independent restore preparation](migration-export-rehearsal.md)
 for export steps and acceptance criteria. The user approved local private storage
 at `/Users/sumanththota/Schrex/archive`; a database export was subsequently requested,
-but its download link is unavailable and import remains paused. Storage archives
+and the completed backup has now been captured privately and catalog-inspected.
+Import remains paused pending restore-selection review. Storage archives
 were downloaded privately; completeness and an independent restore are not proven.
 The separate `hub-rehearsal` destination is recorded in
 [destination audit](migration-destination-audit.md); its read-only connection check
