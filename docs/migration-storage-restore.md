@@ -41,3 +41,22 @@ Do not claim a complete metadata-preserving restore from this byte-copy step alo
 
 Validation: five mocked API tests pass; private source preflight passes all 23 files
 and 15 application buckets. No live upload or remote checksum test has run yet.
+
+## Verified result and remaining ownership gap — 2026-10-19
+
+Private restore report confirms all 23 bytes/checksums and 15 private bucket inventories
+passed. A subsequent read-only hosted query (`scripts/rehearsal/storage-metadata-check.sql`)
+returns hashed paths/owners for private comparison. All object paths, sizes, MIME types,
+cache-control values and empty custom metadata match. Both source and destination
+bucket owners are empty. No destination storage policies have been installed.
+
+13 source objects have owner/owner_id values missing on the destination; 10 are
+ownerless in both. Original owner mappings remain in the private snapshot. None of
+the 57 original storage policies reference owner fields, but functional permission
+testing remains necessary and exact owner preservation remains unresolved.
+
+Do not replay the storage dump or directly patch these fields as an assumed safe fix.
+Supabase's [Storage schema guidance](https://supabase.com/docs/guides/storage/schema/design)
+requires treating metadata as read-only and using Storage API mutations. A supported
+ownership-preserving procedure must be validated before correcting the 13 owners.
+No public access, policies, login or email was enabled during this check.

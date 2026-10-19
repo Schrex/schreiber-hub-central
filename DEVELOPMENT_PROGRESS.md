@@ -3,6 +3,30 @@
 Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Storage byte copy confirmed and metadata compared — 2026-10-19
+
+Private restore report confirms completion: all 23 files verified and 15 private
+buckets inventoried. Read-only hosted metadata query compared hashed object paths
+and owner IDs against the original private storage snapshot. All 23 paths, sizes,
+content types, cache-control values and empty custom-metadata states match. All
+15 buckets remain private with empty owners; target storage policies remain absent.
+Source bucket owners were also empty. Private comparison evidence saved outside git.
+
+Thirteen source objects have owner and owner_id values absent at destination after
+service-key upload; ten originally ownerless objects match. No ownership correction
+applied. All 57 source storage policies were inspected for owner references; none
+reference owner fields. This does not certify policy access or justify discarding
+ownership provenance. Original exact mappings remain in the private snapshot.
+
+Source-public talk-media remains private by design and rehearsal size limits remain
+capped. Storage-generated IDs, versions/timestamps are not claimed identical. Supabase
+recommends treating Storage metadata as read-only and using its API for mutations;
+do not blindly UPDATE owner columns or replay the storage dump. Next: validate an
+ownership-preserving migration method and review/test the original storage policies
+before any access activation. No production or destination data/configuration changed
+in this inspection step; no credentials read. Read-only SQL query succeeded and git
+whitespace checks pass; no app tests needed for inspection-only SQL/documentation.
+
 ## Database content verified; Storage helper prepared — 2026-10-19
 
 Read the private comparison report: all 62 business/account COPY sections pass,
