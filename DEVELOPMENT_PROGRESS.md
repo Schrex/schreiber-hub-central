@@ -3,6 +3,29 @@
 Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Staged migration candidates — 2026-10-19
+
+Prepared private pg_restore-selected SQL candidates (no SQL execution) under the
+approved archive's `candidate-import/`: public pre-data/post-data, all 60 business
+tables, and Auth users/identities. Counts and COPY payload hashes exactly match the
+inspected backup for all 62 data sections. Originals are unchanged. Candidate schema
+scan found no source-project URL, network/cron call, Vault reference or URL literal;
+pgmq remains a dependency. This scan is not full executable safety proof.
+
+Added structural TOC selector with six synthetic tests (16 inspection/selection tests
+total pass). It defers triggers, grants, source dispatch/wake functions and all managed
+platform objects, never strips COPY rows. Public post-data retains RLS/constraints.
+Account candidate includes users/identities only: session/refresh/MFA-AMR/token state
+remains archived and its fresh-sign-in treatment must be finalized explicitly. Empty
+other durable Auth tables and nonempty migration history are not blindly loaded.
+
+Prepared `scripts/rehearsal-schema-check.sh`: fixed destination, verified TLS,
+read-only pg_dump, hidden password prompt, private output; shell syntax passes.
+User asked to run it to complete constraints/defaults/enums comparison. No password
+requested in chat, no destination settings changed, no import runner approved or
+executed. Candidate SQL must not be run standalone: grants, triggers, pgmq setup,
+managed compatibility and destination client/mail isolation remain required.
+
 ## Read-only destination compatibility preflight — 2026-10-19
 
 Rechecked hub-rehearsal via authenticated dashboard and metadata/aggregate SELECTs.

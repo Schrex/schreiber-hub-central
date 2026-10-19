@@ -90,6 +90,31 @@ mapping and extension versions must be reviewed separately, not silently dropped
    Test owner-authorized existing-user login and ordinary-role file/RLS access;
    no employee messages or source password resets. Email reset test waits for DNS.
 
+## Staged candidate artifacts
+
+Private `candidate-import/` now contains four SQL candidates generated structurally
+from TOC selection, not edited COPY payloads: public pre-data (72,571 bytes), public
+post-data (125,190), business data (429,314), Auth accounts (21,325). Per-file hashes
+and data-preservation checks are private. All 60 business and two account-table COPY
+payloads match the original inspection exactly. These are not approved import files.
+
+The selector excludes all triggers/grants and source mail dispatch/wake definitions
+from this first schema slice. pgmq-dependent queue functions remain, so extension
+setup and grants must be finalized. The deferred inventory is preserved for review;
+it is not permission to lose deferred business behavior or platform state.
+
+The Auth slice has users/identities only. Eleven sessions, 59 refresh tokens, eleven
+MFA-AMR claims and one one-time token remain in the original archive, not the account
+candidate, to support the proposed fresh-sign-in approach. No MFA factors or WebAuthn
+credentials exist in this snapshot. Confirm the final treatment when approving the
+complete restore; do not represent the two-table candidate as all Auth state.
+
+Run `sh scripts/rehearsal-schema-check.sh` in the operator's Terminal to capture
+current destination-managed definitions privately with a hidden password prompt.
+It exports no rows and enables default_transaction_read_only. Source schema and
+rehearsal definitions then support full enum/default/constraint comparison before
+a final guarded transaction runner is prepared. No credentials are saved.
+
 ## Remaining prerequisites
 
 The read-only destination catalog was captured: empty target and 344 managed
