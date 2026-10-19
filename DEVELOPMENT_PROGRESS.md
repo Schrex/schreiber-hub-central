@@ -3,6 +3,26 @@
 Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Operator baseline commit and reconciliation preparation — 2026-10-19
+
+Operator reports successful baseline commit from the corrected direct-psql helper,
+with private evidence in runner-1792441149159. The runner's transaction/count/RLS
+checks passed according to its success result; independent content reconciliation
+is not complete yet. Do not rerun the importer or enable client access.
+
+Prepared `scripts/rehearsal-data-check.sh`: fixed-target, verified TLS, hidden-password
+read-only pg_dump of public tables and Auth users/identities into the private archive.
+The offline comparator verifies pinned source fingerprints and compares complete
+COPY column lists and order-independent row-hash multisets, preserving duplicate
+counts. All fields, including password hashes, participate; values are never printed.
+Partial captures fail closed. Reports remain private. Sequences, permissions, files
+and application behavior are explicitly outside this comparison's scope.
+
+Validation: 27 tooling tests pass, including changed hash/content, reordered rows,
+duplicate multiplicity, table/column mismatches and truncated input; shell syntax and
+whitespace pass. Waiting for operator capture with private password. File restoration
+follows only after this comparison passes; production remains untouched.
+
 ## Password-path isolation — 2026-10-19
 
 Operator reset the rehearsal database password and supplied a successful read-only

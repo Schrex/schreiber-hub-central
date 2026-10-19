@@ -2,8 +2,9 @@
 
 Prepared 2026-10-19 for **hub-rehearsal only**, `acgqjjbrnkmeazswdnzp`.
 This is the first database load, not a complete functional restore or production cutover.
-The first operator attempt failed and rolled back; a hosted aggregate check confirms
-zero users, identities and public tables. No successful real-data import yet.
+The corrected operator retry reported **Baseline committed** in private run
+`runner-1792441149159`. Independent content reconciliation is the next gate.
+Earlier failed-attempt details below are historical; do not rerun the importer.
 
 ## Isolation applied
 
@@ -104,3 +105,13 @@ The operator subsequently proved the reset password works through the read-only
 login helper. The importer now uses the same direct psql container entrypoint,
 removing shell/stream-redirection differences. Authentication errors previously
 occurred before SQL execution; their exact input-handling cause is unproven.
+
+## Step 1 after commit: private content reconciliation
+
+Run `sh scripts/rehearsal-data-check.sh` from the repository, entering the database
+password only at its hidden prompt. This performs a read-only capture into the approved
+private archive, then compares 60 business and two account COPY sections against the
+pinned source candidates. Whole-row hash multisets detect every field change, including
+password hashes, without requiring stable physical row ordering. Generated columns
+omitted by pg_dump, sequences, grants, files and executable behavior remain separate
+checks. A mismatch blocks the next step; do not edit data to force a match.
