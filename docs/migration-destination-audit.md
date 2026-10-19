@@ -9,6 +9,35 @@ Read-only authenticated dashboard inspection on 2026-10-19. Destination:
 `hub-rehearsal` (`acgqjjbrnkmeazswdnzp`), Schreiber Excavating organization.
 No settings changed, SQL executed, functions deployed, or data imported.
 
+## Destination preflight refresh — 2026-10-19
+
+Read-only queries through the authenticated dashboard confirmed the target project
+`acgqjjbrnkmeazswdnzp`: zero Auth users, public tables, buckets and storage objects;
+database size 10,884,787 bytes. No import or settings changes. Private catalog and
+comparison reports are saved alongside archive inspection evidence.
+
+All 344 Auth/storage columns match source types and generated-column classification;
+no source COPY column is missing. Six columns absent from COPY lists are generated
+columns in both schemas. This is column-level compatibility only: enum values,
+constraints/defaults, ownership/grants, triggers and managed migration versions are
+not certified equivalent. Keep explicit column lists; never replay source-managed
+DDL or migration records blindly.
+
+Enabled extensions: plpgsql 1.0, pg_stat_statements 1.11, uuid-ossp 1.1, pgcrypto 1.3,
+supabase_vault 0.3.1. pg_cron, pg_net and pgmq are not installed. Their controlled
+installation/compatibility remains part of the eventual inert restore preparation.
+
+Current isolation observations: no Edge Functions or Auth hooks; custom SMTP off;
+public signup on; anonymous signup off; Email on; other listed identity providers
+off. Database SSL enforcement off and network access unrestricted. No controls were
+changed. Custom SMTP off does not disable default Auth email. Network restrictions
+alone do not isolate Data API/Auth/Storage access, and future imports can introduce
+executable triggers. Recheck organization readers and external consumers before load.
+
+Next: specify destination-only signup/client/mail isolation, finish managed constraint
+and executable-object review, then build/test exact restore artifacts. Do not import
+real data until those controls are established. Passwords/secrets were not read.
+
 ## Observed state
 
 | Area | Dashboard evidence |

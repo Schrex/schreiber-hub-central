@@ -92,9 +92,10 @@ mapping and extension versions must be reviewed separately, not silently dropped
 
 ## Remaining prerequisites
 
-The next concrete action is the read-only destination catalog export, followed by
-resolving its differences against this private schema. No further source export
-is required for this preparation step. Still missing: current target catalog,
+The read-only destination catalog was captured: empty target and 344 managed
+column types/generated classifications match. See the refreshed destination audit.
+Next is destination isolation and remaining constraints/executable-object review. No further source export
+is required for this preparation step. Still missing: full target constraint/enum/default comparison,
 verified isolation configuration, finalized managed Auth/storage mapping, reviewed
 inert function adaptations, and a tested restore executor. An independent restore
 has not yet been demonstrated. Source storage and database capture were separate

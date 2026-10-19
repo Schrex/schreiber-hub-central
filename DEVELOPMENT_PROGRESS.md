@@ -3,6 +3,20 @@
 Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Read-only destination compatibility preflight — 2026-10-19
+
+Rechecked hub-rehearsal via authenticated dashboard and metadata/aggregate SELECTs.
+Confirmed empty users/public tables/buckets/objects. Compared all 344 Auth/storage
+column types and generated-column classifications: match; all source COPY columns
+present. Six generated columns correctly omitted from COPY. Exact constraints,
+enums, defaults and executable compatibility still need review; no restore proof.
+
+No deployed Edge Functions/Auth hooks; SMTP off, signup on, SSL enforcement off,
+network unrestricted. Controls unchanged. Destination remains not isolated for real
+import. [Current evidence](docs/migration-destination-audit.md) records gaps and the
+next destination-only isolation step. Private catalog/comparison saved outside git.
+No employee rows or secrets accessed; no import, deployment or paid changes.
+
 ## Backup inspection and restore selection plan — 2026-10-19
 
 Offline decoding and private reconciliation completed without executing SQL.
