@@ -17,6 +17,8 @@
     "test:local": "node scripts/local-smoke.mjs",
     "test:local:permissions": "node scripts/local-permissions.mjs",
     "test:local:hr": "node scripts/local-hr.mjs",
+    "test:local:auth-storage": "node scripts/local-auth-storage.mjs",
+    "test:local:email-guard": "node scripts/local-email-delivery-guard.mjs",
     "local:audit-schema": "node scripts/schema-audit.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "build": "vite build",

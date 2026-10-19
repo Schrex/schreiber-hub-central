@@ -13,6 +13,7 @@ Additional diagnostic commands:
 bun run local:audit-schema
 bun run test:local:permissions
 bun run test:local:hr
+bun run test:local:email-guard
 ```
 
 These checks now pass after the supplied schema reconciliation and local permission

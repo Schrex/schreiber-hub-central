@@ -21,9 +21,9 @@ deploys a backend. After migration changes, rebuild disposable local state with
 | Command | Checks | Docker required |
 | --- | --- | --- |
 | `bun run verify:app` | TypeScript, Vitest, production build | No |
-| `bun run verify:backend` | Catalog inventory, time-off workflow, permission regressions, HR workflow | Yes; local backend must be running |
+| `bun run verify:backend` | Catalog inventory, time-off workflow, permission regressions, HR workflow, Auth/storage and email suppression | Yes; local backend must be running |
 | `bun run verify:browser` | Chromium time-off workflow against synthetic accounts | Yes; also install Playwright Chromium |
-| `bun run verify:edge` | Deno type checks for the 15 edited Edge Function entry points and their imports | No |
+| `bun run verify:edge` | Deno type checks for the 18 edited Edge Function entry points and their imports | No |
 | `bun run verify:lint` | All ESLint rules | No |
 | `bun run verify` | All five groups, with final summary | Yes |
 
@@ -70,7 +70,7 @@ Edge Function static validation is now a CI matrix job and part of bun run verif
 The script scripts/check-edge.mjs pins Deno 2.5.6 via npx as an isolated tooling
 exception, alongside the Supabase CLI. It does not install application dependencies.
 The --no-lock / --node-modules-dir=none options preserve the Bun installation.
-It checks the 15 edited entry points and their imports, not every legacy function.
+It checks the 18 edited entry points and their imports, not every legacy function.
 Deno dependencies follow the existing function import versions; this does not yet
 provide a separately locked Edge Function dependency graph. Network access is needed
 on the first run. Handlers are not executed and delivery integrations remain untested.

@@ -1,4 +1,7 @@
+import { checkEmailDelivery } from '../_shared/email-delivery-guard.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+import { createEmailTransport } from '../_shared/email-transport.ts'
+import { classifyEmailFailure, evaluateEmailPreflight, rateLimitLogFields } from '../_shared/email-queue-policy.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const MAX_RETRIES = 5
@@ -6,33 +9,6 @@ const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_SEND_DELAY_MS = 200
 const DEFAULT_AUTH_TTL_MINUTES = 15
 const DEFAULT_TRANSACTIONAL_TTL_MINUTES = 60
-
-// Check if an error is a rate-limit (429) response.
-// Uses EmailAPIError.status when available (email-js >=0.x with structured errors),
-// falls back to parsing the error message for older versions.
-function isRateLimited(error: unknown): boolean {
-  if (error && typeof error === 'object' && 'status' in error) {
-    return (error as { status: number }).status === 429
-  }
-  return error instanceof Error && error.message.includes('429')
-}
-
-// Check if an error is a forbidden (403) response, which means emails are
-// disabled for this project. Retrying won't help — move straight to DLQ.
-function isForbidden(error: unknown): boolean {
-  if (error && typeof error === 'object' && 'status' in error) {
-    return (error as { status: number }).status === 403
-  }
-  return error instanceof Error && error.message.includes('403')
-}
-
-// Extract Retry-After seconds from a structured EmailAPIError, or default to 60s.
-function getRetryAfterSeconds(error: unknown): number {
-  if (error && typeof error === 'object' && 'retryAfterSeconds' in error) {
-    return (error as { retryAfterSeconds: number | null }).retryAfterSeconds ?? 60
-  }
-  return 60
-}
 
 function parseJwtClaims(token: string): Record<string, unknown> | null {
   const parts = token.split('.')
@@ -52,9 +28,14 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
   }
 }
 
+// Infer the instantiated client type rather than ReturnType of a generic factory.
+function createEmailQueueClient(url: string, key: string) {
+  return createClient(url, key)
+}
+
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof createEmailQueueClient>,
   queue: string,
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
@@ -111,13 +92,27 @@ Deno.serve(async (req) => {
     )
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  // Keep the existing provider and configuration until a replacement is reviewed.
+  // The synthetic sink is test-only and cannot drain a deployed queue.
+  const transport = createEmailTransport(
+    (message: Parameters<typeof sendLovableEmail>[0]) => sendLovableEmail(message, {
+      apiKey,
+      sendUrl: Deno.env.get('LOVABLE_SEND_URL'),
+    })
+  )
+  const supabase = createEmailQueueClient(supabaseUrl, supabaseServiceKey)
 
   // 1. Check rate-limit cooldown and read queue config
-  const { data: state } = await supabase
+  const { data: state, error: stateError } = await supabase
     .from('email_send_state')
     .select('retry_after_until, batch_size, send_delay_ms, auth_email_ttl_minutes, transactional_email_ttl_minutes')
     .single()
+
+  if (stateError || !state) {
+    console.error('Email cooldown state unavailable; queues retained')
+    return new Response(JSON.stringify({ error: 'Queue state unavailable' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } })
+  }
 
   if (state?.retry_after_until && new Date(state.retry_after_until) > new Date()) {
     return new Response(
@@ -156,12 +151,12 @@ Deno.serve(async (req) => {
     const messageIds = Array.from(
       new Set(
         messages
-          .map((msg) =>
+          .map((msg: { message?: { message_id?: unknown } }) =>
             msg?.message?.message_id && typeof msg.message.message_id === 'string'
               ? msg.message.message_id
               : null
           )
-          .filter((id): id is string => Boolean(id))
+          .filter((id: string | null): id is string => Boolean(id))
       )
     )
     const failedAttemptsByMessageId = new Map<string, number>()
@@ -173,10 +168,11 @@ Deno.serve(async (req) => {
         .eq('status', 'failed')
 
       if (failedRowsError) {
-        console.error('Failed to load failed-attempt counters', {
-          queue,
-          error: failedRowsError,
-        })
+        console.error('Failed to load failed-attempt counters; batch retained', { queue })
+        return new Response(
+          JSON.stringify({ processed: totalProcessed, stopped: 'queue_state_unavailable' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        )
       } else {
         for (const row of failedRows ?? []) {
           const messageId = row?.message_id
@@ -201,35 +197,42 @@ Deno.serve(async (req) => {
       // Prefer payload.queued_at when present; fall back to PGMQ's enqueued_at
       // which is always set by the queue.
       const queuedAt = payload.queued_at ?? msg.enqueued_at
-      if (queuedAt) {
-        const ageMs = Date.now() - new Date(queuedAt).getTime()
-        const maxAgeMs = ttlMinutes[queue] * 60 * 1000
-        if (ageMs > maxAgeMs) {
-          console.warn('Email expired (TTL exceeded)', {
-            queue,
-            msg_id: msg.msg_id,
-            queued_at: queuedAt,
-            ttl_minutes: ttlMinutes[queue],
-          })
-          await moveToDlq(supabase, queue, msg, `TTL exceeded (${ttlMinutes[queue]} minutes)`)
-          continue
-        }
+      const preflight = evaluateEmailPreflight({
+        queuedAt,
+        nowMs: Date.now(),
+        ttlMinutes: ttlMinutes[queue],
+        failedAttempts,
+        maxRetries: MAX_RETRIES,
+      })
+      if (preflight.kind === 'expired') {
+        console.warn('Email expired (TTL exceeded)', {
+          queue,
+          msg_id: msg.msg_id,
+          queued_at: queuedAt,
+          ttl_minutes: ttlMinutes[queue],
+        })
       }
-
-      // Move to DLQ if max failed send attempts reached.
-      if (failedAttempts >= MAX_RETRIES) {
-        await moveToDlq(supabase, queue, msg, `Max retries (${MAX_RETRIES}) exceeded (attempted ${failedAttempts} times)`)
+      if (preflight.kind !== 'eligible') {
+        await moveToDlq(supabase, queue, msg, preflight.reason)
         continue
       }
 
       // Guard: skip if another worker already sent this message (VT expired race)
       if (payload.message_id) {
-        const { data: alreadySent } = await supabase
+        const { data: alreadySent, error: sentLookupError } = await supabase
           .from('email_send_log')
           .select('id')
           .eq('message_id', payload.message_id)
           .eq('status', 'sent')
           .maybeSingle()
+
+        if (sentLookupError) {
+          console.error('Failed to verify prior delivery; batch retained', { queue, msg_id: msg.msg_id })
+          return new Response(
+            JSON.stringify({ processed: totalProcessed, stopped: 'queue_state_unavailable' }),
+            { status: 503, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
 
         if (alreadySent) {
           console.warn('Skipping duplicate send (already sent)', {
@@ -248,8 +251,40 @@ Deno.serve(async (req) => {
         }
       }
 
+      const delivery = await checkEmailDelivery(queue, payload.to, {
+        suppression: async (email) => await supabase.from('suppressed_emails')
+          .select('reason').eq('email', email).maybeSingle(),
+        unsubscribe: async (email) => await supabase.from('email_unsubscribe_tokens')
+          .select('used_at').eq('email', email).maybeSingle(),
+      })
+      if (delivery.kind === 'defer') {
+        // Leave the message untouched until visibility expires. No failed-send log
+        // or retry-budget increment: no provider attempt occurred.
+        console.warn('Email delivery deferred', { queue, msg_id: msg.msg_id, reason: delivery.reason })
+        continue
+      }
+      if (delivery.kind === 'suppress') {
+        const { error: logError } = await supabase.from('email_send_log').insert({
+          message_id: payload.message_id,
+          template_name: payload.label || queue,
+          recipient_email: payload.to,
+          status: 'suppressed',
+          error_message: delivery.reason,
+        })
+        if (logError) {
+          console.error('Suppression log failed; retaining queued message', { queue, msg_id: msg.msg_id })
+          continue
+        }
+        const { error: deleteError } = await supabase.rpc('delete_email', {
+          queue_name: queue,
+          message_id: msg.msg_id,
+        })
+        if (deleteError) console.error('Suppressed message deletion failed', { queue, msg_id: msg.msg_id })
+        continue
+      }
+
       try {
-        await sendLovableEmail(
+        await transport.send(
           {
             run_id: payload.run_id,
             to: payload.to,
@@ -263,11 +298,7 @@ Deno.serve(async (req) => {
             idempotency_key: payload.idempotency_key,
             unsubscribe_token: payload.unsubscribe_token,
             message_id: payload.message_id,
-          },
-          // sendUrl is optional — when LOVABLE_SEND_URL is not set, the library
-          // falls back to the default Lovable API endpoint (https://api.lovable.dev).
-          // Set LOVABLE_SEND_URL as a Supabase secret to override (e.g. for local dev).
-          { apiKey, sendUrl: Deno.env.get('LOVABLE_SEND_URL') }
+          }
         )
 
         // Log success
@@ -297,17 +328,23 @@ Deno.serve(async (req) => {
           error: errorMsg,
         })
 
-        if (isRateLimited(error)) {
-          await supabase.from('email_send_log').insert({
+        const failure = classifyEmailFailure(error)
+        if (failure.kind === 'rate_limited') {
+          const { error: rateLogError } = await supabase.from('email_send_log').insert({
             message_id: payload.message_id,
             template_name: payload.label || queue,
             recipient_email: payload.to,
-            status: 'rate_limited',
+            ...rateLimitLogFields(failure.retryAfterSeconds),
             error_message: errorMsg.slice(0, 1000),
           })
 
-          const retryAfterSecs = getRetryAfterSeconds(error)
-          await supabase
+          if (rateLogError) {
+            console.error('Rate-limit audit failed; batch retained', { queue, msg_id: msg.msg_id })
+            return new Response(JSON.stringify({ processed: totalProcessed, stopped: 'queue_state_unavailable' }),
+              { status: 503, headers: { 'Content-Type': 'application/json' } })
+          }
+          const retryAfterSecs = failure.retryAfterSeconds
+          const { error: cooldownError } = await supabase
             .from('email_send_state')
             .update({
               retry_after_until: new Date(
@@ -316,6 +353,12 @@ Deno.serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq('id', 1)
+
+          if (cooldownError) {
+            console.error('Rate-limit cooldown failed; batch retained', { queue, msg_id: msg.msg_id })
+            return new Response(JSON.stringify({ processed: totalProcessed, stopped: 'queue_state_unavailable' }),
+              { status: 503, headers: { 'Content-Type': 'application/json' } })
+          }
 
           // Stop processing — remaining messages stay in queue (VT expires, retried next cycle)
           return new Response(
@@ -326,7 +369,7 @@ Deno.serve(async (req) => {
 
         // 403 means emails are disabled for this project — retrying won't help.
         // Move straight to DLQ and stop processing the rest of the batch.
-        if (isForbidden(error)) {
+        if (failure.kind === 'emails_disabled') {
           await moveToDlq(supabase, queue, msg, 'Emails disabled for this project')
           return new Response(
             JSON.stringify({ processed: totalProcessed, stopped: 'emails_disabled' }),

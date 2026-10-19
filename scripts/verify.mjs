@@ -4,7 +4,7 @@ import { root } from './local-backend.mjs';
 
 const groups = {
   app: ['typecheck', 'test', 'build'],
-  backend: ['local:audit-schema', 'test:local', 'test:local:permissions', 'test:local:hr'],
+  backend: ['local:audit-schema', 'test:local', 'test:local:permissions', 'test:local:hr', 'test:local:auth-storage', 'test:local:email-guard'],
   lint: ['lint'],
   edge: ['typecheck:edge'],
   browser: ['test:browser'],

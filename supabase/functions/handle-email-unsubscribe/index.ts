@@ -1,3 +1,4 @@
+import { readUnsubscribeToken } from '../_shared/email-unsubscribe-token.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -30,38 +31,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Server configuration error' }, 500)
   }
 
-  // Extract token from query params (GET) or body (POST)
-  const url = new URL(req.url)
-  let token: string | null = url.searchParams.get('token')
-
-  if (req.method === 'POST') {
-    // Detect RFC 8058 one-click unsubscribe: POST with form-encoded body
-    // containing "List-Unsubscribe=One-Click". Email clients (Gmail, Apple Mail,
-    // etc.) send this when the user clicks "Unsubscribe" in the mail UI.
-    const contentType = req.headers.get('content-type') ?? ''
-    if (contentType.includes('application/x-www-form-urlencoded')) {
-      const formText = await req.text()
-      const params = new URLSearchParams(formText)
-      // For one-click, token comes from query param (already set above).
-      // Otherwise, token may be in the form body.
-      if (!params.get('List-Unsubscribe')) {
-        const formToken = params.get('token')
-        if (formToken) {
-          token = formToken
-        }
-      }
-    } else {
-      // JSON body (from the app's unsubscribe page)
-      try {
-        const body = await req.json()
-        if (body.token) {
-          token = body.token
-        }
-      } catch {
-        // Fall through — token stays from query param
-      }
-    }
-  }
+  const token = await readUnsubscribeToken(req)
 
   if (!token) {
     return jsonResponse({ error: 'Token is required' }, 400)
@@ -100,7 +70,7 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (updateError) {
-    console.error('Failed to mark token as used', { error: updateError, token })
+    console.error('Failed to mark token as used', { code: updateError.code })
     return jsonResponse({ error: 'Failed to process unsubscribe' }, 500)
   }
 

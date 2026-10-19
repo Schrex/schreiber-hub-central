@@ -1,3 +1,4 @@
+import { transcribeSpeech } from '../_shared/speech-transport.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -49,31 +50,12 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: false, reason: 'no_api_key' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const fd = new FormData()
-    fd.append('file', file, 'recording.webm')
-    fd.append('model_id', 'scribe_v2')
-    fd.append('tag_audio_events', 'false')
-    fd.append('diarize', 'false')
-
-    const resp = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
-      method: 'POST',
-      headers: { 'xi-api-key': elevenKey },
-      body: fd,
-    })
-    if (!resp.ok) {
-      const t = await resp.text()
-      console.error('ElevenLabs error', resp.status, t)
-      let reason = 'transcription_unavailable'
-      let message = 'Transcription service unavailable. Recording was saved.'
-      if (resp.status === 401 && t.includes('detected_unusual_activity')) {
-        reason = 'elevenlabs_free_tier_blocked'
-        message = 'ElevenLabs free tier is blocked for this account. Upgrade to a paid plan to enable transcription.'
-      }
-      await admin.from('toolbox_talk_sessions').update({ transcript: `[${message}]` }).eq('id', sessionId)
-      return new Response(JSON.stringify({ ok: false, reason, message, fallback: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    const result = await transcribeSpeech(file, elevenKey)
+    if (!result.ok) {
+      await admin.from('toolbox_talk_sessions').update({ transcript: `[${result.message}]` }).eq('id', sessionId)
+      return new Response(JSON.stringify(result), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
-    const data = await resp.json()
-    const transcript = data.text ?? ''
+    const transcript = result.transcript
 
     await admin.from('toolbox_talk_sessions').update({ transcript }).eq('id', sessionId)
 

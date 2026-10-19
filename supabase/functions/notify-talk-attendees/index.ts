@@ -1,5 +1,6 @@
 import type { Database } from "../../../src/integrations/supabase/types.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createLovableSmsTransport } from '../_shared/sms-transport.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,32 +8,11 @@ const corsHeaders = {
 }
 
 const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://id-preview--be4f9bee-f0ea-4d93-8142-1b82027df08c.lovable.app'
-const TWILIO_GATEWAY = 'https://connector-gateway.lovable.dev/twilio'
-
-async function sendSms(to: string, body: string) {
-  const lovableKey = Deno.env.get('LOVABLE_API_KEY')
-  const twilioKey = Deno.env.get('LOVABLE_CONNECTOR_TWILIO_API_KEY')
-  const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER')
-  if (!lovableKey || !twilioKey || !fromNumber) {
-    return { ok: false, reason: 'twilio_not_configured' }
-  }
-  try {
-    const resp = await fetch(`${TWILIO_GATEWAY}/Messages.json`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        'X-Connection-Api-Key': twilioKey,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({ To: to, From: fromNumber, Body: body }),
-    })
-    const data = await resp.json()
-    if (!resp.ok) return { ok: false, reason: data?.message ?? `http ${resp.status}` }
-    return { ok: true, sid: data.sid }
-  } catch (e) {
-    return { ok: false, reason: (e as Error).message }
-  }
-}
+const smsTransport = createLovableSmsTransport({
+  lovableKey: Deno.env.get('LOVABLE_API_KEY'),
+  connectorKey: Deno.env.get('LOVABLE_CONNECTOR_TWILIO_API_KEY'),
+  fromNumber: Deno.env.get('TWILIO_FROM_NUMBER'),
+}, fetch)
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
@@ -107,11 +87,11 @@ Deno.serve(async (req) => {
       const phone = phoneByUser.get(a.user_id) ?? null
       let channel = 'in_app'
       if (phone) {
-        const sms = await sendSms(
+        const sms = await smsTransport.send(
           phone,
           `Schreiber Safety: ${session.foreman_name ?? 'Your foreman'} needs you to complete the safety talk "${talkTitle}". Open: ${link}`
         )
-        if (sms.ok) channel = 'in_app+sms'
+        if (sms.ok === true) channel = 'in_app+sms'
         else channel = `in_app (sms failed: ${sms.reason})`
       }
 

@@ -2,7 +2,7 @@ import { errorMessage } from "@/lib/errorMessage";
 import { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { signInWithGoogle } from "@/integrations/auth/google";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,11 +54,11 @@ const Auth = () => {
 
   const handleGoogle = async () => {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
+    try {
+      await signInWithGoogle();
+    } catch {
       toast.error("Google sign-in failed");
+    } finally {
       setBusy(false);
     }
   };

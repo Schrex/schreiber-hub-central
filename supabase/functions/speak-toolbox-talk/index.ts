@@ -1,3 +1,4 @@
+import { synthesizeSpeech } from '../_shared/speech-transport.ts'
 import type { Database } from '../../../src/integrations/supabase/types.ts'
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
@@ -29,70 +30,6 @@ async function resolveVoice(supabase: SupabaseClient<Database>): Promise<{ deepg
   }
 }
 
-async function tryDeepgram(text: string, voice: string): Promise<ArrayBuffer | null> {
-  const apiKey = Deno.env.get('DEEPGRAM_API_KEY')
-  if (!apiKey) {
-    console.log('DEEPGRAM_API_KEY not set, skipping Deepgram')
-    return null
-  }
-  try {
-    const resp = await fetch(
-      `https://api.deepgram.com/v1/speak?model=${encodeURIComponent(voice)}&encoding=mp3`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Token ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
-      }
-    )
-    if (!resp.ok) {
-      const errText = await resp.text()
-      console.error('deepgram tts failed', resp.status, errText.slice(0, 300))
-      return null
-    }
-    return await resp.arrayBuffer()
-  } catch (e) {
-    console.error('deepgram threw', e)
-    return null
-  }
-}
-
-async function tryElevenLabs(text: string, voiceId: string): Promise<ArrayBuffer | null> {
-  const apiKey = Deno.env.get('ELEVENLABS_API_KEY')
-  if (!apiKey) return null
-  try {
-    const resp = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_192`,
-      {
-        method: 'POST',
-        headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          model_id: 'eleven_turbo_v2_5',
-          voice_settings: {
-            stability: 0.4,
-            similarity_boost: 0.85,
-            style: 0.15,
-            use_speaker_boost: true,
-            speed: 0.96,
-          },
-        }),
-      }
-    )
-    if (!resp.ok) {
-      const errText = await resp.text()
-      console.error('elevenlabs fallback failed', resp.status, errText.slice(0, 300))
-      return null
-    }
-    return await resp.arrayBuffer()
-  } catch (e) {
-    console.error('elevenlabs threw', e)
-    return null
-  }
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
@@ -119,14 +56,11 @@ Deno.serve(async (req) => {
 
     const voices = await resolveVoice(supabase)
 
-    // 1) Try Deepgram Aura first — natural foreman voice
-    let audio = await tryDeepgram(text, voices.deepgram)
-
-    // 2) Fall back to ElevenLabs if available
-    if (!audio) {
-      console.log('Falling back to ElevenLabs')
-      audio = await tryElevenLabs(text, voices.eleven)
-    }
+    const audio = await synthesizeSpeech({
+      text, voices,
+      deepgramKey: Deno.env.get('DEEPGRAM_API_KEY'),
+      elevenKey: Deno.env.get('ELEVENLABS_API_KEY'),
+    })
 
     // 3) If both failed, signal browser fallback
     if (!audio) {

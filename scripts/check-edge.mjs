@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { root } from './local-backend.mjs';
 
-// Entry points changed by the foundation cleanup; imports are checked transitively.
+// Entry points changed by foundation cleanup and migration preparation.
+// Imports are checked transitively.
 // Static checks only: do not serve handlers or load production credentials.
 const functions = [
   "complete-safety-talk",
@@ -9,8 +10,11 @@ const functions = [
   "extract-foreman-brief",
   "extract-scope-from-contract",
   "generate-toolbox-talk",
+  "handle-email-suppression",
+  "handle-email-unsubscribe",
   "inbound-swpppp-email",
   "notify-talk-attendees",
+  "process-email-queue",
   "request-safety-inspection",
   "request-truck",
   "send-transactional-email",

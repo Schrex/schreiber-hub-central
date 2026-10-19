@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { AiHttpError, optionalAiText, requestJsonChat } from '../_shared/ai-json-chat.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -67,35 +68,27 @@ Return JSON:
   "reasoning": "one short sentence why"
 }`
 
-    const aiResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${lovableKey}` },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'You match crew tasks to relevant safety talks. Be concise.' },
-          { role: 'user', content: prompt },
-        ],
-        response_format: { type: 'json_object' },
-      }),
+    const parsed = await requestJsonChat({
+      endpoint: 'https://ai.gateway.lovable.dev/v1/chat/completions',
+      apiKey: lovableKey,
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: 'You match crew tasks to relevant safety talks. Be concise.' },
+        { role: 'user', content: prompt },
+      ],
     })
-    if (!aiResp.ok) {
-      const t = await aiResp.text()
-      console.error('ai gateway', aiResp.status, t)
-      if (aiResp.status === 429) return new Response(JSON.stringify({ error: 'Rate limit, try again' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-      if (aiResp.status === 402) return new Response(JSON.stringify({ error: 'AI credits exhausted' }), { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-      throw new Error('AI error ' + aiResp.status)
-    }
-    const aiData = await aiResp.json()
-    const parsed = JSON.parse(aiData.choices?.[0]?.message?.content ?? '{}')
 
     return new Response(JSON.stringify({
-      match_talk_id: parsed.match_talk_id ?? null,
-      suggested_topic: parsed.suggested_topic ?? null,
-      reasoning: parsed.reasoning ?? '',
+      match_talk_id: optionalAiText(parsed.match_talk_id),
+      suggested_topic: optionalAiText(parsed.suggested_topic),
+      reasoning: optionalAiText(parsed.reasoning) ?? '',
       roles, taskNotes,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (e) {
+    if (e instanceof AiHttpError && (e.status === 429 || e.status === 402)) {
+      const error = e.status === 429 ? 'Rate limit, try again' : 'AI credits exhausted'
+      return new Response(JSON.stringify({ error }), { status: e.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
     console.error('suggest-safety-topic error', e)
     return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
