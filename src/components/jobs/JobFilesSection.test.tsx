@@ -1,0 +1,56 @@
+import '@testing-library/jest-dom/vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { JobFilesSection } from './JobFilesSection';
+const mocks = vi.hoisted(() => ({ load: vi.fn(), url: vi.fn(), role: 'admin' }));
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ role: 'admin', effectiveRole: mocks.role }) }));
+vi.mock('./jobFiles', () => ({ loadJobFiles: mocks.load, jobFileUrl: mocks.url }));
+const file = { id: 'Contract:1', source: 'Contract', bucket: 'job-contracts', path: 'private.pdf', name: 'Private contract.pdf' };
+beforeEach(() => { vi.clearAllMocks(); mocks.role = 'admin'; });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+it('shows partial error without misleading empty success', async () => {
+  mocks.load.mockResolvedValue({ files: [], failed: ['Plans'] });
+  render(<JobFilesSection jobId="a" />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not load Plans');
+  expect(screen.queryByText('No files attached to this job yet.')).not.toBeInTheDocument();
+});
+it('removes private rows immediately on preview-role change and ignores late job result', async () => {
+  mocks.load.mockResolvedValueOnce({ files: [file], failed: [] });
+  const view = render(<JobFilesSection jobId="a" />);
+  expect(await screen.findByText(file.name)).toBeInTheDocument();
+  let finish: (value: unknown) => void = () => {};
+  mocks.load.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+  mocks.role = 'employee';
+  view.rerender(<JobFilesSection jobId="a" />);
+  expect(screen.queryByText(file.name)).not.toBeInTheDocument();
+  mocks.load.mockResolvedValueOnce({ files: [], failed: [] });
+  view.rerender(<JobFilesSection jobId="b" />);
+  finish({ files: [file], failed: [] });
+  expect(await screen.findByText('No files attached to this job yet.')).toBeInTheDocument();
+  expect(screen.queryByText(file.name)).not.toBeInTheDocument();
+});
+it('reports signing failure and closes reserved tab', async () => {
+  mocks.load.mockResolvedValue({ files: [file], failed: [] });
+  mocks.url.mockRejectedValue(new Error('private error'));
+  const close = vi.fn();
+  vi.spyOn(window, 'open').mockReturnValue({ close, opener: null } as unknown as Window);
+  render(<JobFilesSection jobId="a" />);
+  fireEvent.click(await screen.findByRole('button', { name: `Open ${file.name}` }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not open');
+  expect(close).toHaveBeenCalledOnce();
+  await waitFor(() => expect(screen.getByRole('button', { name: `Open ${file.name}` })).toBeEnabled());
+});
+it('does not navigate a reserved tab after the job changes while signing', async () => {
+  mocks.load.mockResolvedValue({ files: [file], failed: [] });
+  let finish: (value: string) => void = () => {};
+  mocks.url.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+  const close = vi.fn();
+  const replace = vi.fn();
+  vi.spyOn(window, 'open').mockReturnValue({ close, opener: null, location: { replace } } as unknown as Window);
+  const view = render(<JobFilesSection jobId="a" />);
+  fireEvent.click(await screen.findByRole('button', { name: `Open ${file.name}` }));
+  view.rerender(<JobFilesSection jobId="b" />);
+  finish('https://example.test/private-signed');
+  await waitFor(() => expect(close).toHaveBeenCalledOnce());
+  expect(replace).not.toHaveBeenCalled();
+});
