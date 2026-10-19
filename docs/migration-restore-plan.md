@@ -115,13 +115,32 @@ It exports no rows and enables default_transaction_read_only. Source schema and
 rehearsal definitions then support full enum/default/constraint comparison before
 a final guarded transaction runner is prepared. No credentials are saved.
 
+## Managed schema comparison and synthetic replay — 2026-10-19
+
+User completed hidden-password schema capture. The owner-only destination file has
+a pg_dump completion marker. Compared normalized pg_dump objects: all 292 managed
+Auth/storage objects match source definitions, including tables/defaults, enum types,
+constraints, indexes and managed functions/triggers. Owners and ACLs were omitted
+from both dumps and are not certified by this comparison. The 58 source-only objects
+are expected app customizations: 57 storage policies and one Auth new-user trigger.
+Extracted those privately into a separate review file, not applied.
+
+Tested destination-managed schema plus selected public pre/post schema in a separate
+disposable local database. Both stages loaded successfully; synthetic user/job inserts
+succeeded and transaction rollback left no rows. No actual backup row was loaded.
+Test database removed; normal staging unchanged. This tests schema ordering and basic
+transaction handling as local superuser, not hosted privileges or real-data restore.
+Private comparison/synthetic result evidence saved alongside archive. Import remains
+blocked on effective destination client/Auth/mail isolation and final transaction
+runner/privilege review. No further password/schema capture is needed for this result.
+
 ## Remaining prerequisites
 
 The read-only destination catalog was captured: empty target and 344 managed
 column types/generated classifications match. See the refreshed destination audit.
-Next is destination isolation and remaining constraints/executable-object review. No further source export
-is required for this preparation step. Still missing: full target constraint/enum/default comparison,
-verified isolation configuration, finalized managed Auth/storage mapping, reviewed
+Managed constraints/defaults/enums now match in the normalized schema comparison.
+Next is destination isolation, final privilege/executable review and transaction runner. No further source export
+is required for this preparation step. Still missing: verified isolation configuration, owner/grant mapping, reviewed
 inert function adaptations, and a tested restore executor. An independent restore
 has not yet been demonstrated. Source storage and database capture were separate
 snapshots; the verified file-set match does not imply production writes are frozen.

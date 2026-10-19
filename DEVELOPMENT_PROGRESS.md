@@ -3,6 +3,25 @@
 Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Managed schema comparison and synthetic replay — 2026-10-19
+
+User completed hidden-password schema capture. The owner-only destination file has
+a pg_dump completion marker. Compared normalized pg_dump objects: all 292 managed
+Auth/storage objects match source definitions, including tables/defaults, enum types,
+constraints, indexes and managed functions/triggers. Owners and ACLs were omitted
+from both dumps and are not certified by this comparison. The 58 source-only objects
+are expected app customizations: 57 storage policies and one Auth new-user trigger.
+Extracted those privately into a separate review file, not applied.
+
+Tested destination-managed schema plus selected public pre/post schema in a separate
+disposable local database. Both stages loaded successfully; synthetic user/job inserts
+succeeded and transaction rollback left no rows. No actual backup row was loaded.
+Test database removed; normal staging unchanged. This tests schema ordering and basic
+transaction handling as local superuser, not hosted privileges or real-data restore.
+Private comparison/synthetic result evidence saved alongside archive. Import remains
+blocked on effective destination client/Auth/mail isolation and final transaction
+runner/privilege review. No further password/schema capture is needed for this result.
+
 ## Staged migration candidates — 2026-10-19
 
 Prepared private pg_restore-selected SQL candidates (no SQL execution) under the

@@ -9,6 +9,16 @@ Read-only authenticated dashboard inspection on 2026-10-19. Destination:
 `hub-rehearsal` (`acgqjjbrnkmeazswdnzp`), Schreiber Excavating organization.
 No settings changed, SQL executed, functions deployed, or data imported.
 
+## Managed definition comparison completed — 2026-10-19
+
+Private operator schema capture succeeded. All 292 managed Auth/storage pg_dump
+object definitions match after removing dump headers/session SET statements. Source
+adds 57 application storage policies and one new-user trigger; these remain separate
+restore candidates. Owners/ACLs excluded by dump options still require review.
+Selected application schema successfully replayed against this managed baseline in
+a disposable synthetic database. Hosted privilege compatibility and real-data restore
+are unproven. Isolation settings from the read-only refresh below remain unchanged.
+
 ## Destination preflight refresh — 2026-10-19
 
 Read-only queries through the authenticated dashboard confirmed the target project
