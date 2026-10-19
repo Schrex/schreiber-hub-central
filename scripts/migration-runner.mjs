@@ -81,11 +81,23 @@ ${checks}
 END $verify$;
 `;
 }
+// Managed Auth foreign keys already exist: users must precede identities.
+// Move whole COPY blocks verbatim; never parse or rewrite account fields/hashes.
+export function orderAuthAccounts(sql) {
+  const pattern = /^COPY auth\.(users|identities) \([^\n]+\) FROM stdin;\n[\s\S]*?^\\\.\n/gm;
+  const blocks = [...sql.matchAll(pattern)];
+  if (blocks.length !== 2 || new Set(blocks.map(m => m[1])).size !== 2)
+    throw new Error('Expected exactly two complete account COPY blocks');
+  const users = blocks.find(m => m[1] === 'users')[0];
+  const identities = blocks.find(m => m[1] === 'identities')[0];
+  let index = 0;
+  return sql.replace(pattern, () => index++ === 0 ? users : identities);
+}
 export function buildSql(parts) {
   verifyParts(parts);
   const counts = {...dataCounts(parts['auth-accounts.sql']), ...dataCounts(parts['public-data.sql'])};
   if (Object.keys(counts).length !== 62) throw new Error('Expected 62 COPY sections');
-  return preflight + '\n' + Object.keys(fingerprints).map(name => parts[name]).join('\n') + verificationSql(counts);
+  return preflight + '\n' + Object.keys(fingerprints).map(name => name === 'auth-accounts.sql' ? orderAuthAccounts(parts[name]) : parts[name]).join('\n') + verificationSql(counts);
 }
 function privateFile(path) {
   const stat = lstatSync(path);

@@ -3,6 +3,21 @@
 Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Import retry correction — 2026-10-19
+
+First operator import attempt failed at the managed identities-to-users foreign key:
+the archive's account COPY order was identities then users. Corrected the runner to
+move the two complete COPY blocks into users-first order without changing payloads.
+Verified both real candidate block hashes are unchanged; no credentials or rows
+printed. A fresh hosted aggregate query confirms zero users, identities and public
+tables after failure, consistent with full transaction rollback. No cleanup needed.
+
+Added regression coverage that reproduces the FK error with synthetic COPY data and
+proves the actual ordering transform succeeds. All 23 tooling tests and the synthetic
+commit/rollback/nonempty/permission checks pass; temporary database removed. The
+previous test inserted only a user and missed this dependency; it now covers identities.
+Retry still requires the operator's private password. No successful hosted import yet.
+
 ## Rehearsal isolation and baseline import runner — 2026-10-19
 
 Applied destination-only controls to hub-rehearsal: public signup off, Email provider

@@ -24,3 +24,19 @@ describe('inert baseline runner guards', () => {
   expect(preflight).toContain('Unexpected account mutation trigger');
  });
 });
+
+import { orderAuthAccounts } from './migration-runner.mjs';
+export const syntheticAccounts = 'COPY auth.identities (id, provider_id, user_id, provider, identity_data) FROM stdin;\n00000000-0000-4000-8000-000000000098\tsynthetic-provider\t00000000-0000-4000-8000-000000000099\temail\t{}\n\\.\nCOPY auth.users (id, email, encrypted_password) FROM stdin;\n00000000-0000-4000-8000-000000000099\trunner@example.test\tsynthetic-not-a-password-hash\n\\.\n';
+describe('Auth account dependency order', () => {
+ it('moves complete COPY blocks without changing a single payload byte', () => {
+  const ordered=orderAuthAccounts(syntheticAccounts);
+  expect(ordered.indexOf('COPY auth.users')).toBe(0);
+  expect(dataCounts(ordered)).toEqual(dataCounts(syntheticAccounts));
+  const blocks=syntheticAccounts.match(/^COPY[\s\S]*?^\\\.\n/gm);
+  expect(ordered).toBe(blocks[1]+blocks[0]);
+  expect(orderAuthAccounts(ordered)).toBe(ordered);
+ });
+ it('rejects missing or truncated accounts', () => {
+  expect(()=>orderAuthAccounts('COPY auth.users (id) FROM stdin;\nx\n')).toThrow();
+ });
+});

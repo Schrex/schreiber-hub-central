@@ -2,7 +2,8 @@
 
 Prepared 2026-10-19 for **hub-rehearsal only**, `acgqjjbrnkmeazswdnzp`.
 This is the first database load, not a complete functional restore or production cutover.
-No real-data import has been executed.
+The first operator attempt failed and rolled back; a hosted aggregate check confirms
+zero users, identities and public tables. No successful real-data import yet.
 
 ## Isolation applied
 
@@ -79,7 +80,7 @@ this transaction, and managed Auth/session sequences are not restored.
 
 ## Validation
 
-21 synthetic Vitest inspection/selection/runner tests pass. Shell syntax and diff
+23 synthetic Vitest inspection/selection/runner tests pass. Shell syntax and diff
 whitespace checks pass. `python3 scripts/migration-runner-synthetic.py` reads only
 schema metadata and uses synthetic rows in a fresh temporary local database. It
 checks successful commit, complete rollback on a forced late error, refusal of a
@@ -87,3 +88,13 @@ nonempty rerun, denied client reads, and Auth-only mail-block execution. The tem
 database is removed even on failure; ordinary local staging is not reset. This is
 not hosted privilege proof or a real-data restore. App/browser/Edge suites were not
 rerun because no app or deployed Edge code changed.
+
+## Retry correction
+
+The initial account artifact orders identities before users, which violates the
+existing managed Auth foreign key. The runner now reorders complete COPY blocks,
+users first, after verifying the original file fingerprint. Whole-block hashes prove
+that account payloads/password hashes remain byte-for-byte unchanged. The synthetic
+integration test now reproduces the original error and tests the exact transformation
+with linked identities. The failed hosted attempt left zero users/identities/public
+tables; do not delete or reset anything before retrying the corrected helper.
