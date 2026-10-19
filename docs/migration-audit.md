@@ -1,12 +1,28 @@
 # Migration audit — Schreiber field app off Lovable
 
-Read-only audit of GitHub `main` at `5a81add` ("Lovable update"), compared with `origin/develop` at `936bef8`. No production database, storage, or Lovable project was contacted. No secrets are recorded here.
+Read-only audit of GitHub `main` at `5a81add` ("Lovable update"), compared with `origin/develop` at `936bef8`. No production database, storage, DNS, or Lovable project was contacted. No secrets are recorded here.
 
-**Live app (from README):** https://schreiber-hub-central.lovable.app  
+**Live app (from README on main):** https://schreiber-hub-central.lovable.app  
 **Lovable project id (from README):** `be4f9bee-f0ea-4d93-8142-1b82027df08c`  
-**Supabase project ref:** `bitogpfplcquovpdjprk` — verified in `supabase/config.toml` and in the tracked `.env` URL/project id. The host is `*.supabase.co`.
+**Supabase project ref:** `bitogpfplcquovpdjprk` — verified in `supabase/config.toml` and in the tracked `.env` URL/project id on both branches. The host is `*.supabase.co`.
 
-`main` is what Lovable two-way syncs. `develop` is 21 commits ahead and 0 behind; it was never merged (PR #9, "Develop", is closed). Do not merge this audit, or `develop`, into `main`.
+`main` is what Lovable two-way syncs. `develop` is 21 commits ahead of `main` and was not merged (PR #9, "Develop", is closed). Do not merge this audit, or `develop`, into `main`.
+
+**Conclusion:** the export checklist below is the immediate next step. Cutover is not justified yet. Rebuilding from the repo migrations alone leaves an incomplete database, and logins and email still need a tested replacement.
+
+## How findings are labeled
+
+Every finding below is tagged with one of:
+
+| Label | Meaning |
+| --- | --- |
+| **Production (main)** | True of the Lovable-synced branch. The same code is what production runs, assuming Lovable is still on `main`. |
+| **Fixed on develop, not released** | Changed on `develop` only. Not on `main`, and not released. |
+| **Both** | Re-checked and the same on `main` and `develop`. |
+
+`supabase/migrations` is identical on both branches. A finding that lives only in those files is **Both**.
+
+Claims that need the live dashboard or DNS are marked **NEEDS ACCESS to confirm**. Code can show what the app *calls*. It cannot show what the hosted project currently *allows*.
 
 ## Where the notes live
 
@@ -16,89 +32,97 @@ Read-only audit of GitHub `main` at `5a81add` ("Lovable update"), compared with 
 | `DEVELOPMENT_PROGRESS.md` | Absent | Present | Not a current branch |
 | `local/README.md` | Absent | Present | Not a current branch |
 
-Remote branches today are only `main` and `develop`. The foundation work was merged into `develop` by PR #7 (`codex/verification-cleanup`, includes `9ce17fd` "checkpoint isolated local development foundation"). PR #8 (`codex/time-off-browser-test`) is also merged. `DEVELOPMENT_PROGRESS.md` is stale on both points: it still says the foundation lives on `codex/local-development-foundation` and that PR #8 is unmerged.
+Remote branches at audit time were `main` and `develop` (this audit branch is additional). The foundation work was merged into `develop` by PR #7 (`codex/verification-cleanup`, includes `9ce17fd`). PR #8 (`codex/time-off-browser-test`) is also merged. `DEVELOPMENT_PROGRESS.md` is stale on both points: it still says the foundation lives on `codex/local-development-foundation` and that PR #8 is unmerged. **Fixed on develop, not released** as documentation; those files are not on `main`.
 
-Also on `develop` only, and used below as evidence that was checked against `main` code: `local/AUDIT.md`, `local/SCHEMA_RECONCILIATION.md`, `local/SCHEMA_REQUEST.md`, `local/hr-bootstrap.sql`, `local/reference/schema_benefits_positions_timeoff.sql`, `local/candidate-migrations/20261016210000_time_off_request_permissions.sql`. `supabase/migrations` is identical on `main` and `develop`.
+Also on `develop` only: `local/AUDIT.md`, `local/SCHEMA_RECONCILIATION.md`, `local/SCHEMA_REQUEST.md`, `local/hr-bootstrap.sql`, `local/reference/schema_benefits_positions_timeoff.sql`, `local/candidate-migrations/20261016210000_time_off_request_permissions.sql`.
 
 Those notes are partly right and partly outdated:
 
-- Right: three HR tables exist in the live catalog and in generated types, and are missing as `CREATE TABLE` from migrations. A 2026-10-16 catalog export (Postgres 17.6) was used to reconstruct them locally. Local checks were synthetic and are not production parity.
-- Stale: the reconciliation doc says the time-off permission fix is `supabase/migrations/20261016210000_...sql`. It is not. It sits only in `local/candidate-migrations/` on `develop` and is not applied anywhere in this repo's migration history.
-- Not re-run for this audit: Docker local backend, the "60/60 tables" inventory command, or browser tests. The table-name gap itself is confirmed by reading migrations and `src/integrations/supabase/types.ts`.
+- Right, and re-verified: the three HR tables are in generated `types.ts` on **Both** branches and are missing as `CREATE TABLE` from `supabase/migrations` on **Both**. `develop` holds a local reconstruction in `local/hr-bootstrap.sql` (**Fixed on develop, not released**). That file is not a production migration. A 2026-10-16 catalog export (header says Postgres 17.6) was the input. Local checks described in the notes were synthetic and are not production parity.
+- Stale: the reconciliation doc says the time-off permission fix is `supabase/migrations/20261016210000_...sql`. It is not. It sits only in `local/candidate-migrations/` on `develop` (**Fixed on develop, not released**) and is not in the migration history on either branch.
+- Not re-run for this audit: Docker local backend, the "60/60 tables" inventory command, or browser tests. The table-name gap itself is confirmed by reading migrations and `src/integrations/supabase/types.ts` on both branches.
 
 ## Inventory
 
-Classification: **VERIFIED** means the claim is in the code on `main`. **NEEDS ACCESS OR EXPORT** means the repo cannot prove the live value. **BLOCKER** means cutover cannot be done safely until that item is resolved.
+Classification: **VERIFIED** means the claim is in the git tree named by the branch label. **NEEDS ACCESS OR EXPORT** means the repo cannot prove the live value. **BLOCKER** means cutover cannot be done safely until that item is resolved.
 
-| # | Area | Classification | What the code shows |
-| --- | --- | --- | --- |
-| 1 | Database / schema | **VERIFIED** drift, **BLOCKER** for a clean replay | 78 SQL files. Generated types list 60 `public` tables. Migrations create 57 that still exist (`activity_equipment` is created then dropped). Missing `CREATE TABLE`: `benefit_types`, `employee_benefits`, `employee_compensation_history`. Later migrations still attach audit and validation triggers to the last two, so a fresh replay of `supabase/migrations` fails. `email_queue_dispatch` is in `types.ts` and in no SQL file. Enums in types match `CREATE TYPE` in migrations (26). View `positions_public` is in both. View `employee_contacts_directory` is in SQL only; the client uses `list_employee_directory()`. Dynamic `DO` blocks do create RLS policies for bid and job-scope tables. |
-| 2 | Auth | **VERIFIED** split, **BLOCKER** to leave Lovable | Email/password uses `supabase.auth.signInWithPassword` / `signUp` in `src/pages/Auth.tsx`. Google uses `src/integrations/lovable/index.ts` (`@lovable.dev/cloud-auth-js`), then `supabase.auth.setSession`. Redirect is `window.location.origin`. Public signup is in the UI. `handle_new_user` (final version in `20260425202240`) inserts `profiles`, default `user_roles` role `employee`, and links or creates `employee_contacts`. Migration `20260419193344` inserts four named auth users with one shared password in the SQL file. |
-| 3 | Storage | **VERIFIED** bucket list, **NEEDS ACCESS** for bytes | 15 buckets in migrations. Only `talk-media` is public. The rest are private and mostly use signed URLs. Object counts and total bytes are not in git. |
-| 4 | Edge Functions | **VERIFIED** source, **NEEDS ACCESS** for deployed config and secrets | 23 functions under `supabase/functions`. Several call `https://ai.gateway.lovable.dev`. Email send uses `npm:@lovable.dev/email-js`. |
-| 5 | Scheduled jobs | **NEEDS ACCESS OR EXPORT**, partial **VERIFIED** | Migrations enable `pg_cron`, `pg_net`, `pgmq`, and `supabase_vault`, and create queues `auth_emails` and `transactional_emails` plus DLQs. The `process-email-queue` cron (commented as every 5 seconds, via `net.http_post` and vault secret `email_queue_service_role_key`) is applied outside SQL by Lovable `setup_email_infra`. `daily-celebrations` has no schedule in the repo. |
-| 6 | Email | **VERIFIED** Lovable path, **BLOCKER** for an independent sender | No Resend. Transactional mail is queued and sent through Lovable. From address is `Schreiber Hub <noreply@notify.www.schrex.com>`. Comments say that subdomain must be delegated to Lovable nameservers. Unsubscribe is `handle-email-unsubscribe`. Suppression webhook expects Mailgun events via `@lovable.dev/webhooks-js`. Inbound SWPPP is `inbound-swpppp-email`. Auth email templates are not in the repo. |
-| 7 | Realtime | **VERIFIED** subscribers; publication list incomplete in SQL | Client listens to `truck_requests`, `notifications`, `whiteboard_tiles`, and `toolbox_talk_attendees`. Migrations add only the first three to `supabase_realtime`. `notifications` is `REPLICA IDENTITY FULL`. `20260513013337` locks down `realtime.messages` (broadcast/presence). `develop` notes that this statement fails on a local CLI database. |
-| 8 | Secrets | **VERIFIED** names only | See the name list below. Values were not copied. The tracked `.env` has three `VITE_` client settings and no service-role key. |
-| 9 | Lovable-specific code | **VERIFIED** | Packages, `.lovable/`, auth wrapper, AI gateway, email/Twilio connectors, preview-auth storage, hardcoded `*.lovable.app` URL. |
-| 10 | Hosting | **VERIFIED** build shape; domain is **NEEDS ACCESS** | Vite SPA, `BrowserRouter`, no `vercel.json` / Netlify / Cloudflare config. `npm run build` → `dist/`. Env is inlined at build time. README live URL is the Lovable host. No custom app domain is in the repo. |
+| # | Area | Branch | Classification | What the code shows |
+| --- | --- | --- | --- | --- |
+| 1 | Database / schema | **Both** for the migration gap. **Fixed on develop, not released** for `local/hr-bootstrap.sql` only. | **VERIFIED** drift, **BLOCKER** for a clean replay of production history | 78 SQL files, identical on both branches. Generated types list 60 `public` tables. Migrations create 57 that still exist (`activity_equipment` is created then dropped). Missing `CREATE TABLE` from `supabase/migrations`: `benefit_types`, `employee_benefits`, `employee_compensation_history`. Later migrations still attach audit and validation triggers to the last two, so a fresh replay of `supabase/migrations` fails. `develop` reconstructs those three tables in `local/hr-bootstrap.sql` for disposable local databases only. `email_queue_dispatch` is in `types.ts` and in no SQL file (**Both**). |
+| 2 | Auth | **Both** | **VERIFIED** split in code. Live signup policy is **NEEDS ACCESS to confirm**. Google continuity is a test, not a known break. | Email/password uses `supabase.auth.signInWithPassword` / `signUp` in `src/pages/Auth.tsx` on both branches. Google uses `src/integrations/lovable/index.ts` (`@lovable.dev/cloud-auth-js`), then `supabase.auth.setSession`. `develop` disables the Google button only when `VITE_LOCAL_BACKEND=true`. Redirect is `window.location.origin`. The UI offers signup, and `handle_new_user` assigns `employee`. That does not prove the hosted Auth project currently accepts public signups. |
+| 3 | Storage | **Both** for buckets and `image_url`. Upload URL: **Production (main)** hardcodes the project; **Fixed on develop, not released**. | **VERIFIED** bucket list, **NEEDS ACCESS** for bytes | 15 buckets in migrations. Only `talk-media` is public. Object counts and total bytes are not in git. |
+| 4 | Edge Functions | **Both** | **VERIFIED** source, **NEEDS ACCESS** for deployed config and secrets | 23 functions under `supabase/functions`. Five call `https://ai.gateway.lovable.dev`. Email send uses `npm:@lovable.dev/email-js`. SMS uses the Lovable Twilio connector. These are separate dependencies. |
+| 5 | Scheduled jobs | **Both** | **NEEDS ACCESS OR EXPORT**, partial **VERIFIED** | Migrations enable `pg_cron`, `pg_net`, `pgmq`, and `supabase_vault`, and create queues `auth_emails` and `transactional_emails` plus DLQs. The `process-email-queue` cron (commented as every 5 seconds) is applied outside SQL by Lovable `setup_email_infra`. `daily-celebrations` has no `cron.schedule` in the repo. Whether either job is actually scheduled is **NEEDS ACCESS to confirm**. |
+| 6 | Email | **Both** | **VERIFIED** code path. Domain delegation is **NEEDS ACCESS to confirm**. | No Resend. From address in code is `Schreiber Hub <noreply@notify.www.schrex.com>`. A comment says that subdomain must match a delegation to Lovable nameservers. DNS was not queried. Unsubscribe and inbound SWPPP functions exist. |
+| 7 | Realtime | **Both** | **VERIFIED** subscribers and publication SQL. Live publication for attendees is **NEEDS ACCESS to confirm**. | Client listens to four tables. Migrations add three of them to `supabase_realtime`. Missing SQL for `toolbox_talk_attendees` does not prove production Realtime is off for that table. |
+| 8 | Secrets | **Both** | **VERIFIED** names only | See the name list below. Values were not copied. The tracked `.env` has three `VITE_` client settings and no service-role key. |
+| 9 | Lovable-specific code | **Both**, except the hardcoded Supabase ref | **VERIFIED** | Packages, `.lovable/`, auth wrapper, AI gateway, email library, Twilio connector, preview-auth storage, hardcoded `*.lovable.app` URL. The hardcoded project ref in two upload screens is **Production (main)** only. |
+| 10 | Hosting | **Both** for the Vite SPA. CI workflow is **Fixed on develop, not released**. | **VERIFIED** build shape; custom domain is **NEEDS ACCESS** | Vite SPA, `BrowserRouter`, no `vercel.json` / Netlify / Cloudflare config on either branch. `npm run build` → `dist/`. Env is inlined at build time. |
 
 ### 1. Schema, RLS, and pay / HR data
 
-`src/integrations/supabase/types.ts` reports PostgREST `14.5`. The `develop` catalog note says Postgres 17.6. Both are consistent with current Supabase; neither was rechecked against the live server.
+Branch: **Both**, except the local HR reconstruction, which is **Fixed on develop, not released**.
 
-**In types and not created by migrations**
+`src/integrations/supabase/types.ts` reports PostgREST `14.5` on both branches. The `develop` catalog note says Postgres 17.6. Neither was rechecked against the live server (**NEEDS ACCESS to confirm** the running version).
 
-| Object | Why it matters |
-| --- | --- |
-| `benefit_types` | Lookup for benefits. Columns in types: `name`, `description`, `default_annual_value`, `is_active`, `sort_order`, timestamps. |
-| `employee_benefits` | Per-user benefit amounts (`annual_value`, `effective_date`, `end_date`, `benefit_type_id`). Triggers in `20260421010923` and `20260421020148` target this table. |
-| `employee_compensation_history` | `base_salary`, `bonus`, `benefits_value`, generated `total_compensation`, `year`. Same trigger files. |
-| `email_queue_dispatch()` | Zero-arg function in types only. Likely the live cron entrypoint. Body unknown. |
+**In types on both branches, and not created by `supabase/migrations` on either branch**
 
-`develop`'s `local/hr-bootstrap.sql` reconstructs the three tables from the 2026-10-16 export, including RLS, and normalizes `total_compensation` to `GENERATED ALWAYS AS ((base_salary + bonus) + benefits_value) STORED`. That file is explicitly local-only. The export's grants only mention `sandbox_exec`, so anon/authenticated/service_role grants are still unproven. Do not run the bootstrap against production: those tables already exist there.
+| Object | Branch | Why it matters |
+| --- | --- | --- |
+| `benefit_types` | **Both** missing from migration history. Definitions reconstructed on **develop** in `local/hr-bootstrap.sql` only. | Lookup for benefits. Columns in types: `name`, `description`, `default_annual_value`, `is_active`, `sort_order`, timestamps. |
+| `employee_benefits` | Same split. | Per-user benefit amounts (`annual_value`, `effective_date`, `end_date`, `benefit_type_id`). Triggers in `20260421010923` and `20260421020148` target this table on **Both**. |
+| `employee_compensation_history` | Same split. | `base_salary`, `bonus`, `benefits_value`, generated `total_compensation`, `year`. Same trigger files on **Both**. |
+| `email_queue_dispatch()` | **Both** | Zero-arg function in types only. Body unknown. **NEEDS ACCESS** for the live definition. |
 
-**Pay and HR storage (VERIFIED in migrations plus types)**
+`local/hr-bootstrap.sql` on `develop` reconstructs the three tables from the 2026-10-16 export, including RLS, and normalizes `total_compensation` to `GENERATED ALWAYS AS ((base_salary + bonus) + benefits_value) STORED`. The file header says it is local only and must not be deployed against existing production tables. The export's grants only mention `sandbox_exec`, so anon/authenticated/service_role grants are still unproven (**NEEDS ACCESS**). Do not run the bootstrap against production.
+
+**Pay and HR storage (VERIFIED in migrations plus types on Both)**
 
 | Data | Where | Access in SQL |
 | --- | --- | --- |
 | Pay rates and salaried flag | `employee_positions` | RLS: employee reads own rows; admin writes. Audit trigger → `pay_audit_log`. |
 | Pay bands | `positions.min_pay_rate`, `max_pay_rate` | Admin select policy. `positions_public` omits pay bands (`security_invoker`). |
-| Comp history and benefits | tables above | Policies exist in the local reconstruction, not in `supabase/migrations`. |
-| Audit | `pay_audit_log` | Admin `SELECT` only. No client write policies. |
+| Comp history and benefits | tables above | Policies are in the `develop` local reconstruction, not in `supabase/migrations` on either branch. Live policies are **NEEDS ACCESS to confirm**. |
+| Audit | `pay_audit_log` | Admin `SELECT` only in migrations. No client write policies in SQL. |
 | SSN, bank, license number, emergency contact, termination | `employee_contacts` | Column `SELECT` revoked from `anon` and `authenticated` (`20260513012349`). `get_employee_contact_sensitive` is security definer and office/admin only. |
 | Referral fees | `referrals.fee_amount`, `paid_at` | Column select revoked from client roles. |
 
-`SECURITY.md` (dated 2026-04-21) matches this design. It also claims HIBP leaked-password rejection, required email confirmation, and admin MFA. None of those are in the repo. They are dashboard settings.
+`SECURITY.md` (dated 2026-04-21, **Both**) matches this design. It also claims HIBP leaked-password rejection, required email confirmation, and admin MFA. None of those are in the repo. They are dashboard settings (**NEEDS ACCESS to confirm**).
 
-The current HR page marks Positions & Pay and Performance Reviews as "Soon". `MyPosition.tsx` and `AdminPositions.tsx` still read and write `employee_positions` and `positions`. Benefit and compensation tables are in the database types and in trigger SQL; this audit found no `src/` `.from("benefit_types"|"employee_benefits"|"employee_compensation_history")` call. They can still hold production rows.
+The HR page on **Both** marks Positions & Pay and Performance Reviews as "Soon". `MyPosition.tsx` and `AdminPositions.tsx` still read and write `employee_positions` and `positions`. This audit found no `src/` `.from("benefit_types"|"employee_benefits"|"employee_compensation_history")` call on either branch. The tables can still hold production rows. Row counts are **NEEDS ACCESS**.
 
-**RLS.** Every `public` table created in migrations runs `ENABLE ROW LEVEL SECURITY`. Bid and scope tables (`bid_phases`, `crews`, `bid_items`, `bid_item_activities`, `bid_item_materials`, `job_notes`, `job_exclusions`, `job_unit_pricing`) get four policies each from `EXECUTE format(...)` loops: signed-in read, office/admin write. A text search for `CREATE POLICY` misses those. `activity_equipment` had RLS and was dropped.
+**RLS.** Every `public` table created in migrations runs `ENABLE ROW LEVEL SECURITY` (**Both**). Bid and scope tables (`bid_phases`, `crews`, `bid_items`, `bid_item_activities`, `bid_item_materials`, `job_notes`, `job_exclusions`, `job_unit_pricing`) get four policies each from `EXECUTE format(...)` loops: signed-in read, office/admin write. A text search for `CREATE POLICY` misses those. `activity_equipment` had RLS and was dropped.
 
-Policies and column grants changed many times after the original creates (profiles, schedule, dispatch, contacts, time off). A migration replay is not the same thing as the live policy set if anyone edited policies in the Lovable/Supabase SQL editor. The time-off defect described on `develop` is still the policy in `main`: employees can insert their own requests without forcing `status = 'pending'`, and "cancel own pending" has no `WITH CHECK` on the new row. The forward fix is only the unapplied `develop` candidate.
+Policies and column grants changed many times after the original creates (profiles, schedule, dispatch, contacts, time off). A migration replay is not the same thing as the live policy set if anyone edited policies in the Lovable/Supabase SQL editor (**NEEDS ACCESS**). The time-off policies in `supabase/migrations` on **Both** let employees insert their own requests without forcing `status = 'pending'`, and "cancel own pending" has no `WITH CHECK` on the new row. The forward fix is only the unapplied `develop` candidate (**Fixed on develop, not released**).
 
-**Fresh replay also hits:** `20260513013337` alters `realtime.messages`, which the local notes say is not owned by the local migration role.
+**Fresh replay also hits:** `20260513013337` alters `realtime.messages` (**Both**). The local notes say this statement fails on a local CLI database because that table is not owned by the migration role.
 
 ### 2. Auth
 
-| Piece | Status |
-| --- | --- |
-| Email + password | Direct Supabase Auth. Sign-up sends `emailRedirectTo: ${window.location.origin}/` and `display_name` metadata. Password UI minimum is 6 characters. `create-employee` requires 8 when an admin sets a password. |
-| Google | Lovable OAuth wrapper only. Providers typed in the wrapper: google, apple, microsoft. The UI calls google. |
-| Session storage | `brokeredPreviewStorage()` in `previewAuthStorage.ts` posts the session to a Lovable editor parent on `*.lovable.app`, `lovableproject.com`, `gpt-eng.com`, and similar hosts. Other hosts use `localStorage`. |
-| New-user trigger | `on_auth_user_created` → `handle_new_user`: profile, `employee` role, employee-contact link or insert. |
-| Seeded users | `20260419193344` writes four confirmed email users and identities, then promotes three to `foreman` and sets one `is_driver`. The password is in the file. Treat it as public. Do not replay this file into a new project. |
-| Open signup | The sign-in page offers "Create Account" to anyone who can load it. A new project should turn off public signups unless that is intentional. |
+Branch: **Both**, with the local-only Google disable on **develop**.
+
+| Piece | Branch | Status |
+| --- | --- | --- |
+| Email + password | **Both** | Direct Supabase Auth. Sign-up sends `emailRedirectTo: ${window.location.origin}/` and `display_name` metadata. Password UI minimum is 6 characters. `create-employee` requires 8 when an admin sets a password. |
+| Google | **Both** in production code paths | Lovable OAuth wrapper only. Providers typed in the wrapper: google, apple, microsoft. The UI calls google. **Fixed on develop, not released:** the button is disabled when `VITE_LOCAL_BACKEND=true`. |
+| Session storage | **Both** | `brokeredPreviewStorage()` posts the session to a Lovable editor parent on `*.lovable.app`, `lovableproject.com`, `gpt-eng.com`, and similar hosts. Other hosts use `localStorage`. |
+| New-user trigger | **Both** | `on_auth_user_created` → `handle_new_user` (final version in `20260425202240`): profile, `employee` role, employee-contact link or insert. |
+| Seeded users | **Both** | `20260419193344` writes four confirmed email users and identities, then promotes three to `foreman` and sets one `is_driver`. The password is in the file. Treat it as public. Do not replay this file into a new project. `develop` local prepare replaces this file with a comment for disposable databases only. |
+| Signup UI | **Both** | The sign-in page calls `supabase.auth.signUp` and offers "Create Account". **NEEDS ACCESS to confirm** whether production Auth currently allows that call (signups can be disabled in the dashboard while the button remains). If it is allowed, `handle_new_user` assigns `employee`. |
+
+**Google identity continuity.** The wrapper exchanges a Lovable result for a Supabase session via `setSession`. Whether existing Google users already have a portable `auth.identities` row is **NEEDS ACCESS** (provider counts only). Continuity has to be tested on the migration-rehearsal project. Relinking accounts is a contingency if that test fails, not an assumed requirement.
 
 **Reconfigure on a new Supabase project**
 
-- Auth site URL and redirect allow-list: production origin, staging origin, and any preview origin. Today the code sends the browser origin, so previews only work if that origin is allowed.
-- Google: a Google Cloud OAuth client the company owns. Authorized JavaScript origins and redirect URI must be the new site and `https://<new-ref>.supabase.co/auth/v1/callback`. Replace `lovable.auth.signInWithOAuth` with `supabase.auth.signInWithOAuth`. Lovable's client cannot be assumed transferable.
-- Email confirmation, templates, SMTP, and any "send email" auth hook. Auth mail is queued as `auth_emails` and sent by the Lovable email API, so stock Supabase mail is probably not what production uses. Confirm with the auth hook list.
-- HIBP and MFA, if `SECURITY.md` is the intended policy.
-- Disable the shared-password migration. Rotate those four accounts on the current project before cutover.
+- Auth site URL and redirect allow-list: production origin, staging origin, and any preview origin. The code sends the browser origin, so each origin in use has to be allowed.
+- Google: a Google Cloud OAuth client the company owns. Authorized JavaScript origins and redirect URI must include the new site and `https://<new-ref>.supabase.co/auth/v1/callback`. The app code that calls `lovable.auth.signInWithOAuth` has to call `supabase.auth.signInWithOAuth` on the new project. Lovable's client is not assumed to be transferable.
+- Email confirmation, templates, SMTP, and any "send email" auth hook. Auth mail is queued as `auth_emails` in SQL and the worker sends through the Lovable email API. **NEEDS ACCESS to confirm** the live hook. Stock Supabase mail may differ from what production uses.
+- HIBP and MFA, if `SECURITY.md` is the intended policy (**NEEDS ACCESS** for the current setting).
+- Skip the shared-password migration. Rotate those four accounts on the current project before cutover.
 
 ### 3. Storage
+
+Bucket definitions and policies: **Both**.
 
 | Bucket | Public in SQL | Used by |
 | --- | --- | --- |
@@ -120,31 +144,39 @@ Policies and column grants changed many times after the original creates (profil
 
 Policies are per-bucket on `storage.objects` (signed-in read for most job files; tighter for accident photos, violation photos, signed docs, and waivers).
 
-`PhotosSection.tsx` and `PlansSection.tsx` hardcode `https://bitogpfplcquovpdjprk.supabase.co` for TUS. `src/lib/resumableUpload.ts` and `ContractSection.tsx` use `VITE_SUPABASE_URL`. A new project breaks plan/photo resumable upload until those two constants change.
+**Upload base URL, re-verified:**
 
-**Copy scope:** every object in the 15 buckets, preserving bucket id and object path. Row metadata (`file_path` columns) then keeps working for private files, because the app signs URLs at read time. `toolbox_talks.image_url` stores the absolute public URL of the old project and must be rewritten. Object count and bytes require a storage listing or `storage.objects` export.
+| File | Production (main) | develop |
+| --- | --- | --- |
+| `src/components/jobs/PhotosSection.tsx` | Hardcodes `https://bitogpfplcquovpdjprk.supabase.co` for TUS | `import.meta.env.VITE_SUPABASE_URL` (**Fixed on develop, not released**) |
+| `src/components/jobs/PlansSection.tsx` | Same hardcoded host | `import.meta.env.VITE_SUPABASE_URL` (**Fixed on develop, not released**) |
+| `src/lib/resumableUpload.ts`, `ContractSection.tsx` | `VITE_SUPABASE_URL` | `VITE_SUPABASE_URL` (**Both**) |
+
+Production plan/photo resumable uploads follow the hardcoded host until `main` contains the `develop` change or an equivalent fix. A staging build of `main` would still upload those files to the production project.
+
+**Copy scope:** every object in the 15 buckets, preserving bucket id and object path, including a way to record deletions. Row metadata (`file_path` columns) then keeps working for private files, because the app signs URLs at read time. `toolbox_talks.image_url` stores the absolute public URL (**Both**) and has to be rewritten when the project ref changes. Object count and bytes require a storage listing or `storage.objects` export (**NEEDS ACCESS**).
 
 ### 4. Edge Functions
 
-`supabase/config.toml` sets `verify_jwt` only for five functions. Anything not listed needs the deployed config checked. Supabase CLI default is verify JWT on.
+Branch: **Both**. `supabase/config.toml` sets `verify_jwt` only for five functions. Anything not listed needs the deployed config checked (**NEEDS ACCESS**). Supabase CLI default is verify JWT on.
 
 | Function | Role | `verify_jwt` in config | Secrets / external calls |
 | --- | --- | --- | --- |
-| `process-email-queue` | Drains pgmq, sends via Lovable email | true | `LOVABLE_API_KEY`, optional `LOVABLE_SEND_URL` (default `https://api.lovable.dev`), service role |
+| `process-email-queue` | Drains pgmq, sends via Lovable email | true | `LOVABLE_API_KEY`, optional `LOVABLE_SEND_URL` (default `https://api.lovable.dev`), service role. Depends on the sending-domain configuration, not on the AI or SMS credentials. |
 | `send-transactional-email` | Renders React Email templates and enqueues | true | service role, anon; office/admin or service role |
 | `preview-transactional-email` | Template preview for Lovable | **false** | `LOVABLE_API_KEY` gate in code |
 | `handle-email-unsubscribe` | One-click and in-app unsubscribe | **false** | service role |
 | `handle-email-suppression` | Bounce/complaint/unsubscribe webhook | **false** | `LOVABLE_API_KEY`, `@lovable.dev/webhooks-js`; comment says Mailgun via Lovable |
-| `inbound-swpppp-email` | Inbound SWPPP attachment → job | not set | optional `SWPPPP_INBOUND_SECRET` query secret; service role; writes `swpppp-reports` |
-| `daily-celebrations` | Birthday / anniversary notifications, America/New_York | not set | `DAILY_CELEBRATIONS_SECRET` or service role |
+| `inbound-swpppp-email` | Inbound SWPPP attachment → job | not set | optional `SWPPPP_INBOUND_SECRET`; service role; writes `swpppp-reports`. This is a writer during any freeze. |
+| `daily-celebrations` | Birthday / anniversary notifications, America/New_York | not set | `DAILY_CELEBRATIONS_SECRET` or service role. Writer if a schedule exists. |
 | `create-employee` | Contact plus optional auth user (admin) | not set | service role; caller must be admin/office/foreman |
 | `convert-employee-contact` | Link a contact to a login | not set | service role |
-| `notify-talk-attendees` | SMS the crew a safety-talk link | not set | `LOVABLE_API_KEY`, `LOVABLE_CONNECTOR_TWILIO_API_KEY`, `TWILIO_FROM_NUMBER`, `APP_BASE_URL`. Gateway `https://connector-gateway.lovable.dev/twilio`. Default base URL is a Lovable preview host |
+| `notify-talk-attendees` | SMS the crew a safety-talk link | not set | `LOVABLE_API_KEY`, `LOVABLE_CONNECTOR_TWILIO_API_KEY`, `TWILIO_FROM_NUMBER`, `APP_BASE_URL`. Gateway `https://connector-gateway.lovable.dev/twilio`. Default base URL is a Lovable preview host. SMS does not depend on the email sending domain. |
 | `generate-toolbox-talk` | AI talk + image | not set | `LOVABLE_API_KEY` → `ai.gateway.lovable.dev`, models `google/gemini-2.5-flash` and `google/gemini-2.5-flash-image` |
-| `suggest-safety-topic` | AI topic | not set | same gateway, `gemini-2.5-flash` |
-| `extract-foreman-brief` | AI brief from contract file | not set | same |
-| `extract-scope-from-contract` | AI scope bullets | not set | same |
-| `categorize-document` | AI metadata for uploads | not set | same |
+| `suggest-safety-topic` | AI topic | not set | same AI gateway, `gemini-2.5-flash` |
+| `extract-foreman-brief` | AI brief from contract file | not set | same AI gateway |
+| `extract-scope-from-contract` | AI scope bullets | not set | same AI gateway |
+| `categorize-document` | AI metadata for uploads | not set | same AI gateway |
 | `speak-toolbox-talk` | TTS | not set | `DEEPGRAM_API_KEY` (`api.deepgram.com`), else `ELEVENLABS_API_KEY` (`api.elevenlabs.io`) |
 | `transcribe-toolbox-talk` | STT | not set | `ELEVENLABS_API_KEY`, speech-to-text |
 | `complete-safety-talk` | Close a session, email summary | not set | service role, enqueues mail |
@@ -158,44 +190,57 @@ Templates in `supabase/functions/_shared/transactional-email-templates/`: new-hi
 
 ### 5. Schedules
 
+Branch: **Both** for what is in git. Live schedules are **NEEDS ACCESS to confirm**.
+
 | Job | In repo | Live schedule |
 | --- | --- | --- |
-| `process-email-queue` | Comment only, in `20260420131125_email_infra.sql`. Interval described as 5 seconds. Uses vault name `email_queue_service_role_key`. | **NEEDS** `cron.job` export and vault secret *names* (not values) |
-| `daily-celebrations` | Function plus `celebration_log` table. No `cron.schedule`. | **NEEDS** Lovable/Supabase schedule or external cron |
-| Other external cron | None found | **NEEDS** a dashboard check so a hidden scheduler is not missed |
+| `process-email-queue` | Comment only, in `20260420131125_email_infra.sql`. Interval described as 5 seconds. Uses vault name `email_queue_service_role_key`. | **NEEDS ACCESS** — `cron.job` export and vault secret *names* (not values) |
+| `daily-celebrations` | Function plus `celebration_log` table. No `cron.schedule`. | **NEEDS ACCESS** — Lovable/Supabase schedule or external cron |
+| Other external cron | None found in git | **NEEDS ACCESS** — dashboard check |
 
-`pgmq` queues are database objects and must be recreated before functions run. Queue *contents* at cutover should be drained or discarded on purpose, not half-copied.
+`pgmq` queues are database objects and must be recreated before functions run. Queue contents at cutover should be drained or discarded on purpose, not half-copied. During a write freeze these jobs are writers and have to be unscheduled on the old project, not only hidden behind a page on the new host.
 
-### 6. Email
+### 6. Email, AI, and SMS are separate
 
-- **Auth mail and transactional mail** share the Lovable queue worker. There is no Resend, Postmark, or SendGrid SDK in the app. Suppression comments name Mailgun as Lovable's provider.
-- **Sender:** `noreply@notify.www.schrex.com`. Code comments say the email API looks up that exact domain and that it must be delegated to Lovable nameservers. Moving the app without a new verified domain means mail stops.
+Branch: **Both** for the code paths below.
+
+| Dependency | What it needs | What it does not need |
+| --- | --- | --- |
+| Email | Sending-domain configuration for `notify.www.schrex.com` as `SENDER_DOMAIN`, plus `LOVABLE_API_KEY` / `LOVABLE_SEND_URL` for the current sender. A source comment says the domain must match a subdomain delegated to Lovable nameservers. **NEEDS ACCESS to confirm** that delegation in DNS. | The AI gateway and the Twilio connector. |
+| AI | `LOVABLE_API_KEY` and `https://ai.gateway.lovable.dev` for five functions (toolbox talk text and image, safety topic, foreman brief, scope extraction, document categorization). | The email sending domain. |
+| SMS | `LOVABLE_API_KEY`, `LOVABLE_CONNECTOR_TWILIO_API_KEY`, `TWILIO_FROM_NUMBER`, and `https://connector-gateway.lovable.dev/twilio` in `notify-talk-attendees`. | The email sending domain. |
+| Speech | `DEEPGRAM_API_KEY` and `ELEVENLABS_API_KEY` against those vendors' own APIs. | Lovable's email domain. The Lovable key is not read by these two functions. |
+
+- **Auth mail and transactional mail** share the Lovable queue worker in code. There is no Resend, Postmark, or SendGrid SDK in the app. Suppression comments name Mailgun as Lovable's provider (**NEEDS ACCESS** for the live provider).
 - **Unsubscribe:** `/unsubscribe` calls `handle-email-unsubscribe` (`verify_jwt = false`) with a token in `email_unsubscribe_tokens`. RFC 8058 one-click POST is implemented. `suppressed_emails` records bounces, complaints, and unsubscribes.
-- **Inbound SWPPP:** webhook function, optional shared secret, parses CloudMailin / Postmark / SendGrid-style payloads, finds a job number in the subject, stores the file. The provider, mailbox, and webhook URL are not in git. `config.toml` does not set `verify_jwt = false` for this function, so the gateway may be rejecting unsigned calls unless Lovable overrode that. **NEEDS** the deployed setting and the inbound provider account.
-- **Domains to inventory:** `schrex.com` (people's addresses), `notify.www.schrex.com` (Lovable sending), `www.schrex.com` (implied parent). DNS host is not in the repo.
+- **Inbound SWPPP:** webhook function, optional shared secret, parses CloudMailin / Postmark / SendGrid-style payloads, finds a job number in the subject, stores the file. The provider, mailbox, and webhook URL are not in git (**NEEDS ACCESS**). `config.toml` does not set `verify_jwt = false` for this function. The deployed gateway setting is **NEEDS ACCESS to confirm**.
+- **Domains to inventory:** `schrex.com` (people's addresses), `notify.www.schrex.com` (sender in code), `www.schrex.com` (implied parent). DNS host is not in the repo (**NEEDS ACCESS**).
 
 ### 7. Realtime
 
-| Channel | Table | Publication in migrations |
+Branch: **Both** for client code and migration SQL.
+
+| Channel | Table | Publication SQL in migrations |
 | --- | --- | --- |
 | `truck-requests-pending` | `truck_requests` | yes |
 | `notifications:<user id>` | `notifications` (filter `user_id`) | yes, replica identity full |
 | `wb-<week>` | `whiteboard_tiles` (filter `week_start`) | yes |
-| `talk-attendees-<session>` | `toolbox_talk_attendees` | **no** — `Safety.tsx` also polls every 15s |
+| `talk-attendees-<session>` | `toolbox_talk_attendees` | no `ALTER PUBLICATION` in git. `Safety.tsx` also polls every 15s. |
 
-Confirm `pg_publication_tables` for `supabase_realtime` before cutover. If attendees were added in the dashboard, a migration replay will drop live updates until that publication line is copied. No broadcast or presence channels were found. `realtime.messages` is deny-all for `anon` and `authenticated`.
+Missing publication SQL does not prove `toolbox_talk_attendees` Realtime is off in production. Lovable or the dashboard may have added it. **NEEDS ACCESS to confirm** `pg_publication_tables` for `supabase_realtime`. A migration-only replay would omit that publication until the live list is copied. No broadcast or presence channels were found in app code. `realtime.messages` is deny-all for `anon` and `authenticated` in `20260513013337` (**Both**).
 
 ### 8. Secret and env names
 
-Never copy values into tickets. Names only.
+Branch: **Both**. Never copy values into tickets. Names only.
 
 **Browser (Vite, inlined at build)**
 
 | Name | Where |
 | --- | --- |
-| `VITE_SUPABASE_URL` | client, resumable upload, unsubscribe page |
+| `VITE_SUPABASE_URL` | client, resumable upload, unsubscribe page. On `develop`, also the plan/photo TUS endpoints. |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | client, unsubscribe, Safety TTS call |
 | `VITE_SUPABASE_PROJECT_ID` | `Safety.tsx` builds the functions URL; also tracked `.env` |
+| `VITE_LOCAL_BACKEND` | **Fixed on develop, not released.** When `"true"`, Google sign-in is disabled in the UI. |
 
 **Edge Function / Supabase platform**
 
@@ -204,7 +249,7 @@ Never copy values into tickets. Names only.
 | `SUPABASE_URL` | almost every function |
 | `SUPABASE_ANON_KEY` | user-scoped functions |
 | `SUPABASE_SERVICE_ROLE_KEY` | admin client inside functions; also the vault copy named `email_queue_service_role_key` |
-| `LOVABLE_API_KEY` | AI gateway, email send, email preview, suppression webhook, Twilio connector auth |
+| `LOVABLE_API_KEY` | AI gateway, email send, email preview, suppression webhook, Twilio connector auth. One key name, several products. |
 | `LOVABLE_SEND_URL` | optional email API override |
 | `LOVABLE_CONNECTOR_TWILIO_API_KEY` | SMS |
 | `TWILIO_FROM_NUMBER` | SMS |
@@ -214,175 +259,222 @@ Never copy values into tickets. Names only.
 | `DEEPGRAM_API_KEY` | TTS |
 | `ELEVENLABS_API_KEY` | TTS fallback and transcription |
 
-**Not in the repo, required to operate the new project**
+**Not in the repo, required to operate a new project**
 
 - Database password, pooler string, and service-role key of the new project.
 - Google OAuth client id and secret.
-- New SMTP or transactional provider key, and DNS for the sender.
-- Twilio account the company owns, if SMS stays.
-- Deepgram and ElevenLabs keys (re-issue; do not assume Lovable will keep serving them).
+- A sending domain and mail provider the company controls, if mail leaves Lovable.
+- Twilio credentials the company owns, if SMS stays.
+- Deepgram and ElevenLabs keys (re-issue; do not assume the current host will keep serving them).
 - Inbound email provider credentials.
-- Whatever Lovable stored only in its secret UI. Export the *names* from the Lovable/Supabase secrets screen and diff them against this list.
+- Whatever Lovable stored only in its secret UI. Export the *names* from the Lovable/Supabase secrets screen and diff them against this list (**NEEDS ACCESS**).
 
-`SECURITY.md` says secrets live in Lovable Cloud secret storage. That matches the code: service-role and provider keys are not committed. The publishable client key is committed in `.env`, which is normal for an anon key and still should be rotated when the project changes.
+`SECURITY.md` says secrets live in Lovable Cloud secret storage. That matches the code: service-role and provider keys are not committed. The publishable client key is committed in `.env`. Rotate it when the project changes.
 
 ### 9. Lovable-specific dependencies
 
-| Item | Evidence |
-| --- | --- |
-| `lovable-tagger` | `vite.config.ts` dev plugin; `package.json` devDependency `^1.1.13` |
-| `@lovable.dev/cloud-auth-js` | Google sign-in |
-| `npm:@lovable.dev/email-js` | `process-email-queue` |
-| `npm:@lovable.dev/webhooks-js` | suppression webhook |
-| `.lovable/plan.md` | Editor plan for the pay-validation trigger. Not runtime. |
-| AI gateway | `https://ai.gateway.lovable.dev/v1/chat/completions` in five functions |
-| Twilio connector | `https://connector-gateway.lovable.dev/twilio` |
-| Hardcoded hosts | README live URL; `notify-talk-attendees` default `https://id-preview--be4f9bee-f0ea-4d93-8142-1b82027df08c.lovable.app`; preview-auth zones; `index.html` OG image on `storage.googleapis.com/gpt-engineer-file-uploads/...` |
-| Hardcoded Supabase ref | `PhotosSection.tsx`, `PlansSection.tsx` |
-| Build | `componentTagger()` only when `mode === "development"`. Production `vite build` does not need the tagger at runtime, but the dependency must install unless removed. |
+| Item | Branch | Evidence |
+| --- | --- | --- |
+| `lovable-tagger` | **Both** | `vite.config.ts` dev plugin; `package.json` devDependency `^1.1.13` on main. `develop` still builds with it. |
+| `@lovable.dev/cloud-auth-js` | **Both** | Google sign-in |
+| `npm:@lovable.dev/email-js` | **Both** | `process-email-queue` |
+| `npm:@lovable.dev/webhooks-js` | **Both** | suppression webhook |
+| `.lovable/plan.md` | **Both** | Editor plan for the pay-validation trigger. Not runtime. |
+| AI gateway | **Both** | `https://ai.gateway.lovable.dev/v1/chat/completions` in five functions |
+| Twilio connector | **Both** | `https://connector-gateway.lovable.dev/twilio` |
+| Hardcoded hosts | **Both** | README live URL on main; `notify-talk-attendees` default `https://id-preview--be4f9bee-f0ea-4d93-8142-1b82027df08c.lovable.app`; preview-auth zones; `index.html` OG image on `storage.googleapis.com/gpt-engineer-file-uploads/...` |
+| Hardcoded Supabase ref | **Production (main)** | `PhotosSection.tsx` and `PlansSection.tsx`. **Fixed on develop, not released** (see storage). |
+| Build | **Both** | `componentTagger()` only when `mode === "development"`. Production `vite build` does not need the tagger at runtime, but the dependency must install unless removed. |
 
-Leaving Lovable means replacing auth, email, AI, and SMS. Weather (`api.open-meteo.com`), maps (Nominatim, OSM, Esri, OSRM, Google Maps links), Divvy, HCSS, Clearstory, and Exactix are ordinary outbound links and are not Lovable.
+Weather (`api.open-meteo.com`), maps (Nominatim, OSM, Esri, OSRM, Google Maps links), Divvy, HCSS, Clearstory, and Exactix are ordinary outbound links and are not Lovable (**Both**).
 
 ### 10. Hosting
 
-- Vite 5 + React 18 SPA. Routes are client-side (`react-router-dom` `BrowserRouter`). The host must rewrite unknown paths to `index.html` or refresh on `/jobs/:id`, `/safety/take/:token`, and `/unsubscribe` 404s.
-- `npm run build` writes `dist/`. There is no committed CI on `main`. `develop` adds `.github/workflows/verify.yml` for local checks only.
+- **Both:** Vite + React SPA. Routes are client-side (`react-router-dom` `BrowserRouter`). The host must rewrite unknown paths to `index.html` or refresh on `/jobs/:id`, `/safety/take/:token`, and `/unsubscribe` 404s. `main` uses Vite 5; `develop` upgrades the toolchain in `package.json`. Either way the output is a static `dist/`.
+- **Production (main):** no committed CI. **Fixed on develop, not released:** `.github/workflows/verify.yml` runs local checks only.
 - `VITE_*` must exist in the host's build environment. Changing them requires a rebuild.
-- PWA: `public/manifest.webmanifest`, `start_url: "/"`, icon `app-icon.png`.
-- No custom domain, no TLS config, and no Lovable domain mapping are in git. Ask Lovable whether `schreiber-hub-central.lovable.app` is the only host or whether a `schrex.com` hostname is also attached.
-- `develop` local docs warn that `npm run dev` uses the existing `.env` and can point at production. Keep using that warning.
+- PWA: `public/manifest.webmanifest`, `start_url: "/"`, icon `app-icon.png` (**Both**).
+- No custom domain config is in git. **NEEDS ACCESS** to learn whether `schreiber-hub-central.lovable.app` is the only host or a `schrex.com` hostname is also attached.
+- `develop` local docs warn that `npm run dev` / `bun run dev` uses the existing `.env` and can point at production. Keep using that warning.
 
 ## Blockers
 
-1. **Repo migrations are not a full schema.** Replaying them on an empty database fails on HR triggers and does not create `email_queue_dispatch`, the email cron body, or any dashboard-only policy edits.
-2. **Auth is not a Supabase-only Google provider.** Sessions for Google are minted by Lovable and then stored in the Supabase client. Password hashes and `auth.identities` must be exported and tested. Users who only use Google may have to sign in again and re-link.
-3. **Mail, AI, and SMS are Lovable products.** `LOVABLE_API_KEY` will not exist on a company Supabase project. Sender DNS for `notify.www.schrex.com` is documented as Lovable's. AI features stop until another gateway is wired. SMS stops until a company Twilio account is wired.
-4. **No staging project exists.** `develop` says this explicitly, and nothing in `main` defines one.
-5. **`main` is live.** Lovable syncs `main` both ways. A migration branch must not be merged or pushed there.
-6. **Seeded shared password is in git history.** Rotation is required even if hosting does not change. Do not copy that migration into the new project.
-7. **Absolute storage URLs and hardcoded project ref.** `toolbox_talks.image_url`, plus TUS URLs in two components, keep pointing at `bitogpfplcquovpdjprk` after the app moves.
+1. **Repo migrations are not a full schema (Both).** Replaying `supabase/migrations` on an empty database fails on HR triggers and does not create `email_queue_dispatch`, the email cron body, or any dashboard-only policy edits. `develop`'s `local/hr-bootstrap.sql` is a local reconstruction, not a released migration.
+2. **Google sign-in is Lovable's wrapper (Both).** Password continuity needs a tested `auth.users` export that includes password hashes. Google identity continuity needs a test on the rehearsal project. Relinking is a contingency if that test fails.
+3. **Email, AI, and SMS stop for different reasons (Both).** Email depends on the sending-domain configuration (delegation is a source comment; **NEEDS ACCESS to confirm** DNS) and the Lovable email API. AI depends on `LOVABLE_API_KEY` and `ai.gateway.lovable.dev`. SMS depends on the Lovable connector credentials and Twilio number. Cutting the email domain does not, by itself, describe the AI or SMS cutover.
+4. **No staging project exists.** `develop` says this explicitly. Nothing in `main` defines one. Synthetic staging can start before any Lovable transfer answer.
+5. **`main` is live.** Lovable syncs `main` both ways. This audit branch targets `develop` and must not be merged to `main`.
+6. **Seeded shared password is in git history (Both).** Rotation is required even if hosting does not change. Do not copy that migration into the new project.
+7. **Absolute `talk-media` URLs (Both).** `toolbox_talks.image_url` keeps the old project host until rewritten. **Production (main)** also hardcodes that host in `PhotosSection.tsx` and `PlansSection.tsx`. **Fixed on develop, not released.**
 
 ## Access and export checklist
 
-Ask Sumanth (Lovable project owner) and, if needed, Lovable support. All exports should be schema or inventory first. Do not pull employee row dumps into this repository.
+This is the immediate next step. Ask Sumanth (Lovable project owner) and, in parallel, Lovable support. All exports should be schema or inventory first. Do not pull employee row dumps into this repository.
+
+There is no documented automated transfer of a Lovable Cloud project to a self-managed Supabase organization. Supabase's own note is: [Can't access Supabase project / Lovable Cloud](https://supabase.com/docs/guides/troubleshooting/cant-access-supabase-project-lovable-cloud). Plan for a new project. Ask Lovable support about any other route in parallel. Schema inventory and synthetic staging go ahead either way. The transfer answer must not block preparation.
 
 | Ask | From whom | Why |
 | --- | --- | --- |
-| Read-only full schema dump (`pg_dump --schema-only`, all schemas used by the app: `public`, `storage`, `auth` function/trigger definitions, `cron`, `pgmq`, `vault` secret *names*, `realtime` publication). No row data, no secret values. | Owner, via Supabase/Lovable SQL or support | Prove parity beyond the three HR tables. Capture `email_queue_dispatch`, grants, and policies actually installed. |
-| `cron.job` rows (schedule, command with secrets redacted) and any Lovable scheduled-function list | Owner dashboard | Email worker and celebrations |
-| Auth settings export: site URL, redirect URLs, providers enabled, email confirmations, SMTP/hook, password policy, HIBP, MFA counts. `auth.identities` grouped by `provider` only. | Owner | Google and email cutover |
-| Auth user export plan: GoTrue-compatible `auth.users` including `encrypted_password`, plus identities, **in a private store**, after a dry run on staging. Not GitHub. | Owner + whoever runs the copy | Password users keep working only if hashes and the same auth schema move together |
-| Storage: bucket list with public flag, file size limits, and object count/bytes per bucket. Later, a same-path object copy. | Owner | Size the copy; find files outside the 15 known buckets |
-| Secrets screen: names only, diffed against section 8 | Lovable Cloud → secrets | Find keys this repo does not mention |
-| Whether Lovable will transfer or detach the Supabase project versus requiring a new project | Lovable support | A transfer avoids auth-hash and storage-URL pain. This audit assumes a new project because that is the stated goal. |
-| DNS host for `schrex.com` and any Lovable nameserver delegation on `notify.www.schrex.com` | Domain owner | Email and, later, the app hostname |
-| Inbound SWPPP provider, destination address, and current webhook URL | Whoever forwards those emails | Point the webhook at the new function and set `verify_jwt` off plus a secret |
-| Custom domain on the Lovable app, if any | Lovable project settings | Cutover DNS |
-| Confirmation that production still has the three HR tables and whether they contain rows (counts only) | Owner, read-only | Empty tables are a smaller cutover; nonempty tables are payroll records with a 6-year retention note in `SECURITY.md` |
+| Read-only full schema dump (`pg_dump --schema-only`: `public`, storage policies, auth triggers, `cron` with secrets redacted, `pgmq`, `vault` secret *names*, `realtime` publication). No row data, no secret values. | Owner, via Supabase/Lovable SQL or support | Prove parity beyond the three HR tables. Capture `email_queue_dispatch`, grants, and policies actually installed. |
+| `cron.job` rows (schedule, command with secrets redacted) and any Lovable scheduled-function list | Owner dashboard | Email worker and celebrations. **NEEDS ACCESS to confirm** they exist. |
+| Auth settings: site URL, redirect URLs, providers enabled, whether public signup is enabled, email confirmations, SMTP/hook, password policy, HIBP, MFA counts. `auth.identities` grouped by `provider` only. | Owner | The UI calls `signUp`; the dashboard decides if it works. Provider counts inform the Google continuity test. |
+| Auth user export plan: GoTrue-compatible `auth.users` including `encrypted_password`, plus identities, **in a private store**, used only in the restricted rehearsal below. Not GitHub. | Owner + whoever runs the copy | Password users keep working only if hashes and a compatible auth schema move together. |
+| Storage: bucket list with public flag, file size limits, and object count/bytes per bucket. | Owner | Size the copy; find files outside the 15 known buckets. |
+| Secrets screen: names only, diffed against section 8 | Lovable Cloud → secrets | Find keys this repo does not mention. |
+| Any route other than a new project (support only; do not wait on it) | Lovable support | Cited doc says there is no automated transfer. |
+| DNS host for `schrex.com`, any custom app domain, and the actual NS/records for `notify.www.schrex.com` | Domain owner | Confirm or correct the source comment about Lovable nameservers. |
+| Inbound SWPPP provider, destination address, and current webhook URL | Whoever forwards those emails | That path writes during a freeze and after cutover. |
+| Confirmation of HR table row counts only | Owner, read-only | Counts size the archive. Rows stay out of git. |
 
 The 2026-10-16 file on `develop` (`local/reference/schema_benefits_positions_timeoff.sql`, SHA-256 `30baff2ad62f1a9f4bb69d71c56b3d851db92d3a2439c798b0345120aba6ce8a`) is a partial catalog extract, not this dump. It is not a backup.
 
-## (a) Independent staging
+## (a) Two environments, not one staging database
 
-Stand up staging before any production copy.
+### Ordinary staging — synthetic only
 
-1. **New Supabase project** in the company's own org, Postgres 17, region chosen explicitly. Empty. Do not link the Lovable CLI at this repo.
-2. **Schema:** start from a schema-only dump of production, not from `supabase/migrations` alone. If the dump is delayed, load migrations only after inserting a reviewed HR bootstrap *ahead* of `20260421010923`, and skip `20260419193344` and the local-incompatible realtime ownership change. Then diff the result against the dump before trusting it.
-3. **Host:** Vercel, Netlify, or Cloudflare Pages are all enough. Requirements: Node build of Vite, `dist` as the output, SPA fallback to `index.html`, and build-time `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` for the *staging* project. Preview deployments should use the same staging Supabase project or a third disposable one, never production.
-4. **Branch previews:** connect the host to GitHub and allow previews from `develop` and `cursor/*`. Point Lovable at nothing. Keep production `main` on Lovable until cutover.
-5. **Seed:** synthetic users only (`employee@`, `other@`, `admin@` style). `develop`'s `local/seed.sql` is a starting point and still needs a review so it cannot target production. No employee rows, no SSN, no pay rates from production.
-6. **Google:** a separate OAuth client named for staging, with the staging hostname and `http://localhost:8080` only.
-7. **Integrations:** stub or disable AI, SMS, inbound mail, and outbound mail. Use the host's email sandbox or a sink. Do not put production `LOVABLE_API_KEY` into staging.
-8. **Auth policy:** turn off public signup on staging and on the future production project. Create users through `create-employee` or an invite flow.
-9. **`develop` tooling** (`bun run dev:local`, disposable Docker) can stay as a laptop/CI check. It is not staging. Its own notes say Edge Functions and Realtime are off.
+Shared by developers and branch previews. No production employee rows, no production Auth users, no SSN, no pay rates.
+
+1. **New Supabase project** in the company's own org, Postgres 17, region chosen explicitly. Empty. Do not link the Lovable CLI at this repo. Start this without waiting for a transfer decision.
+2. **Schema:** prefer a schema-only dump of production. If the dump is delayed, load migrations only after a reviewed copy of the HR bootstrap *ahead* of `20260421010923`, and skip `20260419193344` and the local-incompatible realtime ownership change. Diff that result against the dump before trusting it. The bootstrap on `develop` is the local reference, not a license to run it on production.
+3. **Host:** Vercel, Netlify, or Cloudflare Pages. Node build of Vite, `dist` as the output, SPA fallback to `index.html`, and build-time `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` for this staging project. Previews use this project or another disposable synthetic project, never production and never the rehearsal project below.
+4. **Seed:** synthetic users only. `develop`'s `local/seed.sql` is a starting point and still needs a review so it cannot target production.
+5. **Google:** a separate OAuth client named for staging, with the staging hostname and `http://localhost:8080` only.
+6. **Integrations:** stub or disable AI, SMS, inbound mail, and outbound mail. Use a sink. Do not put production `LOVABLE_API_KEY` into staging.
+7. **Auth policy:** disable public signup on this project. Create users through an admin path. The button in the repo is not the control.
+8. **`develop` tooling** (`bun run dev:local`, disposable Docker) can stay as a laptop/CI check. It is not this staging project. Its notes say Edge Functions and Realtime are off.
+
+Build staging frontends from `develop` (or a branch off it), where plan/photo uploads already use `VITE_SUPABASE_URL`. A build of `main` still hardcodes the production Supabase host in those two screens.
+
+### Migration rehearsal — real data, locked down
+
+A separate Supabase project and host. Not the shared staging project. Not a laptop.
+
+- Access limited to the people running the copy. No branch previews, no shared CI logs, no Lovable editor connected.
+- Real employee and Auth data may be loaded here for the dry run only.
+- Outbound email, SMS, AI, and all schedules (pg_cron and any external cron) disabled before the load. A celebrations job or a truck-request email against copied rows would notify real people.
+- Same RLS and column grants as production.
+- Wiping the project afterward removes the database copy. It does not undo exposure that already happened through previews, build logs, function logs, error trackers, or an integration that was left enabled. Treat the rehearsal as a place where production data was present, and keep its logs as restricted as the database.
 
 ## (b) Phased migration and recovery
 
-Keep https://schreiber-hub-central.lovable.app on the current Supabase project until the new host has passed the checks below. DNS is the last switch, and it stays reversible.
+Keep https://schreiber-hub-central.lovable.app on the current Supabase project until the new host has passed the checks below. Cutover is not justified until Phase 0 exports exist and the rehearsal has been done.
 
-### Phase 0 — Inventory (this document plus the checklist)
+### Phase 0 — Inventory
 
-Finish the exports above. Freeze a written list of buckets, cron jobs, secret names, auth providers, and redirect URLs. Decide transfer-versus-new-project with Lovable support before building tooling.
+Finish the exports above. Write down buckets, cron jobs, secret names, auth providers, redirect URLs, and whether public signup is enabled. Ask Lovable about non-automated options in parallel. Do not block Phase 1's synthetic project on that answer.
 
-### Phase 1 — Schema parity
+### Phase 1 — Schema parity on synthetic staging
 
-Apply the schema-only dump to staging. Compare, at least:
+Apply the schema-only dump to the synthetic staging project. Compare, at least:
 
 - table and column names against `types.ts` (expect 60 tables)
 - enums, views (`positions_public`, `employee_contacts_directory`)
 - functions, including `email_queue_dispatch`, `handle_new_user`, `has_role`, `get_employee_contact_sensitive`, `list_employee_directory`
 - triggers on the three HR tables and `auth.users`
 - RLS enabled and policy names
-- publication tables
+- publication tables, including whatever the live dump says about `toolbox_talk_attendees`
 - storage buckets and policies
 - extensions `pg_cron`, `pg_net`, `pgmq`, `supabase_vault`
 
 Do not promote `local/candidate-migrations/20261016210000_time_off_request_permissions.sql` in the same change as the move. It is a behavior fix and needs its own review.
 
-### Phase 2 — Staging rehearsal
+### Phase 2 — Synthetic rehearsal
 
-Deploy the SPA to the staging host from a branch, with Lovable packages still installed so the build matches, but with Google pointed at Supabase Auth. Exercise, with synthetic data:
+Deploy the SPA to the synthetic staging host. Exercise synthetic data only:
 
-- email/password sign-in, rejected public signup, admin-created user, profile and `employee` role trigger
-- Google sign-in on the staging hostname
-- one private upload and a signed URL (plans or handbook)
+- email/password sign-in, admin-created user, profile and `employee` role trigger, and a signup attempt that the project rejects
+- Google sign-in on the staging hostname with the staging OAuth client
+- one private upload and a signed URL (plans or handbook), confirming the request host is the staging project
 - one public `talk-media` image URL rewritten to the staging project
 - realtime on notifications and truck requests
 - time-off create and admin approve
 - a queued email that lands in a sink, including unsubscribe
-- a celebrations dry run
-- SMS and AI either stubbed or called with staging keys
+- a celebrations run with schedules pointed at the sink, or with the job invoked once by hand
+- SMS and AI either stubbed or called with non-production keys
 
-`PhotosSection` / `PlansSection` hardcoded URL must be fixed on this branch before the rehearsal, or those uploads will hit production.
+### Phase 3 — Production-data rehearsal (restricted project)
 
-### Phase 3 — Data, auth, and storage dry run
+Run this only in the migration-rehearsal project, with outbound email, SMS, AI, and schedules disabled.
 
-- Copy `public` data into staging with a maintenance window practice run. Preserve primary keys so storage paths and foreign keys still match.
-- Copy `auth.users` / `auth.identities` into a throwaway staging auth schema. Sign in as a password user. Record whether Google identities exist and which provider string they use.
-- Copy storage objects same-path. Rewrite stored absolute URLs (`toolbox_talks.image_url`, and any `video_url` that points at the old project).
-- Compare row counts and a few checksums. Then wipe staging business data. The dry run is not the cutover database if it contains real payroll data and the staging keys are loose.
+Specify the copy method here and practice it. A filter on `updated_at` captures inserts and updates and misses deletions. The rehearsed method must do one of the following:
 
-Payroll, SSN, and bank fields are in this database. The dry-run target needs the same RLS, restricted column grants, and a private network path. Do not load that dump into a laptop database.
+- **Full copy during a practice freeze** of `public` data, `auth.users` / `auth.identities`, and storage objects, then a second full copy to prove it is repeatable.
+- **Delete-aware incremental copy:** primary-key diff plus content checksums for rows, plus a storage inventory diff that includes removed objects. Practice a known delete, a known update, and a known insert, and show all three land correctly.
+
+Also practice:
+
+- Sign-in as a copied password user.
+- Record which `auth.identities.provider` values exist. That test decides whether Google continuity works. Relink stays a contingency.
+- Rewrite stored absolute URLs (`toolbox_talks.image_url`, and any `video_url` that points at the old project).
+- Compare row counts, a deletion sample, and a few checksums.
+
+Then remove the data from the rehearsal project under the access rules above. Remember that a wipe does not recall logs or preview exposure.
+
+Do not load that dump into a laptop database. Payroll, SSN, and bank fields are in it.
 
 ### Phase 4 — Cutover
 
-1. Pick a low-traffic window. Tell the crew the app will be read-only for the copy.
-2. Snapshot the Lovable project (database backup Lovable/Supabase can restore, plus a storage inventory).
-3. Stop writers: maintenance page on the new host only after DNS; until then, avoid dual writes. Do not delete the Lovable app.
-4. Final incremental copy of rows changed since the dry run, auth users, and storage objects.
-5. Deploy functions to the new project with the new secrets. Recreate cron only after the function URL and vault key exist. Set `verify_jwt = false` only on unsubscribe, suppression, preview, inbound SWPPP, and celebrations-if-it-uses-a-cron-secret.
-6. Point the new host's production env at the new Supabase project and deploy.
-7. Change DNS for the chosen app hostname. Lower TTL the day before. Leave `schreiber-hub-central.lovable.app` on the old project.
-8. Google Cloud: add the production redirect URI before the DNS switch.
+1. Pick a low-traffic window. Tell the crew the app will reject writes for the copy.
+2. Snapshot the Lovable project (a backup Lovable/Supabase can restore, plus a storage inventory). Keep that backup as the start of the retention archive.
+3. **Write freeze on the old system, before the final copy.** A maintenance page on the new host does not stop writers who can still open `*.lovable.app`. Freeze every path that can change old data:
+   - The Lovable-hosted app: maintenance mode or an equivalent that rejects sign-in and writes on `schreiber-hub-central.lovable.app` and any custom domain still pointed there.
+   - Direct Supabase access: confirm no other client (script, Lovable editor session, personal `npm run dev` pointed at production) is using the anon or service key.
+   - Schedules: unschedule `process-email-queue`, `daily-celebrations`, and any other `cron.job` or Lovable schedule found in Phase 0. Confirm `cron.job` is empty or paused.
+   - Edge functions that write: disable or return a maintenance response for `inbound-swpppp-email`, `create-employee`, `convert-employee-contact`, notification senders, and the email worker. `verify_jwt` alone is not a freeze if webhooks are authorized.
+   - Inbound webhooks at the source: pause the SWPPP inbound provider so it stops POSTing, and pause the Lovable suppression webhook if it writes `suppressed_emails`.
+   - Auth admin actions: no invites, password resets, or user deletes during the freeze except the operator's own break-glass account.
+   - Check `email_send_log` / queue depth and storage listings once, wait, and check again. No new rows or objects means the freeze held.
+4. **Final copy during that freeze.** Use the method rehearsed in Phase 3. If the delete-aware incremental procedure was not rehearsed successfully, do a full copy (database, auth, storage) while writers are stopped. Do not describe an unrehearsed "rows changed since the dry run" pass as the cutover copy.
+5. Deploy functions to the new project with the new secrets. Leave schedules off until post-cutover checks pass. Set `verify_jwt = false` only on the functions that must be public (unsubscribe, suppression, preview, inbound SWPPP, and celebrations if it uses a cron secret), and require the shared secrets those functions already check.
+6. Point the new host's production env at the new Supabase project and deploy. Confirm plan/photo uploads use `VITE_SUPABASE_URL` (the `develop` behavior), not the hardcoded production host from `main`.
+7. Change DNS for the chosen app hostname. Lower TTL the day before. Leave the old Lovable URL frozen, not deleted, so rollback can reopen it.
+8. Add the production Google redirect URI before the DNS switch.
 
-### Rollback
+### Rollback is a data recovery, not a DNS flip
 
-- DNS back to Lovable. Old project was not written by the new app if the env vars never pointed production traffic at it before the switch.
-- If a few users did create rows only on the new project, export those rows before reversing DNS.
-- Do not decommission the Lovable Supabase project, OAuth client, or sender DNS until the post-cutover checks have held for a full work week, including a payroll-related read by an admin and a password reset.
-- Keep the old project backup. `SECURITY.md` calls for 6-year retention of payroll records.
+Set a **rollback decision point** before cutover: a named person, a clock time, and the checks that force a rollback. The operational window for that decision is separate from payroll retention (see below). One work week is a reasonable operational window to decide. It is not a retention period.
+
+Pointing DNS back at Lovable, by itself, drops every write made on the new system out of the app users are looking at. Those writes still exist only on the new project until someone copies them back.
+
+When the decision point says rollback:
+
+1. **Stop writes on the new system.** Same coverage as the freeze: new hostname, new Supabase client keys, new cron, new edge functions, new inbound webhooks, and Auth admin changes. Confirm a second sample shows no new rows.
+2. **Reconcile everything written after cutover** back onto the old project, using the rehearsed delete-aware method or a full diff since the cutover snapshot:
+   - inserts, updates, and deletes in `public`
+   - Auth changes: new users, password resets, email changes, banned/disabled flags, and identity links
+   - storage uploads and storage deletions
+   - notifications already sent (email, SMS, in-app). Record them. Delivery cannot be undone. Tell affected people if a message from the new system must be ignored or followed by a correction.
+3. **Verify** on the old project: row counts, a sample of updates, a sample of deletes, Auth user samples, and storage checksums against the new project as of the new-system freeze.
+4. **Reopen the old system.** Restore the old schedules only after verification. Point DNS back, and lift the Lovable maintenance mode, only after that verification. Users then see the reconciled data.
+5. Keep the new project read-only until the reconciliation is accepted, so a second diff is still possible.
+
+### Retention
+
+New York payroll-record rules require keeping applicable records in a recoverable archive for six years. The Department of Labor's recordkeeping summary is [CR 142](https://forms.labor.ny.gov/WP/CR142.pdf). That obligation is an archive (backups the company can restore, with access control), not a requirement to leave Lovable running. `SECURITY.md` states the same six-year period for payroll-related records and says not to delete `pay_audit_log`.
+
+The one-week operational rollback window is a separate decision about how long the frozen Lovable project stays ready to reopen. After that window, decommission the running Lovable app only if the archive has been tested (restore a backup to a locked project and read a pay row and an audit row). Keep the archive for the statutory period.
 
 ### Phase 5 — Post-cutover checks
 
-- Password sign-in and Google sign-in for one user of each kind.
+- Password sign-in, and a Google sign-in that either continues the copied identity or follows the rehearsed relink contingency.
 - A foreman sees only their own pay row; an admin sees `pay_audit_log`; another employee cannot read it.
-- Schedule, jobs, a signed file download, a truck request, a time-off request, a notification arriving over realtime.
-- Outbound mail from the new domain, unsubscribe, and one inbound SWPPP test message.
-- Celebrations job ran once.
-- AI and SMS either work on the new keys or are visibly disabled.
-- Old Lovable URL still loads the old app, so rollback remains real.
+- Schedule, jobs, a signed file download whose host is the new project, a truck request, a time-off request, a notification arriving over realtime.
+- Outbound mail from the company-controlled domain, unsubscribe, and one inbound SWPPP test message.
+- Celebrations job ran once, on purpose, after schedules were re-enabled.
+- AI and SMS each either work on their own new credentials or are visibly disabled. They are not implied by email working.
+- The old Lovable URL stays frozen and restorable until the rollback decision point passes.
 - Error logs and auth failure rate for the first day.
 
 ## Risks to plan around
 
-- **Password hashes** move only with a compatible `auth.users` copy into the same GoTrue major version. A CSV of emails is not enough. Users then need resets.
-- **OAuth identities** are tied to the Google client and to however Lovable created the Supabase user. Budget for a re-link. Apple/Microsoft are in the wrapper types and unused by the button; confirm the identity export anyway.
-- **Open signup** on the old and new projects creates an `employee` role. Close it before the new project is on a public hostname.
-- **Shared password in git history** remains even after rotation. Rotation still matters because those hashes were generated from a password anyone with the repo can read.
-- **Storage URLs** in `image_url` break when the project ref changes. Private `file_path` values survive a same-path copy.
-- **Hardcoded project URL** in two upload components will silently keep writing to Lovable's project if the env is switched and those lines are not.
-- **Email domain delegation** can outlive the app move and keep mail on Lovable, or break mail if nameservers are cut early.
-- **AI credits** disappear with the Lovable key. Safety-talk generation, contract extraction, and document categorization are the features that stop.
-- **Dual write** if Lovable `main` and the new host share one database during a partial move. Avoid that. Staging and production projects stay separate.
-- **Schema drift will grow** if Lovable keeps editing `main` during the staging work. Re-diff migrations and types immediately before cutover.
-- **`develop` is not production.** It has local tooling and a lint/CI trail. Merging it to `main` would ship a large unreleased branch through Lovable. It is a useful input to staging, not a release.
+- **Password hashes** move only with a compatible `auth.users` copy. A CSV of emails is not enough.
+- **Google identities** need a rehearsal test. Relinking is the fallback if the copied identities do not sign in against the company-owned OAuth client.
+- **Signup UI (Both)** calls `signUp`, and the trigger assigns `employee`. **NEEDS ACCESS to confirm** the live Auth setting. Disable public signup on every new project before it has a public hostname.
+- **Shared password in git history (Both)** remains after rotation. Rotation still matters because those hashes were generated from a password anyone with the repo can read.
+- **Storage URLs** in `image_url` (**Both**) break when the project ref changes. Private `file_path` values survive a same-path copy. Deletions survive only if the copy method records them.
+- **Hardcoded project URL** is **Production (main)** in `PhotosSection.tsx` and `PlansSection.tsx`. **Fixed on develop, not released.** Shipping `main` unchanged would keep those uploads on Lovable's project.
+- **Email domain** in source comments is unverified until DNS is read. AI and SMS fail on their own credentials even if that domain stays put.
+- **Dual write** if the Lovable URL stays open during the freeze, or if cron and SWPPP keep writing. The freeze list in Phase 4 is the control.
+- **Schema drift will grow** if Lovable keeps editing `main` during staging. Re-diff migrations and types immediately before cutover.
+- **`develop` is not production.** It has the upload-URL fix, local HR SQL, and CI. Merging it to `main` would ship that branch through Lovable. It is an input to synthetic staging, not a release.
+- **Rehearsal exposure** survives a later wipe if logs, previews, or integrations saw production rows.
