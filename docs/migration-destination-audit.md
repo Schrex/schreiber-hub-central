@@ -1,5 +1,10 @@
 # Rehearsal destination audit
 
+**Latest:** destination isolation was applied on 2026-10-19: signup and Email provider
+off, Data API disabled, blocking Send Email hook enabled. See
+[runner/isolation details](migration-import-runner.md). Historical read-only snapshots
+below describe the earlier settings, not current controls. No data import performed.
+
 **Update 2026-10-19:** the export is now privately captured and inspected. See the
 [restore selection plan](migration-restore-plan.md) for current evidence and next
 steps. Earlier unavailable-export statements below are historical; restore remains

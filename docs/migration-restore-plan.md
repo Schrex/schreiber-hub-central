@@ -1,7 +1,9 @@
 # Independent restore plan — inspected backup, 2026-10-19
 
-Scope: preparation only. No import, SQL execution, source changes, destination
-changes, secret activation or paid infrastructure. Target is existing
+Latest: destination isolation and the restricted database-baseline runner are now
+prepared; see [runner details](migration-import-runner.md). No real-data import has
+run. The original plan below predates the authorized destination control changes.
+No source changes, secret activation or paid infrastructure. Target is existing
 `hub-rehearsal` (`acgqjjbrnkmeazswdnzp`), never source `bitogpfplcquovpdjprk`
 or the synthetic local backend. This is not an executable import script.
 

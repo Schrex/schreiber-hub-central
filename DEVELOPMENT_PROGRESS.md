@@ -3,6 +3,25 @@
 Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Rehearsal isolation and baseline import runner — 2026-10-19
+
+Applied destination-only controls to hub-rehearsal: public signup off, Email provider
+off, Data API disabled, and enabled a Postgres Send Email hook that always returns
+403 without sending or recording its input. No production setting changed. Added
+fixed-target, TLS-verified, hidden-password database baseline runner with private
+artifacts/logs, pinned input hashes, empty-target checks, one transaction, count/RLS
+checks and no automatic retry. All app triggers/client grants/queues/schedules and
+file restore remain separate. Fresh-sign-in treatment is explicit in its operator
+confirmation. No real-data import executed; original archive unchanged.
+
+Validation: 21 tooling tests, shell syntax and whitespace pass. Synthetic-only
+transaction test passes commit, late-error rollback, nonempty-rerun refusal, client
+read denial and Auth mail-block role checks. Temporary test database removed; no
+employee rows loaded locally. Private import bundle prepared. See
+[runner scope and operator instructions](docs/migration-import-runner.md). Complete
+restore, hosted execution, content reconciliation, storage upload and application
+behavior/grant restoration are still unproven. Do not enable client access yet.
+
 ## Managed schema comparison and synthetic replay — 2026-10-19
 
 User completed hidden-password schema capture. The owner-only destination file has
