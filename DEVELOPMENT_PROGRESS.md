@@ -1,5 +1,23 @@
 # Development progress
 
+## Independent integration preparation review — 2026-10-19
+
+Preserved optional integration work separately from migration audit PR #10, based
+on develop. Existing providers remain selected by default; Supabase Google is
+explicit opt-in and Postmark is an unconnected adapter. Includes sanitized transport
+failures, delivery-time suppression/error deferral, schema-valid rate-limit logs,
+and synthetic Auth/storage coverage. No schema migration or deployment.
+
+The accepted immediate email plan is Supabase Auth SMTP and the existing queue.
+Further delivery-tracking infrastructure is paused pending DNS; this draft is not
+a prerequisite for DNS verification or a rehearsal password-reset test.
+
+Full `bun run verify` passes: typecheck, 174 tests, build, six local backend checks,
+lint (0 errors/30 existing warnings), 18 Edge entry points and the time-off browser
+workflow. Tests use synthetic local data; providers and independent restore remain
+unverified. Export download and DNS access remain pending. Main is unchanged.
+
+
 Updated: 2026-10-18. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
