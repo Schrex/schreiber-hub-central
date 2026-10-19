@@ -1,4 +1,4 @@
-/** Pure policy extracted from the existing worker; no delivery or queue mutations. */
+/** Queue policy and persistence coordination; no provider delivery. */
 export type EmailFailurePolicy =
   | { kind: 'rate_limited'; retryAfterSeconds: number }
   | { kind: 'emails_disabled' }
@@ -53,4 +53,19 @@ export function evaluateEmailPreflight(input: {
 /** Existing schema allows pending, not rate_limited; keep provider failures separate. */
 export function rateLimitLogFields(retryAfterSeconds: number) {
   return { status: 'pending' as const, metadata: { outcome: 'rate_limited', retry_after_seconds: retryAfterSeconds } };
+}
+
+/** Attempt both writes independently: an audit failure must not bypass cooldown. */
+export async function persistEmailRateLimit(
+  writeAudit: () => PromiseLike<{ error: unknown }>,
+  writeCooldown: () => PromiseLike<{ error: unknown }>,
+): Promise<{ auditError: unknown; cooldownError: unknown }> {
+  const [audit, cooldown] = await Promise.allSettled([
+    Promise.resolve().then(writeAudit),
+    Promise.resolve().then(writeCooldown),
+  ]);
+  return {
+    auditError: audit.status === 'fulfilled' ? audit.value.error : audit.reason,
+    cooldownError: cooldown.status === 'fulfilled' ? cooldown.value.error : cooldown.reason,
+  };
 }

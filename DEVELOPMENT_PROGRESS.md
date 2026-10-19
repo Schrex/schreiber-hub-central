@@ -12,10 +12,14 @@ The accepted immediate email plan is Supabase Auth SMTP and the existing queue.
 Further delivery-tracking infrastructure is paused pending DNS; this draft is not
 a prerequisite for DNS verification or a rehearsal password-reset test.
 
-Full `bun run verify` passes: typecheck, 174 tests, build, six local backend checks,
+Full `bun run verify` passed before review: typecheck, 174 tests, build, six local backend checks,
 lint (0 errors/30 existing warnings), 18 Edge entry points and the time-off browser
 workflow. Tests use synthetic local data; providers and independent restore remain
 unverified. Export download and DNS access remain pending. Main is unchanged.
+Review also fixed cooldown persistence when rate-limit audit logging fails (four
+regression cases). Added the missing Testing Library DOM development peer for
+fresh installs; Bun frozen installation passes. Post-review app verification has
+178 tests; focused lint/Edge checks pass.
 
 
 Updated: 2026-10-18. This is the current status record; update it after each meaningful

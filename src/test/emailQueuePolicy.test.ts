@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyEmailFailure, evaluateEmailPreflight, rateLimitLogFields } from '../../supabase/functions/_shared/email-queue-policy';
+import { classifyEmailFailure, evaluateEmailPreflight, rateLimitLogFields, persistEmailRateLimit } from '../../supabase/functions/_shared/email-queue-policy';
 
 const pending = {
   queuedAt: '2026-01-01T00:00:00.000Z', nowMs: Date.parse('2026-01-01T00:15:00.000Z'),
@@ -57,5 +57,28 @@ it('records cooldown as pending metadata without consuming provider failure budg
   if (failure.kind !== 'rate_limited') throw new Error('Expected rate limiting');
   expect(rateLimitLogFields(failure.retryAfterSeconds)).toEqual({
     status: 'pending', metadata: { outcome: 'rate_limited', retry_after_seconds: 90 },
+  });
+});
+
+
+describe('rate-limit persistence', () => {
+  it.each(['returned', 'thrown'])('still persists cooldown when the audit error is %s', async mode => {
+    const auditError = new Error('synthetic audit failure');
+    let cooldownWrites = 0;
+    const result = await persistEmailRateLimit(
+      async () => { if (mode === 'thrown') throw auditError; return { error: auditError }; },
+      async () => { cooldownWrites++; return { error: null }; },
+    );
+    expect(cooldownWrites).toBe(1);
+    expect(result).toEqual({ auditError, cooldownError: null });
+  });
+  it('reports cooldown failure independently of successful audit', async () => {
+    const cooldownError = new Error('synthetic cooldown failure');
+    expect(await persistEmailRateLimit(async () => ({ error: null }), async () => { throw cooldownError; }))
+      .toEqual({ auditError: null, cooldownError });
+  });
+  it('reports successful persistence', async () => {
+    expect(await persistEmailRateLimit(async () => ({ error: null }), async () => ({ error: null })))
+      .toEqual({ auditError: null, cooldownError: null });
   });
 });

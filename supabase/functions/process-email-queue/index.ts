@@ -1,7 +1,7 @@
 import { checkEmailDelivery } from '../_shared/email-delivery-guard.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createEmailTransport } from '../_shared/email-transport.ts'
-import { classifyEmailFailure, evaluateEmailPreflight, rateLimitLogFields } from '../_shared/email-queue-policy.ts'
+import { classifyEmailFailure, evaluateEmailPreflight, rateLimitLogFields, persistEmailRateLimit } from '../_shared/email-queue-policy.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const MAX_RETRIES = 5
@@ -330,32 +330,28 @@ Deno.serve(async (req) => {
 
         const failure = classifyEmailFailure(error)
         if (failure.kind === 'rate_limited') {
-          const { error: rateLogError } = await supabase.from('email_send_log').insert({
-            message_id: payload.message_id,
-            template_name: payload.label || queue,
-            recipient_email: payload.to,
-            ...rateLimitLogFields(failure.retryAfterSeconds),
-            error_message: errorMsg.slice(0, 1000),
-          })
+          const { auditError: rateLogError, cooldownError } = await persistEmailRateLimit(
+            () => supabase.from('email_send_log').insert({
+              message_id: payload.message_id,
+              template_name: payload.label || queue,
+              recipient_email: payload.to,
+              ...rateLimitLogFields(failure.retryAfterSeconds),
+              error_message: errorMsg.slice(0, 1000),
+            }),
+            () => supabase
+              .from('email_send_state')
+              .update({
+                retry_after_until: new Date(
+                  Date.now() + failure.retryAfterSeconds * 1000
+                ).toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', 1)
+          )
 
-          if (rateLogError) {
-            console.error('Rate-limit audit failed; batch retained', { queue, msg_id: msg.msg_id })
-            return new Response(JSON.stringify({ processed: totalProcessed, stopped: 'queue_state_unavailable' }),
-              { status: 503, headers: { 'Content-Type': 'application/json' } })
-          }
-          const retryAfterSecs = failure.retryAfterSeconds
-          const { error: cooldownError } = await supabase
-            .from('email_send_state')
-            .update({
-              retry_after_until: new Date(
-                Date.now() + retryAfterSecs * 1000
-              ).toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', 1)
-
-          if (cooldownError) {
-            console.error('Rate-limit cooldown failed; batch retained', { queue, msg_id: msg.msg_id })
+          if (rateLogError) console.error('Rate-limit audit failed; batch retained', { queue, msg_id: msg.msg_id })
+          if (cooldownError) console.error('Rate-limit cooldown failed; batch retained', { queue, msg_id: msg.msg_id })
+          if (rateLogError || cooldownError) {
             return new Response(JSON.stringify({ processed: totalProcessed, stopped: 'queue_state_unavailable' }),
               { status: 503, headers: { 'Content-Type': 'application/json' } })
           }
