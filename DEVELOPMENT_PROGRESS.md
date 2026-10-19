@@ -3,6 +3,23 @@
 Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Backup inspection and restore selection plan — 2026-10-19
+
+Offline decoding and private reconciliation completed without executing SQL.
+Verified 60 public table-data sections, 25 Auth users/identities with nonempty
+password hashes, valid identity/profile links, and all 23 file paths/sizes/checksums
+against private capture. Eight queue tables are empty. One source cron job is
+active; one Vault row and source-targeted email wake/dispatch functions require
+quarantine/inert adaptation. Original archive preserved; no destination import.
+
+[Restore plan](docs/migration-restore-plan.md) defines object selection, ordering,
+validation and remaining gates. Private review matrix covers all 1,666 TOC entries
+but is not executable/approved. Next: current destination catalog comparison and
+isolation verification, then final managed-schema/adaptation review. Do not treat
+SQL byte size as capacity proof. DNS remains pending; no real data entered synthetic
+staging. Inspection-only documentation changes: whitespace checked; app tests are
+not evidence of restore compatibility and were not rerun.
+
 ## Database export captured — 2026-10-19
 
 Rechecked authenticated Lovable Cloud storage and downloaded the completed export

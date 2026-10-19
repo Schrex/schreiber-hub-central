@@ -1,5 +1,10 @@
 # Rehearsal destination audit
 
+**Update 2026-10-19:** the export is now privately captured and inspected. See the
+[restore selection plan](migration-restore-plan.md) for current evidence and next
+steps. Earlier unavailable-export statements below are historical; restore remains
+unperformed and destination compatibility/isolation still require verification.
+
 Read-only authenticated dashboard inspection on 2026-10-19. Destination:
 `hub-rehearsal` (`acgqjjbrnkmeazswdnzp`), Schreiber Excavating organization.
 No settings changed, SQL executed, functions deployed, or data imported.

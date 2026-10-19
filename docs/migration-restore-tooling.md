@@ -1,5 +1,10 @@
 # Offline restore preparation tooling
 
+**Update 2026-10-19:** the export is now privately captured and inspected. See the
+[restore selection plan](migration-restore-plan.md) for current evidence and next
+steps. Earlier unavailable-export statements below are historical; restore remains
+unperformed and destination compatibility/isolation still require verification.
+
 Prepared on 2026-10-19 while the database download link is unavailable. No actual
 export was read, restored, modified, or uploaded by this work. The tooling has no
 network client, database connection, child process, SQL execution, or archive

@@ -1,5 +1,10 @@
 # Independent restore acceptance
 
+**Update 2026-10-19:** the export is now privately captured and inspected. See the
+[restore selection plan](migration-restore-plan.md) for current evidence and next
+steps. Earlier unavailable-export statements below are historical; restore remains
+unperformed and destination compatibility/isolation still require verification.
+
 Prepared 2026-10-19. This is an acceptance plan, not a completed restore report.
 The database export is unavailable to the operator; no real-data checks below have
 run. Read alongside [the export runbook](migration-export-rehearsal.md) and
