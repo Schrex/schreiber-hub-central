@@ -1,7 +1,268 @@
 # Development progress
 
-Updated: 2026-10-18. This is the current status record; update it after each meaningful
+Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
+
+## Review packaging and current scope — 2026-10-19
+
+DNS verification and the full database export remain blocked on access. The accepted
+email plan is Supabase Auth SMTP through Postmark and the existing notification
+queue. New delivery-tracking infrastructure is paused; the standalone adapter and
+additional safeguards below are optional review work, not prerequisites for DNS
+verification or a rehearsal password-reset test. No provider switch is enabled.
+
+Migration documentation/private-inspection tooling is being packaged in draft PR
+#10; runtime integration changes are isolated in a separate draft targeting develop.
+Historical entries below describe that companion work, not code included in the
+audit PR. A separate job Files feature starts from develop and uses synthetic data.
+Neither review authorizes merging to main or deploying. Full independent restore
+remains unproven; preserve business records/Auth/files and exclude destination
+scheduler execution history while leaving the source untouched.
+
+## Suppression and retry safeguards — 2026-10-19
+
+Added delivery-time suppression checks to the worker: transactional mail checks
+current suppression and used unsubscribe tokens; Auth ignores marketing unsubscribe
+but honors bounce/complaint/unknown suppression. Lookup failures defer without
+provider attempts or retry-budget increments. Initial cooldown state, prior-sent
+and failed-counter lookup failures stop processing. HTTP429 now uses schema-supported
+`pending` plus metadata instead of unsupported `rate_limited`; log/cooldown write
+failures stop the batch. No deployment or provider switch.
+
+Postmark standalone adapter now exposes explicit `deliver()` outcomes, intentionally
+incompatible with the worker's void-send interface. Ambiguous timeout, malformed
+success and server responses require reconciliation, never ordinary retry. Known
+suppression/configuration/permanent rejection and rate limits remain distinct.
+No durable hold is claimed: actual claim/receipt persistence and concurrency control
+still require implementation before activation. Current queue RPC timestamp and
+enqueue idempotency gaps are recorded in [safeguards](docs/migration-email-safeguards.md).
+
+Validation: 174 normal-suite tests, app typecheck/build, lint (30 existing warnings),
+all 18 Edge entry points and explicit Postmark module Deno check pass. New guarded
+local DB test passes 24 suppression/token/queue combinations, actual REST error
+deferral and schema-valid rate-limit logs without consuming retries. Fixtures cleaned,
+no reset or queue/provider calls. Added this test to backend verification and verified
+the package command. [Local validation](docs/migration-email-local-validation.md)
+distinguishes helper/DB checks from served-worker or concurrency proof. Existing
+browser/full backend suites not rerun; no UI/schema change. DNS remains pending;
+Postmark stays disconnected, production unchanged, real-data import paused.
+
+## Postmark account inspection and adapter — 2026-10-19
+
+User provided a signed-in Postmark tab. Read-only inspection confirms Owner access,
+existing `hub-rehearsal` server 21137606, default outbound/broadcast/inbound streams,
+SMTP enabled and open/link tracking disabled. Account test mode is not a proven
+non-delivering Sandbox server; inspected UI did not establish server delivery type.
+User subsequently completed account-email confirmation; refreshed dashboard no
+longer shows that banner, but account test mode remains. Both `mail.schrex.com` and
+`schrex.com` show unverified DKIM/Return-Path. Recorded exact public DNS values for
+the subdomain and planned Auth SMTP fields in [Postmark setup](docs/migration-postmark-setup.md).
+DNS access remains pending; no records, settings, tokens or account approval changed.
+
+Prepared standalone Postmark API adapter and 11 fake-request tests. Explicit stream,
+content, unsubscribe headers and provider receipt mapping; raw errors sanitized,
+HTTP/API codes separated, no automatic retries or assumed idempotency. Worker remains
+on Lovable. Activation requires suppression/permanent-error handling, provider receipt
+persistence and duplicate-send reconciliation, plus distinct Postmark webhook auth.
+See [adapter report](docs/migration-postmark-adapter.md).
+
+Combined app checks pass: TypeScript, 132 tests and build; lint 0 errors/30 existing
+warnings. Standalone adapter Deno check passes. No network email tests, credentials
+read/generated, live sends, DNS edits, paid upgrades, deployment or production changes.
+No browser/backend rerun needed for the unconnected adapter. Export/import remains paused.
+
+## Track 2 email, SMS and speech preparation — 2026-10-19
+
+Continued with three agents on existing feature branch. Added 11 unsubscribe token
+compatibility tests, 12 SMS fake-fetch tests, and 21 speech tests. SMS transport now
+rejects success without a message ID and stores sanitized failure codes. Speech
+retains Deepgram/ElevenLabs paths and fallback, with sanitized errors and transcript
+type checking. Removed raw unsubscribe token logging. Existing providers remain
+unchanged; no live delivery or deployment. Combined 121 tests/build pass; a speech
+TypeScript narrowing issue was fixed and final typecheck passes. Lint passes with
+30 existing warnings. All 18 Edge entry points pass; suppression/unsubscribe now
+included. Browser/backend suites not rerun for these transport-only changes.
+
+Rechecked authenticated Lovable domain UI on user request: sending domain
+`notify.www.schrex.com` Verified. Public DNS confirms Lovable NS delegation and
+Mailgun SPF/MX; `schrex.com` uses domaincontrol nameservers, while
+`schreiberexcavating.com` uses Wix nameservers. User reports Outlook company email
+and GoDaddy OTPs. Account ownership/access and independent provider selection
+remain pending. [Provider setup](docs/migration-provider-setup.md) records details.
+No OTP used, DNS changed, credentials read, production modified or paid service
+provisioned. Real-data export/import stays paused.
+
+Remaining mail gates include delivery-time suppression recheck, non-atomic
+unsubscribe writes, provider-specific webhook verification and independent Auth
+mail configuration. [SMS](docs/migration-sms-preparation.md) and
+[speech](docs/migration-speech-preparation.md) reports distinguish stub tests from
+real delivery/hosted authorization proof.
+
+## Login helper and integration implementation — 2026-10-19
+
+Continued user-authorized steps 1–3 without importing real data or changing hosted
+settings. Existing feature branch and prior dirty changes preserved.
+
+- Private login: `scripts/rehearsal-login-check.sh` fixes the rehearsal target,
+  uses verified TLS and the existing PostgreSQL 17.11 container client, prompts
+  privately and runs one read-only identity/version query. Syntax, noninteractive
+  refusal, client and CA mount checked. User-supplied terminal screenshot confirms
+  successful operator login/query: database/role `postgres`, version 17.11,
+  `read_only=on`, completed ROLLBACK without visible errors. No password disclosed.
+  See [connection readiness](docs/migration-connection-readiness.md).
+- Email: extracted existing expiry/retry/error policy into a helper used by the
+  worker; 20 new regression cases pass, preserving current behavior. Lovable remains
+  the default. Full queue effects and independent delivery remain untested.
+- Google: opt-in Supabase OAuth path with local-mode guard, default Lovable path,
+  failure handling and 12 mocked helper/UI cases. No hosted provider enabled.
+  [Google preparation](docs/migration-google-preparation.md) records setup gates.
+- AI: provider-neutral JSON chat helper used by `suggest-safety-topic`; existing
+  endpoint/model retained. Seventeen fake-fetch cases cover request/error/malformed
+  responses. Invalid payloads are now rejected and provider error bodies are not
+  logged. [AI preparation](docs/migration-ai-preparation.md) records limits.
+
+Combined app typecheck/build passed, and final normal Vitest suite passes 77 tests.
+Edge static checks pass all 16 entry points; existing synthetic browser test passes
+1/1. Lint passes with 30 existing warnings. Browser/Edge tooling needed network
+escalation after sandbox registry access failed; approved retries passed.
+Company-owned provider account inventory is awaiting user input. SMS and speech
+remain in scope but have not been replaced. No real provider calls, deployments,
+paid provisioning, production edits, merge/push or export/import occurred.
+
+## Four parallel follow-up workstreams — 2026-10-19
+
+User authorized email preparation, synthetic testing, connection preparation and
+launch-feature planning in parallel. Three agents handled implementation/tests/scope;
+primary agent inspected connection details and integrated the results on the existing
+feature branch. All existing dirty work was preserved; changes remain uncommitted.
+
+- [Email preparation](docs/migration-email-preparation.md): provider-neutral delivery
+  interface and test-only `.test` sink; queue worker still uses Lovable by default.
+  Nine new synthetic cases pass. Queue client typing corrected for static checking.
+  No replacement provider or actual delivery has been tested.
+- [Synthetic validation](docs/migration-synthetic-validation.md): signup, linked
+  profile/contact, forged-role rejection, login UUID continuity and private-file
+  access/denials pass on existing disposable Docker. Added the new test to the
+  backend verification group. No reset; unique fixtures cleaned up.
+- [Connection readiness](docs/migration-connection-readiness.md): dashboard confirms
+  free session-pooler route. Downloaded public CA; OpenSSL verifies TLS 1.3 chain and
+  hostname. Direct DNS resolution failed; Python strict CA validation rejects a
+  missing key-usage extension. No verification bypass. User has password privately;
+  no authenticated SQL connection attempted. Host psql not found in checked locations.
+- [Launch scope](docs/migration-launch-scope.md): retain existing capabilities in
+  preparation scope; no deferral approved. Independent provider/account access and
+  actual feature readiness remain pending; no paid service selected.
+
+Validation: app typecheck/build and 28 unit tests passed; original backend group
+4/4 and browser 1/1 passed; new Auth/storage script passed, including via its newly
+wired package command. Lint passes with 30 existing warnings. Edge group and explicit
+queue-worker static check passed; worker now included in the routine Edge list.
+No hosted writes, import, secrets in git, production changes, merge/push, or Lovable
+cancellation. Database download/import remains paused. Real-data recovery remains
+unproved; synthetic testing is not hosted parity.
+
+## Parallel migration preparation — 2026-10-19
+
+Three user-requested agents prepared offline archive inspection, integration mapping,
+and restore acceptance checks while the primary agent inspected the destination.
+Database export download/import remains paused at the user's request because the
+download link is unavailable. Work remains on `codex/migration-audit-live-findings`.
+
+- [Destination audit](docs/migration-destination-audit.md): verified PG 17.11,
+  one organization Owner, no Auth hooks, custom SMTP off, localhost site URL,
+  no redirect URLs, and pg_cron/pgmq/pg_net disabled. Default Auth mail is not
+  proven disabled. No settings changed; signup remains enabled for synthetic use.
+- [Inspection tooling](docs/migration-restore-tooling.md): offline SHA-256 and
+  format-candidate inspection with private-file/repository guards. Ten synthetic
+  tests pass. This is not a restore executor or completeness validator.
+- [Integration map](docs/migration-integration-map.md): provider dependencies,
+  replacement work, required owners/access and planned synthetic checks. No
+  provider calls or replacement integrations were implemented.
+- [Acceptance checks](docs/migration-acceptance-checks.md): preservation and
+  comparison plan plus two manual read-only SQL aids. Static guards pass; SQL
+  syntax/database execution remain unverified. Destination scheduler history must
+  start empty while source history, business audit and queue state are preserved.
+
+Agent validation: focused Vitest 10/10; lint 0 errors with existing 30 warnings;
+documentation links and whitespace checked. No production changes, import, paid
+provisioning, merge, push or Lovable cancellation. Independent restore proof remains
+blocked on the complete database/Auth export, secure destination connection,
+compatibility review and effective side-effect isolation before real-data loading.
+
+## Rehearsal destination inspected — 2026-10-19
+
+User supplied project `acgqjjbrnkmeazswdnzp`; authenticated dashboard access verified.
+Project name `hub-rehearsal`, organization Schreiber Excavating, Free plan, healthy
+Nano compute in us-east-2 (Ohio). UI shows no public tables/views, no storage
+buckets, no deployed Edge Functions, no migrations and no backups. Auth user list
+shows no users, but its estimated footer was inconsistent; exact counts remain
+unverified. Public signup is enabled; anonymous sign-in is disabled, email
+confirmation enabled, Email provider enabled and Google disabled. No settings
+were changed and no data imported. Destination isolation, scheduler/extensions,
+mail/hooks and secure restore connection still need verification/configuration.
+Supabase's default branch label main/PRODUCTION is internal to this rehearsal
+project; it is not the Git production branch and no repository is connected.
+
+## Storage archive captured — 2026-10-19
+
+Downloaded all 23 application storage objects from seven populated buckets via
+Lovable's Storage UI; checked the other eight buckets and confirmed they are empty.
+Ten original ZIPs, reconstructed bucket/object paths, and a SHA-256 manifest are
+stored privately under `/Users/sumanththota/Schrex/archive/storage-2026-10-19`.
+All ZIP integrity checks pass. Downloaded bytes total 66,632,006, matching the earlier
+aggregate inventory. Files and detailed object paths are outside git. No source
+objects or bucket settings were changed. Current UI displays 5 GB global upload
+limit (earlier audit recorded 2 GB); no limit change was performed by this agent.
+
+ZIP downloads flatten parent paths, so the private manifest records observed source
+prefixes and `objects/` reconstructs them. Hashes cover downloaded bytes; independent
+server hashes, complete owner/content-type/cache-control metadata, and restore proof
+remain pending. Capture occurred with live writers, not an atomic freeze. The private
+`database_export_19_10_26` bucket was still empty when checked after file archiving;
+database export completion/download remain pending. Synthetic staging is unchanged.
+Documentation-only repository changes; `git diff --check` passes. Application test
+suites were not rerun for this archive operation.
+
+## Database export requested — 2026-10-19 14:33 UTC
+
+User selected `/Users/sumanththota/Schrex/archive` as the temporary local archive.
+Created the directory with mode 0700, owned by the local user, outside this repo.
+User explicitly approved the intermediate Lovable Cloud storage and emailed
+temporary download-link workflow. Clicked Start export; Lovable confirmed
+“Database export started” and that it will email a download link when ready.
+No archive downloaded yet; export completion, completeness, checksums and restore
+remain unverified. Storage files still require separate downloads. Source records,
+scheduler history, settings and running services were not changed by us; the
+requested export creates a backup artifact. No paid provisioning or deployment.
+The restricted independent restore destination is still unresolved.
+
+## Migration preparation — current status (2026-10-19)
+
+This entry supersedes older branch/merge status below; those entries are retained
+as historical verification records. PR #7 and PR #8 are merged into develop
+(`936bef8`). Remote main remains `5a81add`; local main remains `37284f0`.
+Draft PR #10 targets develop, with head `528b424` on
+`cursor/migration-audit-4b4b`. The clean local continuation branch
+`codex/migration-audit-live-findings` matched that head before this documentation edit.
+All five hosted checks pass at that head (run 39265809535); they do not prove recovery.
+
+Read AGENTS.md, this record, local/README.md and the updated PR audit. Rechecked
+Lovable access in the in-app browser: Cloud overview, Advanced settings and export
+confirmation load. Canceled before Start export. No production settings/data were
+changed, no export downloaded and no restore performed. No paid infrastructure,
+merge, deployment or Lovable cancellation occurred.
+
+The next milestone is private complete exports and an independent restore proof.
+[Export/rehearsal preparation](docs/migration-export-rehearsal.md) records exact UI
+steps, preservation/exclusion policy, verification criteria and access gates.
+Private archive location/owner, protected transfer path, restricted execution host
+and existing rehearsal target remain unidentified. Actual archive completeness,
+Auth/hash compatibility and all file checksums remain unverified. Destination
+scheduler history must start empty; source history and business/audit/delivery
+state must be preserved. Synthetic staging stays separate from real-data rehearsal.
+
+No application code or migrations changed in this preparation. Hosted checks were
+inspected; local app/backend/lint/edge/browser suites were not rerun for docs only.
 
 ## Current milestone
 

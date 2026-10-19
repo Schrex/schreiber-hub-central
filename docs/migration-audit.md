@@ -11,6 +11,23 @@ Read-only audit of GitHub `main` at `5a81add` ("Lovable update"), compared with 
 
 **Conclusion:** the export checklist below is the immediate next step. Cutover is not justified yet. Rebuilding from the repo migrations alone leaves an incomplete database, and logins and email still need a tested replacement.
 
+## Export preparation follow-up — 2026-10-19
+
+See [private export and independent restore preparation](migration-export-rehearsal.md)
+for export steps and acceptance criteria. The user approved local private storage
+at `/Users/sumanththota/Schrex/archive`; a database export was subsequently requested,
+but its download link is unavailable and import remains paused. Storage archives
+were downloaded privately; completeness and an independent restore are not proven.
+The separate `hub-rehearsal` destination is recorded in
+[destination audit](migration-destination-audit.md); its read-only connection check
+succeeded. Earlier opening observations describe the original audit, before export
+preparation. No source data or scheduler history was modified.
+
+DNS access is pending. The accepted email plan is Supabase Auth SMTP via Postmark
+and the existing notification queue. Additional delivery-tracking infrastructure
+is paused. Runtime preparation described in companion documents is separate draft
+review work, not activation or a prerequisite to DNS/password-reset testing.
+
 ## How findings are labeled
 
 Every finding below is tagged with one of:
