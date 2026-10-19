@@ -17,17 +17,18 @@ IFS= read -r confirmation
 root=$(node scripts/migration-runner.mjs)
 echo 'Reviewed file hashes verified; private run directory created.'
 echo 'Enter the rehearsal database password at the hidden prompt.'
-# /dev/tty remains available for psql password prompting; all SQL/error output is private.
+# Match the proven login helper: psql is the direct container entrypoint.
+# SQL output stays private; SQLSTATE-only errors omit row values and error context.
+# Precreate the output file with owner-only permissions before Docker opens it.
+: > "$root/result.log"
 if docker run --rm -it --pull=never --read-only --cap-drop=ALL \
  --security-opt=no-new-privileges --tmpfs /tmp \
  --mount "type=bind,source=$cert,target=/tmp/supabase-ca.crt,readonly" \
  --mount "type=bind,source=$root,target=/evidence" \
- --entrypoint sh public.ecr.aws/supabase/postgres:17.11.0.004 -c '
- umask 077
- psql -X -W --set=ON_ERROR_STOP=1 --set=VERBOSITY=terse --single-transaction \
- --dbname="host=aws-0-us-east-2.pooler.supabase.com port=5432 dbname=postgres user=postgres.acgqjjbrnkmeazswdnzp sslmode=verify-full sslrootcert=/tmp/supabase-ca.crt connect_timeout=10 application_name=rehearsal_baseline_import" \
- --file=/evidence/import.sql > /evidence/result.log 2>&1
- '; then
+ --entrypoint psql public.ecr.aws/supabase/postgres:17.11.0.004 \
+ -X -W --quiet --set=ON_ERROR_STOP=1 --set=VERBOSITY=sqlstate --single-transaction \
+ 'host=aws-0-us-east-2.pooler.supabase.com port=5432 dbname=postgres user=postgres.acgqjjbrnkmeazswdnzp sslmode=verify-full sslrootcert=/tmp/supabase-ca.crt connect_timeout=10 application_name=rehearsal_baseline_import' \
+ --output=/evidence/result.log --file=/evidence/import.sql; then
  echo "Baseline committed. Private evidence: $root"
  echo 'Do not enable access yet. Next: independent content reconciliation, then file restoration and reviewed behavior.'
 else

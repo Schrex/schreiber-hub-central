@@ -46,7 +46,8 @@ password at psql's hidden prompt. No password is saved or passed in arguments.
 
 The builder verifies hardcoded SHA-256 fingerprints of the four reviewed private
 SQL files and writes a new 0700 run directory with 0600 files in the approved archive.
-SQL, logs and any error details remain outside git. The client image is already
+SQL and result logs remain outside git. SQL errors shown in Terminal contain only
+SQLSTATE codes, not row values/context. The result file is precreated with mode 0600. The client image is already
 installed, runs read-only without extra capabilities, and mounts only the CA and run
 directory. Connection target/pooler username are fixed; TLS verifies the hostname.
 
@@ -98,3 +99,8 @@ that account payloads/password hashes remain byte-for-byte unchanged. The synthe
 integration test now reproduces the original error and tests the exact transformation
 with linked identities. The failed hosted attempt left zero users/identities/public
 tables; do not delete or reset anything before retrying the corrected helper.
+
+The operator subsequently proved the reset password works through the read-only
+login helper. The importer now uses the same direct psql container entrypoint,
+removing shell/stream-redirection differences. Authentication errors previously
+occurred before SQL execution; their exact input-handling cause is unproven.

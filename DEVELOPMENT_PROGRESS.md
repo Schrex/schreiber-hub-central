@@ -3,6 +3,18 @@
 Updated: 2026-10-19. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Password-path isolation — 2026-10-19
+
+Operator reset the rehearsal database password and supplied a successful read-only
+login screenshot (postgres 17.11, read_only on, rollback). The two intervening import
+attempts failed authentication before any SQL ran. This proves the current password
+and pooler connection work; the exact cause of the failed prompts is not established.
+Changed the import helper to use direct psql entrypoint, matching the working login
+helper, instead of a shell-wrapped process with redirected streams. SQL output stays
+in a precreated 0600 private file; quiet SQLSTATE-only errors omit data values/context.
+A synthetic local conversion-error check verified its marker is absent from output.
+Shell syntax and whitespace pass. No hosted import performed by the assistant.
+
 ## Import retry correction — 2026-10-19
 
 First operator import attempt failed at the managed identities-to-users foreign key:
