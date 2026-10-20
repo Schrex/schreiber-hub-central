@@ -13,13 +13,49 @@ Additional diagnostic commands:
 bun run local:audit-schema
 bun run test:local:permissions
 bun run test:local:hr
+bun run test:local:storage
+bun run test:local:roles
 ```
 
 These checks now pass after the supplied schema reconciliation and local permission
 fix. They do not certify complete production parity. See
 [reconciliation details](SCHEMA_RECONCILIATION.md) and the progress record.
 
+Private migration permission regression (requires the authorized private export archive):
+`python3 scripts/local-grant-proposal.py --candidate` tests the proposed grants and
+attendance recursion candidate inside a rollback-only synthetic transaction. Without
+`--candidate`, it reproduces the original recursion and intentionally exits 2. Neither
+command applies the candidate persistently or contacts a hosted database. Keep this
+archive-dependent check separate from CI and ordinary synthetic backend verification.
+
 ## Start
+
+### Hosted migration rehearsal
+
+`bun run dev:rehearsal` starts a separate frontend at `http://127.0.0.1:8083`,
+fixed to `hub-rehearsal` (`acgqjjbrnkmeazswdnzp`). This is **real restored data**,
+separate from the synthetic local backend. It does not change `.env` or hosted
+access settings. Use Node from `.nvmrc`.
+
+Enter that project's **legacy anon** key at its hidden Terminal prompt
+(Supabase Settings → API Keys → Legacy). Never use service_role, the database
+password, or the JWT signing secret. The launcher rejects privileged and
+wrong-project JWT claims; Supabase verifies the actual signature. The key is
+passed to Vite in memory and is necessarily visible to the browser as a client
+key; it is not written to a configuration file. Opaque publishable keys are not
+accepted because this launcher cannot verify their project from their contents.
+
+Rehearsal mode disables Google and hides signup in the sign-in screen. These are
+UI controls, not authorization boundaries. Hosted signup, email delivery, Data API
+and all other isolation controls retain their existing settings. Login cannot
+be accepted until the hosted password provider and required client access have
+been reviewed and enabled for the controlled test. Do not use synthetic test
+scripts against this project, run routine edits, or reuse source Storage URLs as
+proof of independent file restoration. Stop the server with Ctrl-C.
+
+Launcher checks: `PYTHONDONTWRITEBYTECODE=1 python3 scripts/rehearsal-dev-test.py`.
+
+### Synthetic local development
 
 Prerequisites: Bun 1.3.14, dependencies (`bun install --frozen-lockfile` on a fresh checkout), Node from `.nvmrc`,
 Docker Desktop running, and network access for the initial CLI/container downloads.
