@@ -1,13 +1,15 @@
 # Independent restore acceptance
 
-**Update 2026-10-19:** the export is now privately captured and inspected. See the
-[restore selection plan](migration-restore-plan.md) for current evidence and next
-steps. Earlier unavailable-export statements below are historical; restore remains
-unperformed and destination compatibility/isolation still require verification.
+**Update 2026-10-20:** business/Auth data was restored into isolated hub-rehearsal
+and all 62 COPY sections independently reconciled. All 23 files and their ownership/
+content metadata passed verification; 15 buckets remain private. All 70 reviewed
+business triggers are enabled and independently verified, and all 57 authenticated
+Storage policies match the reviewed definitions. Hosted login/file API/workflow,
+Realtime and operational acceptance remain incomplete. Local checks and catalog
+comparisons do not establish production readiness. See [current progress](../DEVELOPMENT_PROGRESS.md).
 
-Prepared 2026-10-19. This is an acceptance plan, not a completed restore report.
-The database export is unavailable to the operator; no real-data checks below have
-run. Read alongside [the export runbook](migration-export-rehearsal.md) and
+Prepared 2026-10-19. This remains an acceptance plan, not a claim that every check
+below has passed. Read alongside [the export runbook](migration-export-rehearsal.md) and
 [the migration audit](migration-audit.md).
 
 ## Environment and evidence rules
@@ -118,7 +120,8 @@ and privilege compatibility remain unverified. No backend was started or reset.
 
 ## Acceptance record
 
-Current result: **BLOCKED — database export unavailable; no restore performed.**
+Current result: **PARTIAL — isolated data/file restoration verified; permissions,
+application behavior and independent operational recovery are not yet accepted.**
 
 For each check retain `check_id`, status, expected/observed aggregate, private
 evidence reference, UTC timestamp, operator and reviewer. Record exceptions with

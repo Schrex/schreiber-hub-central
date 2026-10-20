@@ -1,5 +1,13 @@
 # Private rehearsal file restore
 
+Current status (2026-10-19): byte copy and ownership correction completed. Do not rerun
+the upload/correction commands below. Fresh independent read-only comparison passes
+all 23 paths, both owner fields, sizes, MIME/cache settings and empty custom metadata.
+All 15 buckets remain private; zero Storage policies are installed. Private evidence
+is retained separately as `*-after-ownership.json`. Permissions and application behavior
+remain pending; keep access disabled. The following commands document the completed
+procedure, not a new import instruction.
+
 Database comparison passed for all 62 COPY sections. Next operator command:
 
 ```sh
@@ -60,3 +68,42 @@ Supabase's [Storage schema guidance](https://supabase.com/docs/guides/storage/sc
 requires treating metadata as read-only and using Storage API mutations. A supported
 ownership-preserving procedure must be validated before correcting the 13 owners.
 No public access, policies, login or email was enabled during this check.
+
+## Ownership correction preparation
+
+The loopback synthetic test `node scripts/storage-owner-synthetic.mjs` demonstrated
+an API PUT with identical bytes and a signed owner subject restores both ownership
+fields without changing the object ID, contents, MIME/cache settings or privacy.
+This is local evidence; hosted behavior must still be verified independently.
+Ownership comes from the token subject, as described in the official ownership guide
+linked above. No direct writes to Storage metadata tables are used.
+
+Offline plan (no network or changes):
+
+```sh
+python3 scripts/rehearsal-storage-owners.py
+```
+
+Operator execution, only while rehearsal isolation remains in place:
+
+```sh
+python3 /Users/sumanththota/Schrex/code/schreiber-hub-central/scripts/rehearsal-storage-owners.py --apply
+```
+
+Enter the existing rehearsal legacy service_role key and **legacy JWT signing secret**
+only at the hidden prompts. These are different credentials; the database password
+does not substitute for either. Do not rotate keys or create a signing key for this
+procedure. If the existing secret is unavailable, stop rather than changing project
+authentication. The helper checks that the secret signs the existing project key.
+The signing secret can mint privileged tokens and must never enter chat or Git.
+
+Thirteen existing objects receive identical-byte updates using five-minute tokens
+with their original owner IDs. Ten ownerless objects are left unchanged. Private
+evidence is saved in `ownership-*` within the existing private Storage archive.
+No automatic retry is allowed after a recorded attempt; reconcile first.
+
+After execution, repeat `scripts/rehearsal/storage-metadata-check.sql` read-only and
+compare against the private source: all 23 owner mappings/content metadata must match,
+all 15 buckets must remain private and storage policies must remain absent. The helper
+reports API/byte verification, not an independently proven ownership restore. Keep
+signup, Email, Data API and workers disabled until subsequent behavior/access review.

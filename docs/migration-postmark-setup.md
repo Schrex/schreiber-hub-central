@@ -1,5 +1,15 @@
 # Postmark setup record — 2026-10-19
 
+## Current verified status
+
+DKIM and Return-Path for mail.schrex.com are verified. Account approval is complete.
+An isolated Supabase hub-email-test project (pwaubtyinxuncelqzwlx) now uses Postmark
+SMTP. One controlled password-recovery retry after approval is marked Delivered in
+Postmark Activity. Inbox receipt and the complete reset/login flow remain unverified.
+Production and the real-data Supabase hub-rehearsal remain unchanged. See the latest
+DEVELOPMENT_PROGRESS.md milestone. The following inspection notes describe the
+earlier state and pending gates at that time; they are retained as history.
+
 Authenticated UI inspection only. The signed-in account shows Owner access.
 Existing server `hub-rehearsal` (21137606) has default Transactional (`outbound`),
 Broadcast (`broadcast`) and Inbound streams. SMTP is already enabled; open and link
