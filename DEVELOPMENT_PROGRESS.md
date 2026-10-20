@@ -3,6 +3,21 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Approved rehearsal administrator grant — 2026-10-20
+
+User explicitly authorized adding admin to their existing rehearsal account.
+Executed a transaction only in hub-rehearsal: exact unique account lookup, locked
+role table, idempotent admin insertion, preserved existing employee role, and
+compared all other accounts' role rows before/after. Transaction committed with
+preservation check passing. No other administrator's access was changed.
+After fresh frontend navigation, the ordinary signed-in session displays ADMIN
+and the Admin / Users & settings action. Production was not contacted.
+
+This is an intentional rehearsal divergence from the exported role snapshot,
+in addition to the prior approved password change. Earlier employee-only checks
+describe the pre-promotion state and cannot be repeated with this now-admin account.
+Admin workflow/authorization acceptance still remains separate from this grant.
+
 ## Hosted employee file read and permission checks — 2026-10-20
 
 Using the existing ordinary employee session (no service-role browser credential),
