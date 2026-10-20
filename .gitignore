@@ -28,3 +28,7 @@ supabase/.temp/
 # Browser test artifacts (synthetic sessions)
 /test-results/
 /playwright-report/
+
+# Python migration-tool caches
+__pycache__/
+*.py[cod]
