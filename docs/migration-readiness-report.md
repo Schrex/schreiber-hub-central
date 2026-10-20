@@ -1,5 +1,13 @@
 # Migration readiness — 2026-10-20
 
+Subsequent hosted employee acceptance: one job photo rendered from a signed
+rehearsal Storage URL and its browser download matched the archived size/SHA256.
+A job-plan PDF tab opened on the rehearsal host (not a complete PDF byte check).
+The actual database role is employee-only; admin route redirects home and direct
+sensitive-column HEAD read returns HTTP 403. Cross-user compensation query exposes
+zero records, with the known-existing-record caveat. Hosted foreman/admin sessions,
+cross-user Storage denial and mutation acceptance remain pending.
+
 Latest update: controlled hosted acceptance has begun since the parallel review below.
 The agent has now directly observed the signed-in profile, seven job-list entries
 and one populated job detail through the ordinary rehearsal browser session.

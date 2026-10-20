@@ -55,6 +55,14 @@ proof of independent file restoration. Stop the server with Ctrl-C.
 
 Launcher checks: `PYTHONDONTWRITEBYTECODE=1 python3 scripts/rehearsal-dev-test.py`.
 
+After authorized hosted login, the optional
+`http://127.0.0.1:8083/local/rehearsal-read-check.html` runs read-only checks using
+the current session. It requires the fixed rehearsal configuration and an
+employee-only role. It prints statuses rather than rows/credentials, checks a
+sensitive-column HEAD denial and reports cross-user compensation visibility.
+A zero result alone does not prove filtering without a known-existing other-user
+record. This does not test mutations or substitute for foreman/admin acceptance.
+
 ### Synthetic local development
 
 Prerequisites: Bun 1.3.14, dependencies (`bun install --frozen-lockfile` on a fresh checkout), Node from `.nvmrc`,

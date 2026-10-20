@@ -3,6 +3,30 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Hosted employee file read and permission checks — 2026-10-20
+
+Using the existing ordinary employee session (no service-role browser credential),
+opened a populated job with two plans and one photo. The photo rendered from a
+signed hub-rehearsal Storage URL; browser-downloaded bytes independently matched
+the original private manifest size and SHA256. Downloaded evidence moved into
+the owner-only private archive, outside Git. A plan Open action launched a PDF
+tab on the rehearsal Storage host; PDF bytes/rendering were not independently
+verified. No source file links were used for this proof.
+
+Direct /admin/users navigation redirected this session home. Added a loopback,
+fixed-rehearsal-only read diagnostic at local/rehearsal-read-check.html, using
+the current browser session and printing no employee rows or credentials:
+Auth validates session, user_roles confirms employee-only, sensitive ssn-column
+HEAD request returns HTTP 403. Initial diagnostic wrongly expected SQLSTATE in
+a HEAD response; corrected to inspect HTTP status and reran successfully.
+Other-user compensation HEAD query exposes zero records, but absent proof of an
+existing other-user row this is observation, not complete RLS acceptance.
+
+No roles, business data or hosted settings changed. Admin/foreman hosted sessions,
+cross-user Storage denials, mutation workflows and the two known synthetic Storage
+failures remain pending. Requires an authorized admin/foreman sign-in, not promotion
+of this employee or resetting someone else's credentials. PR remains draft.
+
 ## Migration checkpoint review and first hosted job read — 2026-10-20
 
 Organized pending work into restore tooling/candidates, rehearsal frontend, and
