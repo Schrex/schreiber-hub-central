@@ -24,8 +24,20 @@ export function TalkMedia({ value, kind, title, className }: {
       } catch { if (active) { setUrl(null); setFailed(true); } }
     };
     void resolve();
-    const refresh = setInterval(() => void resolve(), 8 * 60 * 1000);
-    return () => { active = false; clearInterval(refresh); };
+    const resume = () => {
+      if (document.visibilityState === "visible") void resolve();
+    };
+    const refresh = setInterval(resume, 8 * 60 * 1000);
+    window.addEventListener("focus", resume);
+    window.addEventListener("online", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      active = false;
+      clearInterval(refresh);
+      window.removeEventListener("focus", resume);
+      window.removeEventListener("online", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
   }, [value]);
   if (failed) return <p className="text-sm text-muted-foreground">Media unavailable. Check your access or reload to retry.</p>;
   if (!url) return <p className="text-sm text-muted-foreground">Loading media…</p>;

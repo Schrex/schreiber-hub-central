@@ -1,3 +1,4 @@
+import { useResumeRefresh } from "@/hooks/useResumeRefresh";
 import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Truck, CheckCircle2, XCircle, Clock } from "lucide-react";
@@ -54,6 +55,8 @@ export const TruckRequestsPanel = () => {
     }
     setLoading(false);
   };
+
+  useResumeRefresh(load);
 
   useEffect(() => {
     load();

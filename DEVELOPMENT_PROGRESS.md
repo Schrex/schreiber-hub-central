@@ -1,7 +1,58 @@
 # Development progress
 
-Updated: 2026-10-20. This is the current status record; update it after each meaningful
+Updated: 2026-10-21. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
+
+## File permissions and refresh verification — 2026-10-21
+
+Two delegated agents investigated Storage authorization and private-file/refresh UI;
+coordinator reviewed, integrated, exercised UI and applied the narrow destination fix.
+The original two accident-photo failures reproduced at 558/560. Storage v1.82.1
+replacement checks INSERT as well as UPDATE. An additive policy permits office/admin
+INSERT authorization only for an exact existing accident-photo path visible through
+existing SELECT policy; owner-only new uploads and existing UPDATE restrictions remain.
+Expanded HTTP suite passes 590/590, including existing-object upsert, missing-path
+upsert and move boundaries. Synthetic fixtures cleaned up; original local policies
+restored exactly by scripts/local-accident-photo-replacement.mjs.
+
+Applied only this reviewed candidate to destination acgqjjbrnkmeazswdnzp using explicit
+CLI target and one guarded transaction. Before/after checks pin all 57 original
+policies, all 15 private bucket settings, Storage RLS and has_role definition/owner/ACL.
+Destination now has 58 policies. Candidate remains outside supabase/migrations;
+historical migration files and source production are untouched. The SQL generator
+provides guarded apply, verification and rollback; its full flow was also tested
+locally inside a rollback transaction. Hosted role-based replacement HTTP acceptance
+is still pending; local Storage behavior and hosted catalog checks are distinct.
+
+Private files: local browser proves signed job-photo decode after load/reload/resume,
+private contract opening with exact fabricated contents, and anonymous public-path
+photo denial. Both fixture buckets are private; unique rows/objects are cleaned in
+finally. Previous hosted photo checksum/PDF-opening evidence remains historical.
+Source review confirms private document links are signed on click; safety media
+resolves known source/destination references through destination signing.
+
+Added visible-tab focus/reconnect refresh for time off, notifications, truck requests
+and job photos; photo URLs renew before expiry and stale async responses cannot replace
+a newer gallery. Safety media renews on resume/reconnect. Notification reads preserve
+existing items on failed fetch; marking read explicitly reloads without Realtime.
+Unavailable photo signing shows an access/retry message instead of endless loading.
+
+Realtime audit found supabase_realtime exists with ZERO published tables on destination.
+It was not enabled. The browser test now proves time-off approval refresh via simulated
+window focus before full reload, with other-user isolation retained. Native headless
+bringToFront alone did not emit a reliable event; the initial assertion failed and the
+test now explicitly dispatches focus. This proves the app handler, not native tab
+lifecycle or live WebSocket delivery. Safety attendees retain 15-second polling;
+Whiteboard still needs reload for cross-session updates without Realtime. Live
+subscription delivery/denial remains an explicit launch gate.
+
+Verification: 145 unit tests and final typecheck pass; app build, all six backend
+groups, Edge checks and final two browser workflows pass. Lint passes with 0 errors/
+31 warnings (including existing Dispatch unused-disable warning). CUA checks confirmed
+home, jobs, notification list, safety accident form and dispatch render correctly;
+no report/order submitted. Screenshots: /private/tmp/schreiber-accident-form-ui.png
+and /private/tmp/schreiber-private-photo-ui.png. No automatic email, dispatcher,
+frontend deployment, production cutover or new employee-data fixture use occurred.
 
 ## Controlled email delivered to approved inbox — 2026-10-20
 

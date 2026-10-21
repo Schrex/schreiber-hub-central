@@ -17,6 +17,14 @@ bun run test:local:storage
 bun run test:local:roles
 ```
 
+Accident-photo replacement regression: `node scripts/local-accident-photo-replacement.mjs`
+temporarily installs the reviewed candidate on the fixed disposable local backend,
+runs 590 Storage HTTP checks, cleans synthetic fixtures and restores the exact prior
+policy catalog. It never accepts a hosted target. The broader suite covers 14 private
+local buckets; local talk-media is public and is excluded, unlike the private destination.
+The candidate is installed separately on schreiber-hub with guarded catalog checks;
+this local command does not prove hosted role-based HTTP behavior.
+
 These checks now pass after the supplied schema reconciliation and local permission
 fix. They do not certify complete production parity. See
 [reconciliation details](SCHEMA_RECONCILIATION.md) and the progress record.

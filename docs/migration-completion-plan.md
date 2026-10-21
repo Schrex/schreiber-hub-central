@@ -21,6 +21,23 @@ anonymous denial and authorized disabled response pass after credential fix 5a5a
 Queue grants, ordinary-user JWT/no-side-effects checks and controlled delivery remain
 open; this is not completed backend or launch acceptance.
 
+## Current acceptance update — October 21, 2026
+
+- Backend service grants and controlled email proof are complete as recorded in
+  DEVELOPMENT_PROGRESS.md. User confirmed the single fabricated message in the
+  approved inbox. Delivery remains OFF and dispatcher uninstalled.
+- Accident-photo replacement candidate is installed on schreiber-hub with exact
+  catalog checks; local expanded Storage suite passes 590/590. Hosted role-based
+  HTTP replacement acceptance remains pending.
+- Private photo/document browser workflows and time-off refresh pass locally;
+  resume/reconnect and signed-URL renewal fixes are in the feature checkout.
+- All 15 hosted buckets remain private. Realtime publication has zero tables;
+  live updates/denials are not accepted. Whiteboard requires reload until reviewed
+  Realtime configuration or a tested fallback is completed.
+- Restricted independent preview, hosted workflow acceptance, recovery and explicit
+  cutover approval remain next. Historical starting-point bullets below are not
+  the current task status.
+
 ## Starting point
 
 - Existing restored business data/Auth/files are the baseline: 62 COPY sections

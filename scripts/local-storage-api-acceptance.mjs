@@ -69,13 +69,50 @@ try {
       if (updated.error) assert.ok(['400','403','404'].includes(String(updated.error.statusCode)), 'Unexpected update failure status');
       assert.deepEqual(await content(service, bucket, path), !updated.error ? changed : bytes, 'Denied updates preserve bytes');
       cases++;
+      if (bucket === 'accident-photos') {
+        // Replacement authorization also needs INSERT permission in Storage's
+        // upsert probe. An existing object must never let an ordinary reporter
+        // bypass the separate office/admin UPDATE policy.
+        const replacement = await api.storage.from(bucket).upload(path, changed, { contentType: 'text/plain', upsert: true });
+        if (update && replacement.error) failures.push(`${bucket}/${role}/${own ? 'own' : 'other'}: UPSERT existing expected allowed, HTTP ${replacement.error.statusCode}`);
+        if (!update) assert.ok(replacement.error, `${role}: existing-object upsert should fail`);
+        if (replacement.error) assert.equal(String(replacement.error.statusCode), '403');
+        assert.deepEqual(await content(service, bucket, path), update && !replacement.error ? changed : !updated.error ? changed : bytes);
+        cases++;
+        // A missing path does not qualify for the existing-object exception,
+        // even when the caller sets upsert. Own-path creation stays permitted.
+        const absentPath = `${folder}/http-upsert-new-${randomUUID()}.txt`;
+        files.push([bucket, absentPath]);
+        const created = await api.storage.from(bucket).upload(absentPath, bytes, { contentType: 'text/plain', upsert: true });
+        if (insert) { ok(created); assert.deepEqual(await content(service, bucket, absentPath), bytes); }
+        else { assert.equal(String(created.error?.statusCode), '403'); assert.equal(await exists(bucket, absentPath), false); }
+        cases++;
+        // Existing UPDATE policies also govern moves. Keep their established
+        // office/admin boundary, including moves to another reporter's folder.
+        const moveSource = `${folder}/http-move-source-${randomUUID()}.txt`;
+        const moveTarget = `${randomUUID()}/http-move-target-${randomUUID()}.txt`;
+        files.push([bucket, moveSource], [bucket, moveTarget]);
+        ok(await service.storage.from(bucket).upload(moveSource, bytes, { contentType: 'text/plain' }));
+        const moved = await api.storage.from(bucket).move(moveSource, moveTarget);
+        if (update) {
+          ok(moved);
+          assert.equal(await exists(bucket, moveSource), false);
+          assert.deepEqual(await content(service, bucket, moveTarget), bytes);
+        } else {
+          assert.ok(moved.error);
+          assert.ok(['400', '403', '404'].includes(String(moved.error.statusCode)));
+          assert.deepEqual(await content(service, bucket, moveSource), bytes);
+          assert.equal(await exists(bucket, moveTarget), false);
+        }
+        cases++;
+      }
       const deleted = await api.storage.from(bucket).remove([path]);
       if (deleted.error) assert.ok(['400','403','404'].includes(String(deleted.error.statusCode)), 'Unexpected delete failure status');
       if (remove) { ok(deleted); assert.equal(await exists(bucket, path), false); }
       else assert.deepEqual(await content(service, bucket, path), !updated.error ? changed : bytes, 'Denied deletes preserve bytes');
       cases++;
     }
-    console.log(`${failures.some(x => x.startsWith(bucket + '/')) ? 'GAP' : 'PASS'} ${bucket}: 40 HTTP checks, all five roles and own/other paths.`);
+    console.log(`${failures.some(x => x.startsWith(bucket + '/')) ? 'GAP' : 'PASS'} ${bucket}: ${bucket === 'accident-photos' ? 70 : 40} HTTP checks, all five roles and own/other paths.`);
   }
   for (const failure of failures) console.log(`GAP ${failure}`);
   if (failures.length) process.exitCode = 2;
