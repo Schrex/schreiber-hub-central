@@ -3,6 +3,32 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Destination functions deployed with delivery disabled — 2026-10-20
+
+User completed private token installation. Secret inventory confirms the token is
+present; digest comparisons verify Postmark provider, outbound stream, approved
+sender, delivery=false and controlled mode. Provider-token validity/inbox delivery
+are not yet proven. No token value was retrieved or printed.
+
+Deployed exactly the reviewed eight-function allowlist to acgqjjbrnkmeazswdnzp;
+all were ACTIVE version 1. No deferred functions, schedules, DNS, source settings
+or business rows were changed. Worker initially rejected the destination service-role
+caller with handler 403 despite successful gateway validation. Cause of injected
+runtime-key mismatch remains unproven. Reserved keys are absent from the secrets
+inventory, so a digest mismatch there was not evidence about runtime key values.
+
+Fix 5a5a720 separates EMAIL_WORKER_AUTH_TOKEN from the runtime database key while
+retaining exact comparison and verify_jwt=true. Installed that setting privately
+from the existing destination service-role JWT and redeployed only the worker.
+29 focused tests, focused lint, Edge checks and whitespace checks passed.
+Hosted recheck: missing/invalid credentials 401, anonymous JWT 403, authorized
+service-role call 200 with delivery_disabled. This verifies the off-switch response,
+not queue delivery, database permissions or complete ordinary-user authorization.
+No email sent. A valid authenticated ordinary-user JWT/no-side-effects check,
+service-only queue grants/catalog verification, suppression handling, dispatcher,
+controlled six-workflow acceptance and protected hosting remain pending. Old
+Postmark token retirement remains pending confirmation of its SMTP consumers.
+
 ## Private Postmark installation prepared — 2026-10-20
 
 User reports generating a new server token; its value was not read. Added operator-run

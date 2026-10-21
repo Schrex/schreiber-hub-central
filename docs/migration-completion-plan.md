@@ -11,6 +11,12 @@ private safety media and an independent build/runbook. See DEVELOPMENT_PROGRESS.
 for verification and remaining gaps. Starting-point statements below are historical:
 local fixes do not imply destination deployment, hosting, email activation or cutover.
 
+Hosted follow-up: the eight allowlisted functions are now deployed with delivery
+disabled. Token presence and non-secret settings are verified; worker missing/invalid/
+anonymous denial and authorized disabled response pass after credential fix 5a5a720.
+Queue grants, ordinary-user JWT/no-side-effects checks and controlled delivery remain
+open; this is not completed backend or launch acceptance.
+
 ## Starting point
 
 - Existing restored business data/Auth/files are the baseline: 62 COPY sections

@@ -4,7 +4,10 @@
 
 The adapter and its 34 synthetic tests have now been brought onto the restore
 branch and connected to process-email-queue. Earlier standalone-only statements
-below describe the preparation phase. No function has been deployed or activated.
+below describe the preparation phase. The eight reviewed functions are now deployed
+on the destination with delivery disabled. The worker passes missing/invalid/anonymous
+credential denial and an authorized delivery_disabled response; queue privileges,
+ordinary-user acceptance, suppression handling and actual delivery remain pending.
 
 Destination-only configuration required before deployment:
 
@@ -20,6 +23,13 @@ actual configured service key rather than trusting decoded JWT claims. Database
 operation errors produce non-success responses. Unsubscribe first writes idempotent
 suppression, then consumes the token; retry can repair earlier partial failures.
 This is retry-safe ordering, not a database transaction.
+
+Hosted worker compatibility: set EMAIL_WORKER_AUTH_TOKEN privately to the destination
+service-role JWT used by the dispatcher. This exact expected caller credential is
+separate from the platform-injected SUPABASE_SERVICE_ROLE_KEY used for database
+calls; it replaces that key's authentication fallback when configured. Keep
+verify_jwt=true. Rotate this setting with the dispatcher's project service-role
+credential. It is not the Postmark API token. No credential belongs in VITE_ config.
 
 Delivery defaults to EMAIL_DELIVERY_MODE=controlled. EMAIL_ALLOWED_RECIPIENTS must
 list exact approved mailboxes before enabling a controlled send. Other queued
