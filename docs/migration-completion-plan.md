@@ -32,8 +32,9 @@ open; this is not completed backend or launch acceptance.
 - Private photo/document browser workflows and time-off refresh pass locally;
   resume/reconnect and signed-URL renewal fixes are in the feature checkout.
 - All 15 hosted buckets remain private. Realtime publication has zero tables;
-  live updates/denials are not accepted. Whiteboard requires reload until reviewed
-  Realtime configuration or a tested fallback is completed.
+  live updates/denials are not accepted. Whiteboard now has a locally tested Refresh/return/reconnect fallback, and Safety
+  uses permitted attendee columns. Hosted acceptance of the updated frontend and
+  a launch decision on refresh-based versus live updates remain pending.
 - Restricted independent preview, hosted workflow acceptance, recovery and explicit
   cutover approval remain next. Historical starting-point bullets below are not
   the current task status.

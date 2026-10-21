@@ -3,6 +3,47 @@
 Updated: 2026-10-21. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Parallel hosted file and refresh acceptance review — 2026-10-21
+
+Two user-requested agents completed a fresh hosted catalog audit and local acceptance
+work. No hosted mutation, employee-role change, real-file replacement, email activation,
+DNS change or production deployment occurred during this pass.
+
+File-access audit confirms all 15 buckets private, Storage RLS enabled, exact accident
+candidate installed and original 57 policies/role-helper unchanged (58 total). Fresh
+590/590 local HTTP checks passed. Added a separate private talk-media delta harness:
+60/60 download/sign/public-denial/create/replace/delete checks across employee, foreman,
+office, admin and anon/own-other paths. It temporarily matches destination privacy,
+then cleans unique fixtures and restores the exact original local catalog/buckets.
+These are two local suites, not 650 hosted checks. Hosted role-authenticated HTTP
+acceptance remains pending approved sessions and fabricated-file fixtures; no credential
+relay or session extraction was used. See docs/migration-file-access-acceptance.md.
+
+Realtime audit confirms zero published tables; all four subscribed tables have RLS.
+Notifications have owner-only reads; Whiteboard permits foreman/office/admin; truck
+requests retain existing all-authenticated visibility. Attendees have column-only
+SELECT excluding access_token. Found and fixed Safety's incompatible select('*'):
+it now requests only nine displayed fields, preserves prior sign-offs on error, shows
+a stale-data warning and refreshes on resume/reconnect as well as existing polling.
+No permission was broadened. Whiteboard gains explicit Refresh plus resume/reconnect,
+failed-read retention, stale-load guards, and protection around optimistic mutations.
+Week changes clear prior-week tiles/dispatches; saving disables week navigation/copy.
+
+Two new browser cases pass: real synthetic two-session Whiteboard persistence/refresh/
+error retention and employee UI denial; mocked synthetic Safety HTTP responses enforce
+safe-column selection and failure/recovery behavior. Safety test is not hosted RLS proof.
+Integrated four-workflow browser suite passes. App typecheck, 145 unit tests and
+build pass; lint has 0 errors/30 existing warnings. Focus events
+are explicitly simulated in headless tests; no native mobile or live WebSocket proof.
+Screenshots inspected at /private/tmp/schreiber-whiteboard-refresh-retains-data.png
+and /private/tmp/schreiber-safety-refresh-proof.png. Detailed evidence and launch limits:
+docs/verification/realtime-refresh-acceptance-2026-10-21.md.
+
+Next: deploy the reviewed frontend to a restricted preview, perform approved hosted
+role/file/safety acceptance, and explicitly choose refresh-based launch behavior or
+complete a scoped Realtime configuration plus live delivery/denial testing. Do not
+blanket-publish attendees or grant token access. Automatic email remains OFF.
+
 ## File permissions and refresh verification — 2026-10-21
 
 Two delegated agents investigated Storage authorization and private-file/refresh UI;

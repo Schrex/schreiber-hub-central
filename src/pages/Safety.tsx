@@ -1,3 +1,4 @@
+import { useResumeRefresh } from "@/hooks/useResumeRefresh";
 import { TalkMedia } from "@/components/safety/TalkMedia";
 import { independentLaunch } from "@/lib/launchScope";
 import type { Json } from "@/integrations/supabase/types";
@@ -530,6 +531,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   const [recording, setRecording] = useState(false);
   const [recBusy, setRecBusy] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
+  const [attendeesError, setAttendeesError] = useState(false);
+  const attendeeLoadGeneration = useRef(0);
   const [employees, setEmployees] = useState<{ user_id: string; display_name: string | null }[]>([]);
   const [pickUserId, setPickUserId] = useState<string>("");
   const [signFor, setSignFor] = useState<Attendee | null>(null);
@@ -544,10 +547,21 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   const streamRef = useRef<MediaStream | null>(null);
 
   const loadAttendees = async () => {
-    const { data } = await supabase.from("toolbox_talk_attendees").select("*").eq("session_id", session.id).order("created_at");
-    setAttendees((data as Attendee[]) ?? []);
+    const generation = ++attendeeLoadGeneration.current;
+    // access_token is intentionally not readable by browser roles.
+    const { data, error } = await supabase.from("toolbox_talk_attendees")
+      .select("id,session_id,user_id,attendee_name,signature_data,signed_at,quiz_score,quiz_total,quiz_completed_at")
+      .eq("session_id", session.id).order("created_at");
+    if (generation !== attendeeLoadGeneration.current) return;
+    setAttendeesError(!!error);
+    if (!error) setAttendees((data as Attendee[]) ?? []);
   };
-  useEffect(() => { loadAttendees(); }, [session.id]);
+  useResumeRefresh(loadAttendees);
+  useEffect(() => {
+    setAttendees([]);
+    void loadAttendees();
+    return () => { attendeeLoadGeneration.current += 1; };
+  }, [session.id]);
 
   // Live updates so foreman sees crew sign-offs/quizzes from their own devices
   useEffect(() => {
@@ -816,6 +830,7 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
               </Select>
               <Button onClick={addAttendee} disabled={!pickUserId}><Plus className="h-4 w-4" /></Button>
             </div>
+            {attendeesError && <p role="alert" className="text-sm text-destructive">Could not refresh attendees. Displayed sign-offs may be out of date.</p>}
             <div className="space-y-2">
               {attendees.map((a) => {
                 const quizOk = !hasQuiz || !!a.quiz_completed_at;
