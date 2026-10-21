@@ -3,6 +3,17 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Private Postmark installation prepared — 2026-10-20
+
+User reports generating a new server token; its value was not read. Added operator-run
+scripts/rehearsal-postmark-secret.py with hidden Terminal input, fixed destination,
+owner-only temporary env file, no token in argv or subprocess output, and cleanup
+on success/failure. It installs Postmark settings with delivery disabled; it neither
+deploys functions nor sends mail. Mocked checks passed target/off-switch/input
+validation/file permissions/cleanup. CLI --env-file support verified. Installation
+and provider validity remain unverified until the operator runs it. Old token
+retirement remains pending SMTP-consumer inspection; generation alone is not rotation.
+
 ## Cloudflare/Postmark account inspection — 2026-10-20
 
 Read-only signed-in browser inspection confirms Cloudflare account access, two
