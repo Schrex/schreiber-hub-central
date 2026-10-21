@@ -13,6 +13,8 @@ avoid matching the new Files panel's Open/Download buttons. No runtime behavior
 changed to resolve integration. Full verification passed:153 unit tests,5 browser
 workflows, app typecheck/build, six backend checks, lint and Edge static checks.
 Added-line credential-pattern scan passed; production migration history unchanged.
+Remote CI caught macOS-only screenshot paths in two browser tests. Replaced them
+with Playwright testInfo.outputPath for portable Linux/macOS evidence capture.
 This records local pre-push evidence. Remote checks and merge status must be verified
 separately. Build367ba33 is superseded for the next preview; rebuild merged develop.
 

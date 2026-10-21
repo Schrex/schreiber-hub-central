@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('Safety uses permitted attendee columns and retains sign-offs when refresh fails', async ({ browser }) => {
+test('Safety uses permitted attendee columns and retains sign-offs when refresh fails', async ({ browser }, testInfo) => {
   // Synthetic HTTP fixtures test the UI failure path; this is not hosted RLS proof.
   const context = await browser.newContext({ baseURL: 'http://127.0.0.1:8082' });
   try {
@@ -36,6 +36,6 @@ test('Safety uses permitted attendee columns and retains sign-offs when refresh 
     await page.evaluate(() => window.dispatchEvent(new Event('focus')));
     await expect(page.getByRole('alert')).toHaveCount(0);
     expect(attendeeReads).toBeGreaterThanOrEqual(3);
-    await page.screenshot({ path: '/private/tmp/schreiber-safety-refresh-proof.png', fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath('schreiber-safety-refresh-proof.png'), fullPage: true });
   } finally { await context.close(); }
 });

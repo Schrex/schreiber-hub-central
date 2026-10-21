@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import { localStatus } from '../scripts/local-backend.mjs';
 
-test('Whiteboard reconciles two sessions without Realtime and retains data on refresh failure', async ({ browser }) => {
+test('Whiteboard reconciles two sessions without Realtime and retains data on refresh failure', async ({ browser }, testInfo) => {
   const status = localStatus();
   const service = createClient(status.API_URL, status.SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -44,7 +44,7 @@ test('Whiteboard reconciles two sessions without Realtime and retains data on re
     await reader.getByRole('button', { name: 'Refresh', exact: true }).click();
     await expect(reader.getByRole('alert')).toContainText('Could not refresh the board');
     await expect(reader.getByRole('button', { name: label, exact: true })).toBeVisible();
-    await reader.screenshot({ path: '/private/tmp/schreiber-whiteboard-refresh-retains-data.png', fullPage: true });
+    await reader.screenshot({ path: testInfo.outputPath('schreiber-whiteboard-refresh-retains-data.png'), fullPage: true });
     await reader.unroute('**/rest/v1/whiteboard_tiles?*');
 
     const deleted = writer.waitForResponse(r => new URL(r.url()).pathname === '/rest/v1/whiteboard_tiles' && r.request().method() === 'DELETE');
