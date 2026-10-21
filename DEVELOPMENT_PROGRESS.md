@@ -3,6 +3,14 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Permanent project display name updated — 2026-10-20
+
+At the user's request, renamed the Supabase project display name from hub-rehearsal
+to schreiber-hub. Dashboard confirmed successful save and the updated title. Project
+reference remains acgqjjbrnkmeazswdnzp. This was a display-name change only; database,
+credentials, API URL, DNS and delivery configuration were not changed. Historical
+rehearsal names in scripts/evidence refer to this same project.
+
 ## Destination functions deployed with delivery disabled — 2026-10-20
 
 User completed private token installation. Secret inventory confirms the token is

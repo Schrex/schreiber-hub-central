@@ -5,6 +5,10 @@ paid provisioning or cancellation is authorized by this document.
 
 ## Execution update — October 20, 2026
 
+Permanent destination display name is now **schreiber-hub** (formerly hub-rehearsal),
+renamed at the user's request. Its reference remains acgqjjbrnkmeazswdnzp; historical
+rehearsal references below identify the same project.
+
 Inherited pending work is preserved in b7df700. The subsequent local implementation
 adds worker/unsubscribe reliability, controlled-recipient gates, deferred UI controls,
 private safety media and an independent build/runbook. See DEVELOPMENT_PROGRESS.md
