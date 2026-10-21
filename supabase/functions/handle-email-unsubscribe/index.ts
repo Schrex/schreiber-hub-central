@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (!token) {
+  if (typeof token !== 'string' || !token.trim()) {
     return jsonResponse({ error: 'Token is required' }, 400)
   }
 
@@ -76,55 +76,41 @@ Deno.serve(async (req) => {
     .eq('token', token)
     .maybeSingle()
 
-  if (lookupError || !tokenRecord) {
+  if (lookupError) return jsonResponse({ error: 'Unsubscribe temporarily unavailable' }, 503)
+
+  if (!tokenRecord) {
     return jsonResponse({ error: 'Invalid or expired token' }, 404)
   }
 
-  if (tokenRecord.used_at) {
-    return jsonResponse({ valid: false, reason: 'already_unsubscribed' })
-  }
-
-  // GET: Validate token (the app's unsubscribe page calls this on load)
+  // GET never mutates. POST also repairs previously used tokens whose suppression
+  // write failed in the old implementation.
   if (req.method === 'GET') {
-    return jsonResponse({ valid: true })
+    return jsonResponse(tokenRecord.used_at
+      ? { valid: false, reason: 'already_unsubscribed' }
+      : { valid: true })
   }
 
-  // POST: Process the unsubscribe
-  // Atomic check-and-update to avoid TOCTOU race
-  const { data: updated, error: updateError } = await supabase
-    .from('email_unsubscribe_tokens')
-    .update({ used_at: new Date().toISOString() })
-    .eq('token', token)
-    .is('used_at', null)
-    .select()
-    .maybeSingle()
-
-  if (updateError) {
-    console.error('Failed to mark token as used', { error: updateError, token })
-    return jsonResponse({ error: 'Failed to process unsubscribe' }, 500)
-  }
-
-  if (!updated) {
-    return jsonResponse({ success: false, reason: 'already_unsubscribed' })
-  }
-
-  // Add email to suppressed list (upsert to handle duplicates)
+  // Idempotent suppression must succeed BEFORE consuming the token. If marking
+  // used fails, the retry safely repeats this upsert; concurrent POSTs are safe.
+  // Preserve an existing bounce/complaint suppression reason.
   const { error: suppressError } = await supabase
     .from('suppressed_emails')
     .upsert(
       { email: tokenRecord.email.toLowerCase(), reason: 'unsubscribe' },
-      { onConflict: 'email' },
+      { onConflict: 'email', ignoreDuplicates: true },
     )
-
   if (suppressError) {
-    console.error('Failed to suppress email', {
-      error: suppressError,
-      email: tokenRecord.email,
-    })
-    return jsonResponse({ error: 'Failed to process unsubscribe' }, 500)
+    return jsonResponse({ error: 'Failed to process unsubscribe' }, 503)
   }
 
-  console.log('Email unsubscribed', { email: tokenRecord.email })
+  const { error: updateError } = await supabase
+    .from('email_unsubscribe_tokens')
+    .update({ used_at: new Date().toISOString() })
+    .eq('token', token)
+    .is('used_at', null)
+  if (updateError) {
+    return jsonResponse({ error: 'Failed to process unsubscribe' }, 503)
+  }
 
   return jsonResponse({ success: true })
 })

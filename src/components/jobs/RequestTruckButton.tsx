@@ -42,7 +42,7 @@ export const RequestTruckButton = ({ jobId, jobAddress }: Props) => {
     }
     setBusy(true);
     try {
-      const { error } = await supabase.functions.invoke("request-truck", {
+      const { data, error } = await supabase.functions.invoke("request-truck", {
         body: {
           jobId,
           requestedDate: form.requestedDate,
@@ -55,7 +55,8 @@ export const RequestTruckButton = ({ jobId, jobAddress }: Props) => {
         },
       });
       if (error) throw error;
-      toast.success("Truck request sent to office");
+      if (data?.notification === "queued") toast.success("Truck request saved. Office notification queued.");
+      else toast.warning("Truck request saved, but the office notification was not queued. Contact the office; do not submit a duplicate request.");
       setOpen(false);
       setForm({ ...form, material: "", pickupLocation: "", loadQuantity: "", notes: "" });
     } catch (e: unknown) {

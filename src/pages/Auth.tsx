@@ -1,3 +1,4 @@
+import { independentLaunch } from "@/lib/launchScope";
 import { errorMessage } from "@/lib/errorMessage";
 import { useState, useEffect } from "react";
 import { useNavigate, Navigate, Link } from "react-router-dom";
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import logo from "@/assets/schreiber-logo.png";
 
-const isRehearsal = import.meta.env.VITE_REHEARSAL_BACKEND === "true";
+
 
 const Auth = () => {
   const { session, loading } = useAuth();
@@ -33,7 +34,7 @@ const Auth = () => {
     setBusy(true);
     try {
       if (mode === "signup") {
-        if (isRehearsal) throw new Error("Use an existing rehearsal account.");
+        if (independentLaunch) throw new Error("Use an existing account. New-account signup is unavailable.");
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -56,7 +57,7 @@ const Auth = () => {
   };
 
   const handleGoogle = async () => {
-    if (isRehearsal) return;
+    if (independentLaunch) return;
     setBusy(true);
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
@@ -84,15 +85,15 @@ const Auth = () => {
           variant="outline"
           className="w-full"
           onClick={handleGoogle}
-          disabled={busy || isRehearsal || import.meta.env.VITE_LOCAL_BACKEND === "true"}
+          disabled={busy || independentLaunch || import.meta.env.VITE_LOCAL_BACKEND === "true"}
         >
           Continue with Google
         </Button>
         {import.meta.env.VITE_LOCAL_BACKEND === "true" && (
           <p className="text-xs text-muted-foreground">Local test environment. Use a synthetic email account below.</p>
         )}
-        {isRehearsal && (
-          <p className="text-sm text-muted-foreground">Migration rehearsal · Use your existing email and password. Google and new-account signup are unavailable.</p>
+        {independentLaunch && (
+          <p className="text-sm text-muted-foreground">Use your existing email and password. Google and new-account signup are unavailable.</p>
         )}
 
         <div className="relative">
@@ -124,7 +125,7 @@ const Auth = () => {
           </Button>
         </form>
 
-        {!isRehearsal && <button
+        {!independentLaunch && <button
           type="button"
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           className="block w-full text-center text-xs text-muted-foreground hover:text-foreground"

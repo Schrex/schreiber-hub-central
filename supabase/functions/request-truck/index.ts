@@ -1,3 +1,4 @@
+import { notificationResult } from "../_shared/notification-result.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -79,8 +80,9 @@ Deno.serve(async (req) => {
       (settingValue && typeof settingValue === 'object' && settingValue.email) ||
       DEFAULT_OFFICE_EMAIL
 
+    let notification: 'queued' | 'failed' = 'failed'
     try {
-      await admin.functions.invoke('send-transactional-email', {
+      const { data: emailData, error: emailError } = await admin.functions.invoke('send-transactional-email', {
         body: {
           templateName: 'truck-request-submitted',
           recipientEmail: recipient,
@@ -100,11 +102,12 @@ Deno.serve(async (req) => {
           },
         },
       })
+      notification = notificationResult(emailData, emailError)
     } catch (e) {
       console.error('truck-request submit email failed', e)
     }
 
-    return new Response(JSON.stringify({ ok: true, requestId: request.id }), {
+    return new Response(JSON.stringify({ ok: true, requestId: request.id, notification }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

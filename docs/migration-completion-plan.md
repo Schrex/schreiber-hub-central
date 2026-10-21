@@ -3,6 +3,14 @@
 Prepared October 20, 2026. Planning only: no production deployment, main merge,
 paid provisioning or cancellation is authorized by this document.
 
+## Execution update — October 20, 2026
+
+Inherited pending work is preserved in b7df700. The subsequent local implementation
+adds worker/unsubscribe reliability, controlled-recipient gates, deferred UI controls,
+private safety media and an independent build/runbook. See DEVELOPMENT_PROGRESS.md
+for verification and remaining gaps. Starting-point statements below are historical:
+local fixes do not imply destination deployment, hosting, email activation or cutover.
+
 ## Starting point
 
 - Existing restored business data/Auth/files are the baseline: 62 COPY sections

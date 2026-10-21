@@ -8,7 +8,7 @@ echo 'Target: hub-rehearsal only. Outgoing app email will remain disabled.'
 npx --yes supabase@2.121.0 functions list --project-ref "$project"
 # Install the off switch BEFORE deploying anything. No provider token is handled here.
 npx --yes supabase@2.121.0 secrets set --project-ref "$project" \
-  EMAIL_PROVIDER=postmark EMAIL_DELIVERY_ENABLED=false \
+  EMAIL_PROVIDER=postmark EMAIL_DELIVERY_ENABLED=false EMAIL_DELIVERY_MODE=controlled \
   POSTMARK_MESSAGE_STREAM=outbound POSTMARK_FROM=no-reply@mail.schrex.com
 for function in send-transactional-email process-email-queue handle-email-unsubscribe \
   request-truck decide-truck-request submit-accident-report submit-safety-violation request-safety-inspection

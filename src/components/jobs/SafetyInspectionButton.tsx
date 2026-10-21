@@ -24,7 +24,9 @@ export const SafetyInspectionButton = ({ jobId }: { jobId: string }) => {
         body: { jobId, notes: notes.trim() || undefined },
       });
       if (error) throw error;
-      toast.success(`Safety inspection requested${data?.recipient ? ` → ${data.recipient}` : ""}`);
+      if (data?.notification === "queued") toast.success("Inspection request saved. Notification queued; delivery is pending.");
+      else toast.warning("Inspection request saved, but the notification was not queued. Contact the safety office; do not submit a duplicate request.");
+      if (data?.statusRecorded === false) toast.warning("The notification status could not be saved. Ask an administrator to check this request.");
       setOpen(false);
       setNotes("");
     } catch (e: unknown) {

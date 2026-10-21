@@ -3,6 +3,47 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Independent migration implementation checkpoint — 2026-10-20
+
+Preserved all inherited work in b7df700 on codex/export-capture. PR #10 was
+rechecked as draft targeting develop. Three agents used explicit disjoint file
+ownership; coordinator handled integration. No source/hosted mutation, deployment,
+paid provisioning, main merge or cutover occurred.
+
+Local changes: retry-safe unsubscribe suppresses before consuming its token;
+worker authenticates the configured service key, propagates database failures and
+requires controlled recipients by default. Deployment helper explicitly selects
+controlled mode with delivery disabled. Truck/inspection feedback distinguishes
+saved work, failed enqueue and queued (not delivered) notifications. Partial truck
+approval reports the committed dispatch and blocks repeat approval in that browser
+session. This mitigation is not atomic or cross-session/concurrency protection.
+
+Independent/rehearsal builds disable deferred integrations and onboarding actions.
+Manual safety workflows remain, but unavailable server-validated toolbox completion
+stays disabled. Existing safety media now uses signed destination talk-media URLs;
+records are not rewritten. Independent builder ignores source env/config, requires
+explicit destination/client credentials and produces SPA/cache/revision metadata.
+Hosting/recovery runbook is preparation, not configured hosting.
+
+Verified baseline: all verify groups passed (58 tests, typecheck/build, six backend
+groups, lint 0 errors/30 warnings, 17 Edge entries, browser time-off). Broader
+synthetic Storage HTTP suite again passed 558/560; office/admin replacement of
+another user's accident photo returns 403. Cleanup passed; no policy was broadened.
+Private archive manifest/database comparison/file integrity check passed without
+printing private contents. New handler tests cover ordinary/forged credential
+rejection without DB calls, controlled recipients, DB/provider failures and
+unsubscribe retries. Final integration: 94 app tests/typecheck/build passed, then
+one added partial-save UI test and typecheck passed (95 tests across those runs).
+Lint remains 0 errors/30 warnings; all 17 Edge entries and browser time-off passed.
+Two independent-build guard tests and a full synthetic-destination build passed.
+Existing bundle-size/Browserslist warnings remain. No hosted acceptance implied.
+
+Remaining: explicit permanent-backend choice, company hosting/DNS access, private
+CLI login/token rotation status, reviewed service RPC grants, hosted eight-function
+deployment/auth tests, suppression webhook/equivalent, dispatcher, controlled
+workflow mail acceptance, two Storage policy decisions, Realtime/refresh acceptance,
+restricted preview and six-workflow acceptance. No production readiness inferred.
+
 ## Completion plan independently reviewed — 2026-10-20
 
 Created docs/migration-completion-plan.md from current repository/live evidence and
