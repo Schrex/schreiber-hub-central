@@ -1,13 +1,16 @@
 # Controlled email proof and inactive dispatcher
 
-Updated October 20, 2026. Inbox delivery is not yet proven.
+Updated October 20, 2026. Single-recipient inbox proof completed.
 
-Approved proof recipient: sumanth@schrex.com. Service queue permissions and hosted
-synthetic unsubscribe checks passed; see DEVELOPMENT_PROGRESS.md. Destination audit
-found 7 safety-report recipients, 8 time-off recipients and both queues empty.
-Postmark suppression endpoint is deployed, but its provider webhook awaits private
-operator setup with scripts/rehearsal-postmark-webhook.py. Delivery stays disabled.
-No fabricated notification has been enqueued or sent.
+Approved recipient sumanth@schrex.com confirmed inbox receipt. Enqueue, worker
+processing and one sent log correlated; final transactional/DLQ queues are empty.
+Controlled allowlist remains limited to that inbox and delivery is OFF. Dispatcher
+candidate is locally validated but not installed or activated. No employee fan-out
+was tested. See DEVELOPMENT_PROGRESS.md for retained rejection history and fixes.
+Postmark SubscriptionChange webhook 26048997 is configured and visibly Verified;
+synthetic authentication/replay and unsubscribe checks passed. Real business-producer
+acceptance and private owner review of eventual recipient settings remain separate.
+
 Parent execution plan: [migration-completion-plan.md](migration-completion-plan.md).
 Only the coordinator performs hosted mutations. Keep source, DNS and production
 unchanged. No employee records or restored messages are test fixtures.

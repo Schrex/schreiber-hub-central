@@ -3,6 +3,55 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Controlled email delivered to approved inbox — 2026-10-20
+
+User confirmed the fabricated notification arrived in sumanth@schrex.com's inbox.
+Exactly one successful delivery is recorded for the approved fixture. No employee
+fan-out was exercised. Enqueue used the existing approved signed-in admin session,
+with fabricated template data and no time-off/business row creation. Before send,
+verified empty transactional/DLQ queues, no cron.job, recipient not suppressed,
+and sole-recipient controlled allowlist. Final worker HTTP 200: processed=1, failed=0;
+correlated sent log count=1 and both queues empty. EMAIL_DELIVERY_ENABLED=false was
+restored and digest-verified in finally. Dispatcher remains prepared only, uninstalled.
+
+Two integration defects were diagnosed and fixed. Postmark verification uses the
+visible fixed ServerID 23 / all-zero MessageID / john@example.com fixture even for
+server 21137606. The authenticated exact fixture is now acknowledged without writes;
+real events retain server/stream validation. Webhook 26048997 is visibly Verified in
+Postmark. Read-only API comparison matched URL, stream, secret header and only
+SubscriptionChange enabled. API omitted Status despite documentation; dashboard
+provided the verification evidence. Screenshot: /private/tmp/postmark-webhook-verified.png.
+
+First real provider attempt rejected the fixture into DLQ. No sent log existed.
+Postmark's documented no-delivery POSTMARK_API_TEST reproduced 422/code300: metadata
+key application_message_id exceeded its 20-character limit. Shortened to app_message_id;
+no-delivery API check then returned 200/code0. Requeued only the exact rejected fixture
+with its original message/idempotency IDs after verifying no sent log and empty queue.
+Its historic rejection log is retained; the corrected attempt delivered once. Worker
+rejection logs now retain safe HTTP/provider codes, never raw provider bodies.
+An earlier local helper formatting failure occurred before worker invocation; off
+switch was verified before continuing. No uncertain delivery was blindly retried.
+
+Temporary service-only diagnostic endpoint deleted and absence verified; local
+one-off test pages and diagnostic function source removed. No API token or browser
+session token logged/saved. Synthetic unsubscribe/suppression evidence remains.
+Validation: 99 focused email/worker tests, app typecheck, focused lint and Deno checks
+passed. Earlier full verification remains recorded below. No production cutover,
+source changes, automatic sending, or full business-workflow acceptance claimed.
+
+## Postmark verification failure isolated to provider check — 2026-10-20
+
+User reported HTTP 422 / Postmark error 1364 during reviewed recovery. With explicit
+user approval, deployed temporary service-authenticated migration-webhook-setup and
+invoked once using installed secrets. It confirmed the fixed server and empty
+webhook inventory, then received the same 422/1364; safe output did not reveal the
+underlying verification cause. No webhook ID was returned, and no email was sent.
+A further request with expanded safe diagnostics was blocked by automatic approval
+review pending explicit retry approval. Supabase invocation UI offered no logs yet.
+Temporary endpoint was deleted and absence verified through function inventory.
+Local diagnostic source remains prepared; it is outside the deployment allowlist.
+Do not infer payload/authentication failure, successful configuration or inbox delivery.
+
 ## Postmark setup recovery prepared — 2026-10-20
 
 Operator's attempt marker reached synthetic authentication and replay proof passed;

@@ -7,7 +7,7 @@ const response = (status: number, body: unknown, headers = {}) => new Response(J
 describe('standalone Postmark preparation adapter', () => {
   it('maps content, stream, tracking policy and one-click headers without inventing idempotency', () => {
     const payload = postmarkPayload(message, options);
-    expect(payload).toMatchObject({ From: message.from, To: message.to, Subject: message.subject, HtmlBody: message.html, TextBody: message.text, MessageStream: 'outbound', Metadata: { application_message_id: 'synthetic-id' }, TrackOpens: false, TrackLinks: 'None' });
+    expect(payload).toMatchObject({ From: message.from, To: message.to, Subject: message.subject, HtmlBody: message.html, TextBody: message.text, MessageStream: 'outbound', Metadata: { app_message_id: 'synthetic-id' }, TrackOpens: false, TrackLinks: 'None' });
     expect(payload.Headers).toEqual([{ Name: 'List-Unsubscribe', Value: '<https://example.test/functions/unsubscribe?token=synthetic%2Btoken>' }, { Name: 'List-Unsubscribe-Post', Value: 'List-Unsubscribe=One-Click' }]);
     expect(JSON.stringify(payload)).not.toMatch(/idempotency/i);
   });

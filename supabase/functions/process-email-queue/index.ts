@@ -270,7 +270,7 @@ async function processQueue(req: Request): Promise<Response> {
             return new Response(JSON.stringify({ processed: totalProcessed, stopped: 'provider_configuration' }), { status: 503 })
           }
           if (outcome.kind === 'suppressed' || outcome.kind === 'permanent_rejection') {
-            await moveToDlq(supabase, queue, msg, `Postmark ${outcome.kind}`)
+            await moveToDlq(supabase, queue, msg, `Postmark ${outcome.kind}; HTTP ${outcome.status}; code ${outcome.providerCode}`)
             continue
           }
           if (outcome.kind === 'rate_limited') {

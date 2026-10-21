@@ -67,7 +67,7 @@ export function postmarkPayload(message: PostmarkEmail, options: PostmarkOptions
     ...(message.text ? { TextBody: message.text } : {}),
     ...(message.label ? { Tag: message.label } : {}),
     MessageStream: options.messageStream,
-    Metadata: { application_message_id: message.message_id },
+    Metadata: { app_message_id: message.message_id },
     Headers: headers,
     TrackOpens: false,
     TrackLinks: 'None',

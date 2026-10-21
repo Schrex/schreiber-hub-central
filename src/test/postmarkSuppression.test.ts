@@ -13,6 +13,30 @@ const request = (body: unknown = event, token = secret, method = 'POST') => new 
   ...(method === 'POST' ? { body: JSON.stringify(body) } : {}),
 })
 describe('Postmark suppression receiver', () => {
+  const verification = { ...event, ServerID: 23, MessageID: '00000000-0000-0000-0000-000000000000',
+    Recipient: 'john@example.com', Origin: 'Recipient', Tag: 'welcome-email',
+    Metadata: { example: 'value', example_2: 'value' } }
+  it('acknowledges the authenticated fixed Postmark verification fixture without writes', async () => {
+    const opts = options()
+    const response = await handlePostmarkSuppression(request(verification), opts)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ result: 'verification_ignored' })
+    expect(opts.suppress).not.toHaveBeenCalled()
+  })
+  it('still authenticates Postmark verification fixtures', async () => {
+    const opts = options()
+    expect((await handlePostmarkSuppression(request(verification, 'wrong'), opts)).status).toBe(401)
+    expect(opts.suppress).not.toHaveBeenCalled()
+  })
+  it.each([{ MessageID: 'different' }, { Recipient: 'real@example.test' }, { ServerID: 24 },
+    { MessageStream: 'broadcast' }, { Origin: 'Customer' }, { Tag: 'other' },
+    { Metadata: {} }, { ChangedAt: 'invalid' }, { SuppressionReason: 'SpamComplaint' },
+    { SuppressSending: false }])('does not broaden verification exception %o', async override => {
+    const opts = options()
+    expect((await handlePostmarkSuppression(request({ ...verification, ...override }), opts)).status).toBe(400)
+    expect(opts.suppress).not.toHaveBeenCalled()
+  })
+
   it.each([['HardBounce', 'bounce'], ['SpamComplaint', 'complaint'], ['ManualSuppression', 'unsubscribe']])(
     'maps %s and minimizes metadata', async (providerReason, reason) => {
       const opts = options()

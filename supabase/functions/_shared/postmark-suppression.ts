@@ -58,6 +58,23 @@ export async function handlePostmarkSuppression(req: Request, options: Options):
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return reply(400, 'invalid_payload')
     event = parsed
   } catch { return reply(400, 'invalid_payload') }
+  // Postmark's Add Webhook UI shows this fixed verification fixture (ServerID 23),
+  // even on another server. Authenticate first and acknowledge ONLY this exact
+  // fixture without persisting its example address. Never waive real-event scope.
+  const metadata = event.Metadata
+  if (event.RecordType === 'SubscriptionChange' && event.ServerID === 23 &&
+      event.MessageID === '00000000-0000-0000-0000-000000000000' &&
+      event.MessageStream === options.stream && event.MessageStream === 'outbound' &&
+      event.Recipient === 'john@example.com' && event.Origin === 'Recipient' &&
+      event.SuppressSending === true && event.SuppressionReason === 'HardBounce' &&
+      event.Tag === 'welcome-email' && typeof event.ChangedAt === 'string' &&
+      Number.isFinite(Date.parse(event.ChangedAt)) && metadata !== null &&
+      typeof metadata === 'object' && !Array.isArray(metadata) &&
+      Object.keys(metadata).length === 2 &&
+      (metadata as Record<string, unknown>).example === 'value' &&
+      (metadata as Record<string, unknown>).example_2 === 'value') {
+    return reply(200, 'verification_ignored')
+  }
   if (event.RecordType !== 'SubscriptionChange' ||
       !Number.isSafeInteger(event.ServerID) || String(event.ServerID) !== options.serverId ||
       event.MessageStream !== options.stream || typeof event.SuppressSending !== 'boolean' ||
