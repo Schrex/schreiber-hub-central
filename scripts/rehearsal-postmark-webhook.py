@@ -48,6 +48,18 @@ def api(token, method, path, body=None):
             if not isinstance(result, dict):
                 raise ValueError()
             return result
+    except urllib.error.HTTPError as error:
+        # Never expose provider Message, URL, headers or response bodies.
+        code = None
+        try:
+            detail = json.loads(error.read(65536))
+            candidate = detail.get('ErrorCode')
+            if type(candidate) is int and 0 <= candidate < 100000:
+                code = candidate
+        except Exception:
+            pass
+        suffix = f'; Postmark error code {code}' if code is not None else ''
+        raise SafeFailure(f'Provider returned HTTP {error.code}{suffix}. No automatic retry was made.') from None
     except Exception:
         raise SafeFailure('Provider request failed or outcome is uncertain. No automatic retry was made.') from None
 
@@ -147,8 +159,12 @@ def record(state, phase, exclusive=False):
         os.fsync(output.fileno())
 
 
-def configure(token, state=STATE, call=api, installer=install, prover=prove):
-    if state.exists():
+def configure(token, state=STATE, call=api, installer=install, prover=prove, *, resume_if_empty=False):
+    recovering = state.exists() and resume_if_empty
+    recoverable = 'synthetic authentication and replay proof passed; provider creation pending'
+    if recovering and (state.read_text().strip() != recoverable or state.with_suffix('.previous').exists()):
+        raise SafeFailure('This recorded phase needs separate review; recovery refused.')
+    if state.exists() and not recovering:
         raise SafeFailure('An earlier setup attempt is recorded. Stop: review it before retrying; do not rotate the webhook secret.')
     if not re.fullmatch(r'[A-Za-z0-9_-]{20,200}', token):
         raise SafeFailure('Invalid server-token format.')
@@ -160,6 +176,10 @@ def configure(token, state=STATE, call=api, installer=install, prover=prove):
     # Conservative conflict policy: no changes to an already configured stream.
     if existing:
         raise SafeFailure('Outbound webhooks already exist. Stop for review; nothing overwritten.')
+    if recovering:
+        # Provider inventory above must be empty before replacing an unused secret.
+        # Preserve the old record; only one reviewed recovery attempt is permitted.
+        state.rename(state.with_suffix('.previous'))
     record(state, 'started: destination and provider outcome require review', exclusive=True)
     secret = secrets.token_urlsafe(32)
     installer(secret)
@@ -189,13 +209,14 @@ def configure(token, state=STATE, call=api, installer=install, prover=prove):
 
 
 def main():
-    if len(sys.argv) != 1 or not sys.stdin.isatty():
-        print('Run without arguments in your private Terminal.', file=sys.stderr)
+    if sys.argv[1:] not in ([], ['--resume-if-empty']) or not sys.stdin.isatty():
+        print('Run in your private Terminal, optionally with --resume-if-empty after review.', file=sys.stderr)
         return 2
     print('Target: schreiber-hub. Creates one suppression webhook; app email stays OFF.')
     print('Requires the reviewed suppression endpoint to be deployed first.')
     try:
-        configure(getpass.getpass('Paste the current Postmark server token (hidden): ').strip())
+        configure(getpass.getpass('Paste the current Postmark server token (hidden): ').strip(),
+                  resume_if_empty=sys.argv[1:] == ['--resume-if-empty'])
     except SafeFailure as error:
         print(str(error), file=sys.stderr)
         return 1

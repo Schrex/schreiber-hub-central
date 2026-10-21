@@ -3,6 +3,21 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Postmark setup recovery prepared — 2026-10-20
+
+Operator's attempt marker reached synthetic authentication and replay proof passed;
+provider creation pending. This means the helper completed hosted missing/invalid
+secret rejection and synthetic suppression insert/replay before its provider call.
+Read-only Postmark outbound Webhooks page confirms no webhook is currently configured.
+The original provider failure detail was not retained, so its cause remains unknown.
+
+Added --resume-if-empty for exactly this reviewed phase. It revalidates server identity
+and an empty provider webhook inventory before preserving the earlier marker and
+replacing the unused webhook secret. Any existing webhook blocks recovery; a second
+recovery is refused. Provider failures now expose only HTTP status and numeric error
+code, never response messages or credentials. Twelve mock checks pass. Recovery has
+not been executed; provider hookup and one approved email/inbox proof remain pending.
+
 ## Destination service permissions and email safeguards — 2026-10-20
 
 User authorized backend permissions work and one fabricated email to

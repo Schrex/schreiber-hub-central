@@ -119,6 +119,43 @@ class SetupTests(unittest.TestCase):
                 m.configure(TOKEN, Path(d) / 'attempt.local', call, installed.append, fail)
         self.assertFalse(any(method == 'POST' for method, _ in calls))
 
+    def test_reviewed_recovery_requires_empty_inventory_and_preserves_record(self):
+        phase = 'synthetic authentication and replay proof passed; provider creation pending'
+        for existing in ([], [{'ID': 9}]):
+            calls, installed, _, call = self.scenario(existing=existing)
+            with tempfile.TemporaryDirectory() as d:
+                state = Path(d) / 'attempt.local'
+                state.write_text(phase)
+                if existing:
+                    with self.assertRaises(m.SafeFailure):
+                        m.configure(TOKEN, state, call, installed.append, lambda secret: None, resume_if_empty=True)
+                    self.assertFalse(installed)
+                    self.assertEqual(state.read_text(), phase)
+                else:
+                    m.configure(TOKEN, state, call, installed.append, lambda secret: None, resume_if_empty=True)
+                    self.assertEqual(state.with_suffix('.previous').read_text(), phase)
+                    self.assertEqual(len(installed), 1)
+                    self.assertEqual(calls.count(('POST', '/webhooks')), 1)
+
+    def test_wrong_recovery_phase_never_calls_provider(self):
+        calls, installed, _, call = self.scenario()
+        with tempfile.TemporaryDirectory() as d:
+            state = Path(d) / 'attempt.local'; state.write_text('readback pending')
+            with self.assertRaises(m.SafeFailure):
+                m.configure(TOKEN, state, call, installed.append, lambda secret: None, resume_if_empty=True)
+            self.assertFalse(calls)
+            self.assertFalse(installed)
+
+    def test_provider_error_contains_only_numeric_codes(self):
+        import io
+        failure = m.urllib.error.HTTPError('https://private.invalid', 422, 'SENSITIVE', {},
+            io.BytesIO(b'{"ErrorCode":1364,"Message":"SENSITIVE SECRET VALUE"}'))
+        opener = SimpleNamespace(open=lambda *a, **k: (_ for _ in ()).throw(failure))
+        with patch.object(m.urllib.request, 'build_opener', lambda *a: opener):
+            with self.assertRaises(m.SafeFailure) as result: m.api(TOKEN, 'POST', '/webhooks', {})
+        self.assertIn('HTTP 422; Postmark error code 1364', str(result.exception))
+        self.assertNotIn('SENSITIVE', str(result.exception))
+
     def test_redirect_denied(self):
         with self.assertRaises(m.SafeFailure):
             m.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://other.test')
