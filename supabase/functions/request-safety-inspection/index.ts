@@ -1,3 +1,4 @@
+import { notificationResult } from "../_shared/notification-result.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -64,6 +65,8 @@ Deno.serve(async (req) => {
     if (insErr) throw insErr
 
     // Send email via the transactional dispatcher using supabase-js (handles auth headers correctly)
+    let notification: 'queued' | 'failed' = 'failed'
+    try {
     const { data: sendData, error: sendErr } = await admin.functions.invoke('send-transactional-email', {
       body: {
         templateName: 'safety-inspection-request',
@@ -85,15 +88,15 @@ Deno.serve(async (req) => {
       },
     })
 
-    if (sendErr) {
-      console.error('email send failed', sendErr)
-      await admin.from('safety_inspections').update({ status: 'failed' }).eq('id', insp.id)
-      throw new Error('Failed to send email')
+    notification = notificationResult(sendData, sendErr)
+    } catch (error) {
+      console.error('inspection notification enqueue failed', error)
     }
-
-    await admin.from('safety_inspections').update({ status: 'sent' }).eq('id', insp.id)
-
-    return new Response(JSON.stringify({ ok: true, recipient }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    // Queue acceptance must never claim the inspection email was delivered.
+    const { error: statusError } = await admin.from('safety_inspections')
+      .update({ status: notification === 'queued' ? 'queued' : 'failed' }).eq('id', insp.id)
+    if (statusError) console.error('inspection notification status update failed', statusError)
+    return new Response(JSON.stringify({ ok: true, inspectionId: insp.id, recipient, notification, statusRecorded: !statusError }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (e) {
     console.error('request-safety-inspection error', e)
     return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })

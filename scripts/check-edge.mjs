@@ -4,6 +4,9 @@ import { root } from './local-backend.mjs';
 // Entry points changed by the foundation cleanup; imports are checked transitively.
 // Static checks only: do not serve handlers or load production credentials.
 const functions = [
+  "process-email-queue",
+  "handle-email-unsubscribe",
+  "handle-email-suppression",
   "complete-safety-talk",
   "decide-truck-request",
   "extract-foreman-brief",

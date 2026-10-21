@@ -1,3 +1,4 @@
+import { handlePostmarkSuppression } from '../_shared/postmark-suppression.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { WebhookError, verifyWebhookRequest } from 'npm:@lovable.dev/webhooks-js'
 
@@ -32,6 +33,22 @@ function jsonResponse(data: Record<string, unknown>, status = 200): Response {
 }
 
 Deno.serve(async (req) => {
+  if (Deno.env.get('EMAIL_PROVIDER') === 'postmark') {
+    return handlePostmarkSuppression(req, {
+      secret: Deno.env.get('POSTMARK_WEBHOOK_SECRET'),
+      serverId: Deno.env.get('POSTMARK_SERVER_ID'),
+      stream: Deno.env.get('POSTMARK_MESSAGE_STREAM'),
+      suppress: async (row) => {
+        const url = Deno.env.get('SUPABASE_URL')
+        const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+        if (!url || !key) throw new Error('Missing database configuration')
+        const { error } = await createClient(url, key).from('suppressed_emails')
+          .upsert(row, { onConflict: 'email', ignoreDuplicates: true })
+        if (error) throw new Error('Suppression write failed')
+      },
+    })
+  }
+
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'Method not allowed' }, 405)
   }

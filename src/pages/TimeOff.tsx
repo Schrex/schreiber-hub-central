@@ -1,3 +1,4 @@
+import { useResumeRefresh } from "@/hooks/useResumeRefresh";
 import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -102,6 +103,8 @@ const TimeOffPage = () => {
     setItems((data as TimeOff[]) ?? []);
     setLoading(false);
   };
+
+  useResumeRefresh(load);
 
   useEffect(() => { load(); }, []);
 

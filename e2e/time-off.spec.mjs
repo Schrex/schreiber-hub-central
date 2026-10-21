@@ -54,12 +54,18 @@ test('employee request is private, admin approves, employee reads persisted appr
     await expect(other.getByText(reason, { exact: true })).toHaveCount(0);
 
     const admin = await signIn('admin@example.test');
+    await admin.bringToFront();
     await admin.getByRole('tab', { name: /Approvals/ }).click();
     const pending = admin.getByRole('tabpanel').locator('div.rounded-xl').filter({ hasText: reason });
     await expect(pending.getByText('pending', { exact: true })).toBeVisible();
     await pending.getByRole('button', { name: 'Approve', exact: true }).click();
     await expect(pending).toHaveCount(0);
-    // Reload proves persistence without relying on disabled local Realtime.
+    // Returning to the employee tab must reconcile without local Realtime.
+    await employee.bringToFront();
+    // Headless contexts do not reliably emit native window focus transitions.
+    await employee.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await expect(request.getByText('approved', { exact: true })).toBeVisible();
+    // Reload independently proves persistence.
     await employee.reload();
     await expect(request.getByText('approved', { exact: true })).toBeVisible();
     const reloaded = other.waitForResponse(response =>

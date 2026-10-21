@@ -1,3 +1,4 @@
+import { independentLaunch } from "@/lib/launchScope";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -132,6 +133,7 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
       }
     }
 
+    if (independentLaunch) return;
     setSaving(true);
     const fullName = [parsed.data.first_name, parsed.data.last_name].filter(Boolean).join(" ").trim();
     const payload: Record<string, unknown> = {

@@ -1,3 +1,6 @@
+import { useResumeRefresh } from "@/hooks/useResumeRefresh";
+import { TalkMedia } from "@/components/safety/TalkMedia";
+import { independentLaunch } from "@/lib/launchScope";
 import type { Json } from "@/integrations/supabase/types";
 import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useRef, useState } from "react";
@@ -38,6 +41,7 @@ const Safety = () => {
         <div className="mt-4">
           <h1 className="font-display text-2xl uppercase tracking-wide">Safety</h1>
           <p className="text-sm text-muted-foreground">Rules, toolbox talks & sign-offs</p>
+          {independentLaunch && <p className="mt-2 text-sm text-muted-foreground">AI, recording, read-aloud, crew messages and toolbox completion emails are unavailable. Manual talks, attendance, signatures and safety reports remain available.</p>}
         </div>
 
         <div className="mt-4 space-y-2">
@@ -155,6 +159,7 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
   useEffect(() => { load(); }, []);
 
   const generateAI = async () => {
+    if (independentLaunch) return;
     if (!aiTopic.trim()) return;
     setAiBusy(true);
     try {
@@ -186,7 +191,7 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
       category: form.category.trim() || null,
       content: form.content,
       quiz_questions: form.quiz_questions.map(q => ({ ...q })),
-      created_with_ai: true,
+      created_with_ai: !independentLaunch,
       image_url: form.image_url || null,
       voice_script: form.voice_script || null,
       video_url: form.video_url || null,
@@ -224,10 +229,10 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
             </div>
           </summary>
           {t.image_url && (
-            <img src={t.image_url} alt={t.title} loading="lazy" className="mt-3 w-full rounded-lg border border-border object-cover max-h-64" />
+            <TalkMedia kind="image" value={t.image_url} title={t.title} className="mt-3 w-full rounded-lg border border-border object-cover max-h-64" />
           )}
           {t.video_url && (
-            <video src={t.video_url} controls className="mt-3 w-full rounded-lg border border-border" />
+            <TalkMedia kind="video" value={t.video_url} title={t.title} className="mt-3 w-full rounded-lg border border-border" />
           )}
           <div className="mt-3 whitespace-pre-wrap text-sm text-foreground/90">{t.content}</div>
           {(t.voice_script || t.content) && (
@@ -249,7 +254,7 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
               <p className="text-xs uppercase tracking-wider text-primary"><Sparkles className="inline h-3 w-3 mr-1" />AI assist</p>
               <div className="flex gap-2">
                 <Input placeholder="Topic e.g. trench shoring" value={aiTopic} onChange={(e) => setAiTopic(e.target.value)} />
-                <Button onClick={generateAI} disabled={aiBusy || !aiTopic.trim()}>{aiBusy ? "…" : "Generate"}</Button>
+                <Button onClick={generateAI} disabled={independentLaunch || aiBusy || !aiTopic.trim()}>{aiBusy ? "…" : "Generate"}</Button>
               </div>
             </div>
             <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
@@ -356,6 +361,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
   }, [pickedJobId, userId]);
 
   const suggestTopic = async () => {
+    if (independentLaunch) return;
     if (!pickedJobId) return;
     setAiBusy(true);
     setAiHint(null);
@@ -383,7 +389,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
     try {
       const { data: sess, error: sErr } = await supabase.from("toolbox_talk_sessions").insert({
         talk_id: selectedTalkId, foreman_id: userId, foreman_name: foremanName, status: "in_progress",
-        job_id: pickedJobId, topic_source: "ai_schedule", delivery_mode: "remote",
+        job_id: pickedJobId, topic_source: independentLaunch ? "manual" : "ai_schedule", delivery_mode: "remote",
       }).select("*").single();
       if (sErr) throw sErr;
 
@@ -396,13 +402,15 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
         if (aErr) throw aErr;
       }
 
-      // Notify
+      // SMS delivery is deferred for independent launch.
+      if (!independentLaunch) {
       const { error: nErr } = await supabase.functions.invoke("notify-talk-attendees", {
         body: { sessionId: sess.id },
       });
       if (nErr) console.warn("notify failed", nErr);
       else toast.success(`Notified ${includes.length} crew member${includes.length === 1 ? "" : "s"}`);
 
+      }
       setActiveSession(sess as SessionRow);
       load();
     } catch (e: unknown) {
@@ -462,7 +470,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Talk</Label>
-            <Button size="sm" variant="ghost" onClick={suggestTopic} disabled={!pickedJobId || aiBusy}>
+            <Button size="sm" variant="ghost" onClick={suggestTopic} disabled={independentLaunch || !pickedJobId || aiBusy}>
               <Sparkles className="mr-1 h-3 w-3" />{aiBusy ? "Thinking…" : "Suggest from schedule"}
             </Button>
           </div>
@@ -476,10 +484,10 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
         </div>
 
         <Button className="w-full" size="lg" onClick={startSession} disabled={!selectedTalkId || starting}>
-          <Play className="mr-2 h-4 w-4" />{starting ? "Starting…" : `Confirm & start — notify ${includeIds.size} crew`}
+          <Play className="mr-2 h-4 w-4" />{starting ? "Starting…" : (independentLaunch ? "Confirm & start" : `Confirm & start — notify ${includeIds.size} crew`)}
         </Button>
         <p className="text-[11px] text-muted-foreground text-center">
-          Crew gets a notification on their phones to join, take the quiz, and sign.
+          {independentLaunch ? "Crew can join through the app to take the quiz and sign. No notifications will be sent." : "Crew gets a notification on their phones to join, take the quiz, and sign."}
         </p>
       </div>
 
@@ -523,6 +531,8 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   const [recording, setRecording] = useState(false);
   const [recBusy, setRecBusy] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
+  const [attendeesError, setAttendeesError] = useState(false);
+  const attendeeLoadGeneration = useRef(0);
   const [employees, setEmployees] = useState<{ user_id: string; display_name: string | null }[]>([]);
   const [pickUserId, setPickUserId] = useState<string>("");
   const [signFor, setSignFor] = useState<Attendee | null>(null);
@@ -537,10 +547,21 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   const streamRef = useRef<MediaStream | null>(null);
 
   const loadAttendees = async () => {
-    const { data } = await supabase.from("toolbox_talk_attendees").select("*").eq("session_id", session.id).order("created_at");
-    setAttendees((data as Attendee[]) ?? []);
+    const generation = ++attendeeLoadGeneration.current;
+    // access_token is intentionally not readable by browser roles.
+    const { data, error } = await supabase.from("toolbox_talk_attendees")
+      .select("id,session_id,user_id,attendee_name,signature_data,signed_at,quiz_score,quiz_total,quiz_completed_at")
+      .eq("session_id", session.id).order("created_at");
+    if (generation !== attendeeLoadGeneration.current) return;
+    setAttendeesError(!!error);
+    if (!error) setAttendees((data as Attendee[]) ?? []);
   };
-  useEffect(() => { loadAttendees(); }, [session.id]);
+  useResumeRefresh(loadAttendees);
+  useEffect(() => {
+    setAttendees([]);
+    void loadAttendees();
+    return () => { attendeeLoadGeneration.current += 1; };
+  }, [session.id]);
 
   // Live updates so foreman sees crew sign-offs/quizzes from their own devices
   useEffect(() => {
@@ -576,10 +597,11 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
     setPickUserId("");
     loadAttendees();
     // Notify the newly added attendee
-    supabase.functions.invoke("notify-talk-attendees", { body: { sessionId: session.id } }).catch(() => {});
+    if (!independentLaunch) supabase.functions.invoke("notify-talk-attendees", { body: { sessionId: session.id } }).catch(() => {});
   };
 
   const startRec = async () => {
+    if (independentLaunch) return;
     setRecBusy(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -636,6 +658,7 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
   const completeSession = async () => {
     setCompleting(true);
     try {
+      if (independentLaunch) return;
       const extras = extraEmails
         .split(/[\s,;]+/)
         .map(s => s.trim())
@@ -707,9 +730,9 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
           <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Step 1 · Read & discuss with the crew</p>
             {talk?.image_url && (
-              <img src={talk.image_url} alt={talk.title} loading="lazy" className="w-full rounded-lg border border-border object-cover max-h-72" />
+              <TalkMedia kind="image" value={talk.image_url} title={talk.title} className="w-full rounded-lg border border-border object-cover max-h-72" />
             )}
-            {talk?.video_url && <video src={talk.video_url} controls className="w-full rounded-lg border border-border" />}
+            {talk?.video_url && <TalkMedia kind="video" value={talk.video_url} title={talk.title} className="w-full rounded-lg border border-border" />}
             {(talk?.voice_script || talk?.content) && (
               <ReadAloudButton text={talk?.voice_script || talk?.content || ""} label="Read to the crew" />
             )}
@@ -727,7 +750,7 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
             </div>
             <p className="text-[11px] text-muted-foreground">Capture Q&amp;A for the record. You can skip this and move to the next step.</p>
             {!recording ? (
-              <Button className="w-full" variant="outline" onClick={startRec} disabled={recBusy || !!session.audio_path}>
+              <Button className="w-full" variant="outline" onClick={startRec} disabled={independentLaunch || recBusy || !!session.audio_path}>
                 <Play className="mr-2 h-4 w-4" />{session.audio_path ? "Already recorded" : "Start recording"}
               </Button>
             ) : (
@@ -755,7 +778,7 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
           <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Step 2 · Crew completes quiz &amp; signs</p>
             <p className="text-sm">
-              Each crew member got a notification. They open it on their phone, take the quiz, and sign.
+              {independentLaunch ? "Ask crew members to open the app, take the quiz, and sign. No notifications were sent." : "Each crew member got a notification. They open it on their phone, take the quiz, and sign."}
               You'll see the live count below.
             </p>
 
@@ -780,7 +803,9 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
               size="sm"
               variant="outline"
               className="w-full"
+              disabled={independentLaunch}
               onClick={async () => {
+                if (independentLaunch) return;
                 const { error } = await supabase.functions.invoke("notify-talk-attendees", { body: { sessionId: session.id } });
                 if (error) toast.error(error.message); else toast.success("Reminder sent");
               }}
@@ -805,6 +830,7 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
               </Select>
               <Button onClick={addAttendee} disabled={!pickUserId}><Plus className="h-4 w-4" /></Button>
             </div>
+            {attendeesError && <p role="alert" className="text-sm text-destructive">Could not refresh attendees. Displayed sign-offs may be out of date.</p>}
             <div className="space-y-2">
               {attendees.map((a) => {
                 const quizOk = !hasQuiz || !!a.quiz_completed_at;
@@ -853,7 +879,7 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
           <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Step 3 · Complete &amp; email</p>
             <p className="text-sm">
-              When you complete the talk, a summary is emailed to the office team automatically.
+              {independentLaunch ? "Toolbox completion and summary emails are unavailable during this launch. Attendance and signatures are saved." : "When you complete the talk, a summary is emailed to the office team automatically."}
               Add the customer or anyone else below if you want them on it too.
             </p>
             <div>
@@ -876,7 +902,7 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
             className="w-full"
             size="lg"
             onClick={completeSession}
-            disabled={!everyoneDone || completing}
+            disabled={independentLaunch || !everyoneDone || completing}
           >
             <CheckCircle2 className="mr-2 h-4 w-4" />
             {completing ? "Sending…" : "Complete talk & send email"}
@@ -1056,6 +1082,7 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
   }, []);
 
   const toggle = async () => {
+    if (independentLaunch) return;
     if (playing && audioRef.current) {
       audioRef.current.pause();
       setPlaying(false);
@@ -1122,7 +1149,7 @@ const ReadAloudButton = ({ text, label = "Read aloud" }: { text: string; label?:
   };
 
   return (
-    <Button type="button" variant="secondary" className="w-full" onClick={toggle} disabled={busy || !text}>
+    <Button type="button" variant="secondary" className="w-full" onClick={toggle} disabled={independentLaunch || busy || !text}>
       {playing ? <Pause className="mr-2 h-4 w-4" /> : <Volume2 className="mr-2 h-4 w-4" />}
       {busy ? "Loading voice…" : playing ? "Pause" : label}
     </Button>

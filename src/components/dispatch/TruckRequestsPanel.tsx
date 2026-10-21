@@ -1,3 +1,4 @@
+import { useResumeRefresh } from "@/hooks/useResumeRefresh";
 import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Truck, CheckCircle2, XCircle, Clock } from "lucide-react";
@@ -34,6 +35,10 @@ export const TruckRequestsPanel = () => {
   const [truckNumber, setTruckNumber] = useState("");
   const [driverName, setDriverName] = useState("");
   const [notes, setNotes] = useState("");
+  const [needsReconciliation, setNeedsReconciliation] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(sessionStorage.getItem("truck-request-reconciliation") ?? "[]")); }
+    catch { return new Set(); }
+  });
 
   const load = async () => {
     setLoading(true);
@@ -51,6 +56,8 @@ export const TruckRequestsPanel = () => {
     setLoading(false);
   };
 
+  useResumeRefresh(load);
+
   useEffect(() => {
     load();
     const ch = supabase
@@ -63,6 +70,7 @@ export const TruckRequestsPanel = () => {
   }, []);
 
   const openDecide = (r: TruckRequest, m: "approve" | "decline") => {
+    if (needsReconciliation.has(r.id)) return;
     setActive(r);
     setMode(m);
     setTruckNumber("");
@@ -83,7 +91,7 @@ export const TruckRequestsPanel = () => {
     }
     setBusy(true);
     try {
-      const { error } = await supabase.functions.invoke("decide-truck-request", {
+      const { data, error } = await supabase.functions.invoke("decide-truck-request", {
         body: {
           requestId: active.id,
           decision: mode === "approve" ? "approved" : "declined",
@@ -93,7 +101,17 @@ export const TruckRequestsPanel = () => {
         },
       });
       if (error) throw error;
+      if (data?.reconciliationRequired) {
+        const blocked = new Set(needsReconciliation).add(active.id);
+        setNeedsReconciliation(blocked);
+        try { sessionStorage.setItem("truck-request-reconciliation", JSON.stringify([...blocked])); } catch { /* Keep this session's in-memory guard. */ }
+        toast.error(data.error, { duration: Infinity });
+        close();
+        load();
+        return;
+      }
       toast.success(mode === "approve" ? "Approved — dispatch order created" : "Request declined");
+      if (data?.notification !== "queued") toast.warning("Decision saved, but the requester notification was not queued. Contact the requester directly.");
       close();
       load();
     } catch (e: unknown) {
@@ -136,10 +154,11 @@ export const TruckRequestsPanel = () => {
                 </div>
               </div>
               <div className="flex shrink-0 flex-col gap-1">
-                <Button size="sm" onClick={() => openDecide(r, "approve")}>
+                {needsReconciliation.has(r.id) && <p className="max-w-40 text-xs text-destructive">Dispatch saved; approval needs administrator reconciliation. Do not retry.</p>}
+                <Button size="sm" disabled={needsReconciliation.has(r.id)} onClick={() => openDecide(r, "approve")}>
                   <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Approve
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => openDecide(r, "decline")}>
+                <Button size="sm" variant="ghost" disabled={needsReconciliation.has(r.id)} onClick={() => openDecide(r, "decline")}>
                   <XCircle className="mr-1 h-3.5 w-3.5" /> Decline
                 </Button>
               </div>

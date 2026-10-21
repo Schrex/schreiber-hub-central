@@ -1,6 +1,7 @@
+import { independentLaunch } from "@/lib/launchScope";
 import { errorMessage } from "@/lib/errorMessage";
 import { useState, useEffect } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import logo from "@/assets/schreiber-logo.png";
+
+
 
 const Auth = () => {
   const { session, loading } = useAuth();
@@ -31,6 +34,7 @@ const Auth = () => {
     setBusy(true);
     try {
       if (mode === "signup") {
+        if (independentLaunch) throw new Error("Use an existing account. New-account signup is unavailable.");
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -53,6 +57,7 @@ const Auth = () => {
   };
 
   const handleGoogle = async () => {
+    if (independentLaunch) return;
     setBusy(true);
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
@@ -74,17 +79,21 @@ const Auth = () => {
           <p className="mt-1 text-sm text-muted-foreground">Schreiber Excavating · Field App</p>
         </div>
 
+        <Link className="block text-sm underline" to="/forgot-password">Forgot password?</Link>
         <Button
           type="button"
           variant="outline"
           className="w-full"
           onClick={handleGoogle}
-          disabled={busy || import.meta.env.VITE_LOCAL_BACKEND === "true"}
+          disabled={busy || independentLaunch || import.meta.env.VITE_LOCAL_BACKEND === "true"}
         >
           Continue with Google
         </Button>
         {import.meta.env.VITE_LOCAL_BACKEND === "true" && (
           <p className="text-xs text-muted-foreground">Local test environment. Use a synthetic email account below.</p>
+        )}
+        {independentLaunch && (
+          <p className="text-sm text-muted-foreground">Use your existing email and password. Google and new-account signup are unavailable.</p>
         )}
 
         <div className="relative">
@@ -116,13 +125,13 @@ const Auth = () => {
           </Button>
         </form>
 
-        <button
+        {!independentLaunch && <button
           type="button"
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           className="block w-full text-center text-xs text-muted-foreground hover:text-foreground"
         >
           {mode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
-        </button>
+        </button>}
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index.tsx";
+import PasswordRecovery from "./pages/PasswordRecovery.tsx";
 import Auth from "./pages/Auth.tsx";
 import AdminUsers from "./pages/AdminUsers.tsx";
 import Jobs from "./pages/Jobs.tsx";
@@ -45,6 +46,8 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/forgot-password" element={<PasswordRecovery />} />
+            <Route path="/reset-password" element={<PasswordRecovery update />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
             <Route path="/jobs/:id" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />

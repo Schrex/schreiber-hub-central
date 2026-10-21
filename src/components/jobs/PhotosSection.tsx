@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useResumeRefresh } from "@/hooks/useResumeRefresh";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Trash2, X, Plus, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -223,35 +224,50 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
   const [uploadPct, setUploadPct] = useState(0);
   const [viewer, setViewer] = useState<Photo | null>(null);
 
+  const loadVersion = useRef(0);
   const load = async () => {
+    const version = ++loadVersion.current;
     const { data, error } = await supabase
       .from("job_photos")
       .select("*")
       .eq("job_id", jobId)
       .order("taken_on", { ascending: false })
       .order("created_at", { ascending: false });
+    if (version !== loadVersion.current) return;
     if (error) {
       console.error("Load photos failed", error);
       setLoading(false);
       return;
     }
     const list = (data ?? []) as Photo[];
-    setPhotos(list);
+    const map: Record<string, string> = {};
     if (list.length) {
       const { data: signed } = await supabase.storage
         .from("job-photos")
         .createSignedUrls(list.map((p) => p.file_path), 3600);
-      const map: Record<string, string> = {};
+      if (version !== loadVersion.current) return;
       (signed ?? []).forEach((s, i) => {
         if (s.signedUrl) map[list[i].file_path] = s.signedUrl;
       });
-      setUrls(map);
     }
+    setPhotos(list);
+    setUrls(map);
     setLoading(false);
   };
 
+  useResumeRefresh(load);
+  const invalidateLoads = () => { ++loadVersion.current; };
+
   useEffect(() => {
     load();
+    // Signed photo URLs expire after an hour, including while the gallery stays open.
+    const renewal = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 50 * 60 * 1000);
+    return () => {
+      invalidateLoads(); // Ignore in-flight results from the prior job or unmounted gallery.
+      window.clearInterval(renewal);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
@@ -408,7 +424,7 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       />
                     ) : (
-                      <div className="h-full w-full animate-pulse bg-muted" />
+                      <span className="px-2 text-xs text-muted-foreground">Photo unavailable. Reload to retry.</span>
                     )}
                   </button>
                 ))}
@@ -430,6 +446,7 @@ export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) 
               >
                 <X className="h-4 w-4" />
               </button>
+              {!urls[viewer.file_path] && <p className="p-8 text-sm text-muted-foreground">Photo unavailable. Check your access or reload to retry.</p>}
               {urls[viewer.file_path] && (
                 <img
                   src={urls[viewer.file_path]}
