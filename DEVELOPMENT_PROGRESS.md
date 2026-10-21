@@ -22,9 +22,14 @@ denials and service enqueue/read/visibility/DLQ/delete. Dedicated synthetic queu
 were rolled back. Private before/after fingerprints confirm existing transactional
 queues, logs and worker state were unchanged. Hosted worker still returns missing/
 invalid credential 401, anon 403 and authorized service 200 delivery_disabled.
-The valid authenticated-browser worker check remains open: direct fetch is blocked
-by CORS; automatic approval review rejected a temporary credential-forwarding local
-relay pending explicit user approval. No relay was started or credential extracted.
+After explicit user approval of the temporary loopback relay, the existing signed-in
+user (Auth role authenticated, app role admin) received worker HTTP 403. The gateway
+validated the token; the handler denied it. Private before/after fingerprints prove
+transactional queues, logs and worker state unchanged. Relay forwarded one request
+to the fixed destination, logged only status, exited successfully, and its port was
+confirmed closed. No token was logged or saved; temporary diagnostic code removed.
+This closes the authenticated-user worker-denial gate. Screenshot evidence is at
+/private/tmp/schreiber-worker-denial-passed.png (temporary local artifact).
 
 Hosted unsubscribe proof passed with one unique example.invalid address: GET made
 no suppression, POST suppressed and consumed the token, repeated POST stayed
