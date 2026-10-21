@@ -57,7 +57,7 @@ test('private job photo and document open through signed URLs and survive refres
     await page.screenshot({ path: testInfo.outputPath('private-photo-after-resume.png') });
 
     const popupPromise = context.waitForEvent('page');
-    await page.getByRole('button', { name: contractName, exact: false }).click();
+    await page.getByRole('button', { name: contractName, exact: true }).click();
     const document = await popupPromise;
     await document.waitForLoadState('domcontentloaded');
     const documentUrl = new URL(document.url());

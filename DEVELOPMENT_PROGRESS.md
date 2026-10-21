@@ -3,6 +3,19 @@
 Updated: 2026-10-21. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## PR10 integration verification — 2026-10-21
+
+User explicitly authorized updating and merging PR10 into develop, not main.
+Merged origin/develop97693d5 into codex/export-capture, preserving PR12's unified
+job Files implementation. The only merge conflict was DEVELOPMENT_PROGRESS.md;
+both histories retained. Tightened the private-file browser contract selector to
+avoid matching the new Files panel's Open/Download buttons. No runtime behavior
+changed to resolve integration. Full verification passed:153 unit tests,5 browser
+workflows, app typecheck/build, six backend checks, lint and Edge static checks.
+Added-line credential-pattern scan passed; production migration history unchanged.
+This records local pre-push evidence. Remote checks and merge status must be verified
+separately. Build367ba33 is superseded for the next preview; rebuild merged develop.
+
 ## Independent preview build prepared — 2026-10-21
 
 Built clean367ba33 for schreiber-hub using isolated builder and destination anon key
@@ -1738,6 +1751,51 @@ state must be preserved. Synthetic staging stays separate from real-data rehears
 
 No application code or migrations changed in this preparation. Hosted checks were
 inspected; local app/backend/lint/edge/browser suites were not rerun for docs only.
+
+## Unified job Files — 2026-10-19
+
+Implemented on `codex/job-files`, branched from `origin/develop` (`936bef8`) in the separate
+managed job-files worktree. The migration-preparation changes are not included.
+No production branch, database migration, storage policy or hosted setting changed.
+
+Job detail now includes a Files panel near the top, aggregating plans, photos,
+permit attachments, SWPPP reports, submittals and the contract. Existing specialized
+sections remain available for uploads and workflow changes. Estimates and external
+dig-ticket links are not added. Contracts remain office/admin-only in the UI;
+submittals remain foreman/office/admin. Effective preview role controls the new
+queries and display; keyed state prevents old role/job results and signed URLs from
+being shown after navigation. These UI controls do not strengthen existing RLS.
+
+Files retain source labels and plan version/current state. Missing attachments are
+omitted; loading, empty, partial-source failure, refresh and access failure states
+are distinct. Open and download create five-minute signed URLs on demand; downloads
+request attachment filenames. No bucket is made public and no signed URLs are stored.
+
+Verification with Bun 1.3.14 and Node 26.8.2:
+
+- `bun install --frozen-lockfile` passes. Added only the missing development peer
+  `@testing-library/dom` for the existing React Testing Library; a clean install
+  otherwise could not load the new UI tests. No application runtime dependency added.
+- `verify:app`: typecheck, 27 Vitest tests in five files, and build pass. Eight new
+  focused tests cover permissions/query scoping, version retention, partial failure,
+  private URL download semantics, role/job stale data and stale signed-URL rejection.
+- `verify:lint`: passes with 30 existing warnings, zero errors.
+- `verify:browser`: both tests pass, including the new synthetic Files scenario
+  (employee signed open/download, foreman visibility/mobile layout and admin contract
+  visibility) and existing time-off regression. Initial fixture used an invalid
+  plan enum; corrected to the existing `civil` category before the passing run.
+- `verify:backend`: schema audit, smoke, permissions and HR checks pass. No reset.
+- Browser cleanup operations all succeeded; separate local aggregate checks confirm
+  zero remaining Files-test jobs or users. Synthetic storage fixture removals were
+  checked by the browser test. Outbound browser requests were restricted to loopback.
+- Mobile screenshot at Playwright's ignored output path was visually inspected at
+  390px width; rows and action buttons fit without horizontal overflow.
+
+Build chunk-size and stale Browserslist warnings remain. Edge verification was not
+rerun because this feature changes no Edge source. No live provider, employee data,
+production release or production-parity claim is part of these tests. The Files UI
+preserves existing access behavior; contract storage policies remain broader than
+its UI visibility and are a separate pre-existing security-review concern.
 
 ## Current milestone
 
