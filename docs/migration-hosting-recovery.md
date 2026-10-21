@@ -55,7 +55,9 @@ proves hosted security, live key validity, backend independence, or workflow suc
 1. Record the company-owned hosting account, authorized operator and existing plan.
    Permanent-backend choice is confirmed. User reports GoDaddy access and a new
    Cloudflare account. User confirmed the current Lovable hostname as
-   app.schreiberexcavating.com; account access remains unverified. Cloudflare Pages is a recommendation;
+   app.schreiberexcavating.com. Signed-in Cloudflare access is verified; two existing
+   Workers and no app Pages project were listed. Zero Trust setup is still needed
+   before Access-protected hosting. Cloudflare Pages is a recommendation;
    do not buy a plan or create hosting until authorized. Prefer an explicit artifact
    upload after review; no automatic main-branch release or implicit deploy-all.
 2. Establish access protection **before uploading the real-backend build**. If the

@@ -3,6 +3,24 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Cloudflare/Postmark account inspection — 2026-10-20
+
+Read-only signed-in browser inspection confirms Cloudflare account access, two
+existing Workers and no app Pages project. The Pages direct-upload creation form
+is available. Cloudflare reports Zero Trust setup is needed before Access-protected
+hosting; no project, subscription, Access policy or DNS record was created/changed.
+Postmark account is approved/live; hub-rehearsal has the outbound transactional
+stream. mail.schrex.com shows DKIM and return-path verified. Existing server-token
+rotation remains unverified; token values were not read. User was handed off to
+privately generate a replacement, retaining the old token until SMTP consumers
+are checked. No email sent or credential changed by the agent.
+
+Destination secret-name inventory confirms POSTMARK_SERVER_TOKEN, POSTMARK_FROM,
+POSTMARK_MESSAGE_STREAM, EMAIL_PROVIDER, EMAIL_DELIVERY_ENABLED, EMAIL_DELIVERY_MODE
+and EMAIL_ALLOWED_RECIPIENTS are absent. Values/digests were not printed. Auth SMTP
+is separate from these function secrets. Restricted preview setup, token install,
+reviewed backend deployment and production cutover remain outstanding.
+
 ## Supabase CLI access verified — 2026-10-20
 
 After the user completed private login, the pinned CLI successfully listed functions
