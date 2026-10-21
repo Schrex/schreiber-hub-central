@@ -49,8 +49,8 @@ Decisions/access update — October 20, 2026:
    backend for now. No additional copy is planned. This selects the destination;
    it does not authorize production cutover or notification activation.
 2. User reports GoDaddy access and a newly created Cloudflare account. Account
-   access/ownership and plan are not yet inspected. Exact domain spelling is pending
-   confirmation because the user-entered spelling differs from the recorded
+   access/ownership and plan are not yet inspected. User confirmed the current
+   Lovable app URL is https://app.schreiberexcavating.com/; the parent domain is
    schreiberexcavating.com. No DNS or hosting changes have occurred. Preserve email
    DNS/MX records; paid provisioning still requires separate authorization.
 3. Read-only CLI function inventory attempt failed because login is required.

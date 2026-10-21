@@ -6,8 +6,9 @@ verification or change. A successful local check never marks a production step d
 ## Permanent destination selected; account access pending — 2026-10-20
 
 User confirmed keeping hub-rehearsal as the permanent backend for now and reports
-GoDaddy access plus a newly created Cloudflare account. Exact domain spelling
-requires confirmation; account ownership/plan have not been inspected. Read-only
+GoDaddy access plus a newly created Cloudflare account. User subsequently confirmed
+https://app.schreiberexcavating.com/ as the current Lovable address. Account
+ownership/plan have not been inspected. Read-only
 Supabase CLI function-list attempt against the explicit destination failed because
 login is required. Postmark token rotation is unverified (user unsure). No secrets
 requested or printed; no hosted changes, DNS update, deployment or cutover.
