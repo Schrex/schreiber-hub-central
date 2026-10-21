@@ -76,8 +76,9 @@ async function processQueue(req: Request): Promise<Response> {
   const apiKey = Deno.env.get(provider === 'postmark' ? 'POSTMARK_SERVER_TOKEN' : 'LOVABLE_API_KEY')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const workerAuthToken = Deno.env.get('EMAIL_WORKER_AUTH_TOKEN') ?? supabaseServiceKey
 
-  if (!['lovable', 'postmark'].includes(provider) || !apiKey || !supabaseUrl || !supabaseServiceKey) {
+  if (!['lovable', 'postmark'].includes(provider) || !apiKey || !supabaseUrl || !supabaseServiceKey || !workerAuthToken) {
     console.error('Missing required environment variables')
     return new Response(
       JSON.stringify({ error: 'Server configuration error' }),
@@ -93,10 +94,11 @@ async function processQueue(req: Request): Promise<Response> {
     )
   }
 
-  // Authenticate the actual configured secret, never trust unsigned JWT claims.
-  // This also remains safe when gateway JWT verification is disabled.
+  // The dispatcher credential can differ from the platform-injected DB key.
+  // An explicit override replaces the fallback; never trust unsigned JWT claims.
+  // Keep verify_jwt=true and provision a valid project service-role JWT for callers.
   const token = authHeader.slice('Bearer '.length).trim()
-  if (token !== supabaseServiceKey) {
+  if (token !== workerAuthToken) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
   }
 

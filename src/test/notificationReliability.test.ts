@@ -63,6 +63,24 @@ describe('queue worker reliability boundaries', () => {
     expect((await h.request(token)).status).toBe(token ? 403 : 401);
     expect(h.operations).toEqual([]); expect(h.createClient).not.toHaveBeenCalled(); expect(h.deliver).not.toHaveBeenCalled();
   });
+  it('accepts only the explicit dispatcher credential when runtime DB key differs', async () => {
+    const h = harness('process-email-queue', normal, { EMAIL_WORKER_AUTH_TOKEN: 'synthetic-dispatcher' });
+    expect((await h.request('synthetic-dispatcher')).status).toBe(200);
+    expect(h.createClient).toHaveBeenCalledWith('https://example.test', 'synthetic-service');
+    expect(h.deliver).toHaveBeenCalledTimes(1);
+  });
+  it.each(['', 'invalid', 'synthetic-anon', 'ordinary-user-jwt', 'x.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.forged', 'synthetic-service'])('explicit dispatcher configuration rejects %s without database effects', async token => {
+      const h = harness('process-email-queue', normal, { EMAIL_WORKER_AUTH_TOKEN: 'synthetic-dispatcher' });
+      expect((await h.request(token)).status).toBe(token ? 403 : 401);
+      expect(h.createClient).not.toHaveBeenCalled();
+      expect(h.operations).toEqual([]);
+      expect(h.deliver).not.toHaveBeenCalled();
+    });
+  it('fails closed on an empty explicit dispatcher credential rather than falling back', async () => {
+    const h = harness('process-email-queue', normal, { EMAIL_WORKER_AUTH_TOKEN: '' });
+    expect((await h.request()).status).toBe(500);
+    expect(h.createClient).not.toHaveBeenCalled();
+  });
   it('delivery disabled has no queue or log effects', async () => {
     const h = harness('process-email-queue', normal, { EMAIL_DELIVERY_ENABLED: 'false' });
     expect(await (await h.request()).json()).toMatchObject({ skipped: true });
