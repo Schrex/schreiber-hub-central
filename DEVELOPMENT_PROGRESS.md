@@ -3,6 +3,14 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Supabase CLI access verified — 2026-10-20
+
+After the user completed private login, the pinned CLI successfully listed functions
+on explicit destination acgqjjbrnkmeazswdnzp. The returned function list was empty.
+This confirms CLI access and no deployed functions at check time; no secrets were
+printed, no deployment was performed and no hosted configuration changed. Postmark
+rotation and company hosting-account access remain unverified.
+
 ## Permanent destination selected; account access pending — 2026-10-20
 
 User confirmed keeping hub-rehearsal as the permanent backend for now and reports

@@ -53,8 +53,8 @@ Decisions/access update — October 20, 2026:
    Lovable app URL is https://app.schreiberexcavating.com/; the parent domain is
    schreiberexcavating.com. No DNS or hosting changes have occurred. Preserve email
    DNS/MX records; paid provisioning still requires separate authorization.
-3. Read-only CLI function inventory attempt failed because login is required.
-   Complete private `npx --yes supabase@2.121.0 login` on this Mac. User is unsure
+3. Private CLI login is now complete: the pinned CLI successfully returned an empty
+   function list for the explicit destination on October 20. User is unsure
    whether the exposed Postmark server token was rotated; treat rotation as
    unverified. Inspect actual consumers before private replacement. SMTP stream
    credentials and server API token are distinct; retest Auth SMTP if affected.
