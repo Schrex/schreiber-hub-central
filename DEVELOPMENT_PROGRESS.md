@@ -3,6 +3,59 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Destination service permissions and email safeguards — 2026-10-20
+
+User authorized backend permissions work and one fabricated email to
+sumanth@schrex.com. No message has been sent or enqueued. Delivery remains disabled;
+the automatic dispatcher has not been installed or activated.
+
+Live metadata audit found service_role missing public schema USAGE, all four queue
+wrapper EXECUTE grants and email table access. Applied the reviewed queue grant
+candidate plus destination_email_service_access and destination_workflow_service_access
+candidates to explicit destination acgqjjbrnkmeazswdnzp in one transaction. These grant
+only the operations required by the deployed handlers; no browser privileges,
+DELETE/TRUNCATE, schema CREATE or default privileges were added. Production migration
+history and source project remain untouched. Candidate files stay outside normal replay.
+
+Hosted rollback-only verification passed eight anon/authenticated queue-function
+denials and service enqueue/read/visibility/DLQ/delete. Dedicated synthetic queues
+were rolled back. Private before/after fingerprints confirm existing transactional
+queues, logs and worker state were unchanged. Hosted worker still returns missing/
+invalid credential 401, anon 403 and authorized service 200 delivery_disabled.
+The valid authenticated-browser worker check remains open: direct fetch is blocked
+by CORS; automatic approval review rejected a temporary credential-forwarding local
+relay pending explicit user approval. No relay was started or credential extracted.
+
+Hosted unsubscribe proof passed with one unique example.invalid address: GET made
+no suppression, POST suppressed and consumed the token, repeated POST stayed
+idempotent, and GET then reported already_unsubscribed. One synthetic suppression
+and token are retained as evidence. No real address was unsubscribed.
+
+Postmark SubscriptionChange handler deployed with independent fail-closed shared
+secret authentication, server/stream validation and idempotent suppression. Private
+operator helper scripts/rehearsal-postmark-webhook.py is ready to install its dedicated
+secret, test unauthorized denial and synthetic insert/replay, create the provider
+webhook once and verify it. Provider configuration is pending private operator token
+entry; no live bounce/complaint coverage is claimed yet. Uncertain attempts are not
+automatically retried. Existing Postmark token retirement remains separate.
+
+Aggregate destination recipient audit: safety reports target 7 distinct inboxes;
+time-off approvals target 8. Office dispatch setting is absent (code fallback applies);
+safety inspection setting exists. Both transactional queues are empty. Private
+owner review of eventual business recipients remains pending. Single-message proof
+will use only the approved inbox and must recheck empty queue/off switch first.
+
+Inactive dispatcher candidate passed local rollback-only creation and duplicate/
+missing-marker rejection; no HTTP call or persisted job. It remains uninstalled.
+Absent-extension rejection was not exercised by removing shared extensions.
+
+Verification: 127 unit tests, build, all six synthetic backend checks, lint (0 errors,
+30 existing warnings), 18 Edge entries and browser time-off passed. Initial app
+typecheck exposed Object.hasOwn target-library incompatibility; fixed with
+hasOwnProperty.call and app typecheck plus 24 focused suppression tests passed.
+Nine private-helper mock checks passed. These checks do not prove hosted workflow
+acceptance, provider webhook delivery or inbox receipt; all remain explicit gates.
+
 ## Permanent project display name updated — 2026-10-20
 
 At the user's request, renamed the Supabase project display name from hub-rehearsal

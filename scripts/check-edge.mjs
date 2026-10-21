@@ -6,6 +6,7 @@ import { root } from './local-backend.mjs';
 const functions = [
   "process-email-queue",
   "handle-email-unsubscribe",
+  "handle-email-suppression",
   "complete-safety-talk",
   "decide-truck-request",
   "extract-foreman-brief",
