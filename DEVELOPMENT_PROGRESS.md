@@ -3,6 +3,19 @@
 Updated: 2026-10-21. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Independent preview build prepared — 2026-10-21
+
+Built clean367ba33 for schreiber-hub using isolated builder and destination anon key
+passed in memory. No deployment or hosted change. Packaged12 files in
+ dist/schreiber-hub-preview-367ba33.zip; SHA256 and per-file manifest recorded in
+ docs/verification/preview-build-367ba33.md. Static scan found only destination anon
+JWT; no privileged-token/private-key/database-URL/source-map patterns. Known source
+media classifier and external asset references are documented rather than hidden.
+All verification groups passed (145 tests,4 browser workflows,0 lint errors/30warnings)
+and both independent-builder guard tests passed. Packaged sign-in/recovery UI checked
+without login or sending email. Draft PR10 is seven commits behind this artifact;
+remote integration approval remains pending. Main, DNS and automatic email unchanged.
+
 ## Parallel hosted file and refresh acceptance review — 2026-10-21
 
 Two user-requested agents completed a fresh hosted catalog audit and local acceptance
