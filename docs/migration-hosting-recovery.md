@@ -15,8 +15,8 @@ python3 scripts/independent-build.py \
   --url https://acgqjjbrnkmeazswdnzp.supabase.co
 ```
 
-That example names the existing restored destination; it does not approve making
-it production. The prompt accepts its legacy anon key, passed through stdin to the
+The user selected this existing destination as the permanent backend for now on
+October 20. Production cutover remains a separate approval. The prompt accepts its legacy anon key, passed through stdin to the
 builder. Do not enter a service-role key, signing secret or Postmark token. The
 guard rejects wrong-project/privileged/expired JWT claims, opaque keys, mismatched
 URLs and the source project. It does not cryptographically verify the key;
@@ -53,7 +53,8 @@ proves hosted security, live key validity, backend independence, or workflow suc
 ## Restricted preview: operator gates, not performed setup
 
 1. Record the company-owned hosting account, authorized operator and existing plan.
-   Confirm permanent-backend choice separately. Cloudflare Pages is a recommendation;
+   Permanent-backend choice is confirmed. User reports GoDaddy access and a new
+   Cloudflare account; exact domain and account access remain unverified. Cloudflare Pages is a recommendation;
    do not buy a plan or create hosting until authorized. Prefer an explicit artifact
    upload after review; no automatic main-branch release or implicit deploy-all.
 2. Establish access protection **before uploading the real-backend build**. If the

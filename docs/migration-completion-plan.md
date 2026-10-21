@@ -43,21 +43,23 @@ build while their backend setup is unavailable; existing contacts remain usable.
 Do not promise the October 21 onboarding until that work is separately resumed and
 passed. No new invitation feature is required merely to finish this scoped launch.
 
-Three decisions/access items must be resolved early, not on cutover night:
+Decisions/access update — October 20, 2026:
 
-1. Confirm whether the existing acgqjjbrnkmeazswdnzp project becomes the production
-   backend. Recommended to avoid another copy. If a separate production project is
-   required, add an explicit restore/configuration/acceptance step using the retained
-   baseline; do not silently point production at rehearsal.
-2. Identify a company-owned frontend hosting account, its operator and DNS access
-   for app.schreiberexcavating.com. Use an existing suitable plan; paid provisioning
-   needs separate authorization. Preserve company email DNS/MX records.
-3. Complete private Supabase CLI login. Privately rotate the Postmark server token
-   exposed earlier and update any actual consumers; do not assume rotation is done.
-   SMTP stream credentials and the server API token are distinct configurations.
-   Determine which consumers use each token before rotation, then retest Auth SMTP
-   if its credential was affected. Confirm the existing private archive is readable
-   now, before making further destination changes; final reconciliation follows later.
+1. User confirmed keeping acgqjjbrnkmeazswdnzp (hub-rehearsal) as the permanent
+   backend for now. No additional copy is planned. This selects the destination;
+   it does not authorize production cutover or notification activation.
+2. User reports GoDaddy access and a newly created Cloudflare account. Account
+   access/ownership and plan are not yet inspected. Exact domain spelling is pending
+   confirmation because the user-entered spelling differs from the recorded
+   schreiberexcavating.com. No DNS or hosting changes have occurred. Preserve email
+   DNS/MX records; paid provisioning still requires separate authorization.
+3. Read-only CLI function inventory attempt failed because login is required.
+   Complete private `npx --yes supabase@2.121.0 login` on this Mac. User is unsure
+   whether the exposed Postmark server token was rotated; treat rotation as
+   unverified. Inspect actual consumers before private replacement. SMTP stream
+   credentials and server API token are distinct; retest Auth SMTP if affected.
+   Private archive integrity was rechecked successfully during the implementation
+   checkpoint. Final reconciliation remains a later release gate.
 
 ## Ordered execution
 
