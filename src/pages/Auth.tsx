@@ -1,6 +1,6 @@
 import { errorMessage } from "@/lib/errorMessage";
 import { useState, useEffect } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
@@ -78,6 +78,7 @@ const Auth = () => {
           <p className="mt-1 text-sm text-muted-foreground">Schreiber Excavating · Field App</p>
         </div>
 
+        <Link className="block text-sm underline" to="/forgot-password">Forgot password?</Link>
         <Button
           type="button"
           variant="outline"

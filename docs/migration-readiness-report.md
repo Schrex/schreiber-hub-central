@@ -1,5 +1,18 @@
 # Migration readiness — 2026-10-20
 
+**Current release checklist:** [migration completion plan](migration-completion-plan.md).
+The detailed report below retains historical evidence, not current task ordering.
+Auth SMTP/code recovery is user-confirmed; app mail remains inactive, fresh queues
+exist, service RPC grants and function deployment are pending. No production cutover.
+
+
+**Current launch plan (2026-10-20):** see [launch scope](migration-launch-scope.md).
+Use the verified restored baseline: the user reports no source use/changes for
+three months. No automatic repeat export/import or change capture. Six essential
+workflows are prioritized; AI/SMS/speech/celebrations are deferred. Older snapshot
+and all-feature gates below are historical. The approved rehearsal-only admin grant
+also supersedes earlier employee-only descriptions. Full app cutover remains pending.
+
 Subsequent hosted employee acceptance: one job photo rendered from a signed
 rehearsal Storage URL and its browser download matched the archived size/SHA256.
 A job-plan PDF tab opened on the rehearsal host (not a complete PDF byte check).

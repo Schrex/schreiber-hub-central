@@ -1,3 +1,4 @@
+import { createPostmarkAdapter } from '../_shared/postmark-email.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -52,9 +53,11 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
   }
 }
 
+const queueClient = (url: string, key: string) => createClient(url, key)
+
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof queueClient>,
   queue: string,
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
@@ -79,11 +82,12 @@ async function moveToDlq(
 }
 
 Deno.serve(async (req) => {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  const provider = Deno.env.get('EMAIL_PROVIDER') ?? 'lovable'
+  const apiKey = Deno.env.get(provider === 'postmark' ? 'POSTMARK_SERVER_TOKEN' : 'LOVABLE_API_KEY')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-  if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
+  if (!['lovable', 'postmark'].includes(provider) || !apiKey || !supabaseUrl || !supabaseServiceKey) {
     console.error('Missing required environment variables')
     return new Response(
       JSON.stringify({ error: 'Server configuration error' }),
@@ -111,6 +115,20 @@ Deno.serve(async (req) => {
     )
   }
 
+  // No queue claims or log writes while delivery is disabled.
+  if (provider === 'postmark' && Deno.env.get('EMAIL_DELIVERY_ENABLED') !== 'true') {
+    return new Response(JSON.stringify({ skipped: true, reason: 'delivery_disabled' }),
+      { headers: { 'Content-Type': 'application/json' } })
+  }
+  const postmark = provider === 'postmark' ? createPostmarkAdapter({
+    serverToken: apiKey,
+    messageStream: Deno.env.get('POSTMARK_MESSAGE_STREAM') ?? 'outbound',
+    unsubscribeEndpoint: `${supabaseUrl}/functions/v1/handle-email-unsubscribe`,
+  }, fetch) : null
+  const postmarkFrom = Deno.env.get('POSTMARK_FROM')
+  if (postmark && !postmarkFrom) {
+    return new Response(JSON.stringify({ error: 'Postmark sender required' }), { status: 500 })
+  }
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   // 1. Check rate-limit cooldown and read queue config
@@ -136,7 +154,7 @@ Deno.serve(async (req) => {
   let totalProcessed = 0
 
   // 2. Process auth_emails first (priority), then transactional_emails
-  for (const queue of ['auth_emails', 'transactional_emails']) {
+  for (const queue of (postmark ? ['transactional_emails'] : ['auth_emails', 'transactional_emails'])) {
     const { data: messages, error: readError } = await supabase.rpc('read_email_batch', {
       queue_name: queue,
       batch_size: batchSize,
@@ -156,12 +174,12 @@ Deno.serve(async (req) => {
     const messageIds = Array.from(
       new Set(
         messages
-          .map((msg) =>
+          .map((msg: { message?: { message_id?: unknown } }) =>
             msg?.message?.message_id && typeof msg.message.message_id === 'string'
               ? msg.message.message_id
               : null
           )
-          .filter((id): id is string => Boolean(id))
+          .filter((id: unknown): id is string => Boolean(id))
       )
     )
     const failedAttemptsByMessageId = new Map<string, number>()
@@ -249,7 +267,41 @@ Deno.serve(async (req) => {
       }
 
       try {
-        await sendLovableEmail(
+        // Recheck local suppression at delivery time, including after enqueue.
+        if (postmark) {
+          const { data: suppressed, error: suppressionError } = await supabase
+            .from('suppressed_emails').select('email').eq('email', payload.to.toLowerCase()).maybeSingle()
+          if (suppressionError) {
+            return new Response(JSON.stringify({ processed: totalProcessed, stopped: 'suppression_check_failed' }), { status: 503 })
+          }
+          if (suppressed) {
+            await moveToDlq(supabase, queue, msg, 'Recipient suppressed')
+            continue
+          }
+        }
+        if (postmark) {
+          const outcome = await postmark.deliver({
+            ...payload,
+            from: postmarkFrom!,
+          })
+          if (outcome.kind === 'configuration_error') {
+            // Stop without discarding messages; repair provider settings first.
+            return new Response(JSON.stringify({ processed: totalProcessed, stopped: 'provider_configuration' }), { status: 503 })
+          }
+          if (outcome.kind === 'suppressed' || outcome.kind === 'permanent_rejection') {
+            await moveToDlq(supabase, queue, msg, `Postmark ${outcome.kind}`)
+            continue
+          }
+          if (outcome.kind === 'rate_limited') {
+            throw Object.assign(new Error('Postmark rate limited'), {
+              status: 429, retryAfterSeconds: outcome.retryAfterSeconds,
+            })
+          }
+          if (outcome.kind === 'ambiguous') {
+            // Retain existing bounded retry policy. A lost receipt can cause duplicates.
+            throw new Error('Postmark acceptance uncertain; retry may duplicate delivery')
+          }
+        } else await sendLovableEmail(
           {
             run_id: payload.run_id,
             to: payload.to,

@@ -1,5 +1,12 @@
 # Migration audit — Schreiber field app off Lovable
 
+**Current launch plan (2026-10-20):** see [launch scope](migration-launch-scope.md).
+Use the verified restored baseline: the user reports no source use/changes for
+three months. No automatic repeat export/import or change capture. Six essential
+workflows are prioritized; AI/SMS/speech/celebrations are deferred. Older snapshot
+and all-feature gates below are historical. The approved rehearsal-only admin grant
+also supersedes earlier employee-only descriptions. Full app cutover remains pending.
+
 Read-only audit of GitHub `main` at `5a81add` ("Lovable update"), compared with `origin/develop` at `936bef8`. Updated with authorized read-only Lovable dashboard inspection and SELECT-only catalog/count queries on 2026-10-19. No infrastructure, settings, application records, or scheduler history were changed; no full export was started. No secret values or employee rows are recorded here.
 
 **Live primary app (verified in dashboard):** https://app.schreiberexcavating.com

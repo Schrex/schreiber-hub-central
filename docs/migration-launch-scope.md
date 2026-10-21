@@ -1,90 +1,98 @@
-# Migration launch scope and readiness
+# Independent launch scope — 2026-10-20
 
-Prepared 2026-10-19 on `codex/migration-audit-live-findings`. This document turns the
-[integration map](migration-integration-map.md) into an implementation sequence.
-It records options, not approval to drop features or release production. No
-providers, settings, credentials, deployed functions or source records were changed.
+**Current execution checklist:** [migration completion plan](migration-completion-plan.md).
+This scope document's earlier implementation notes are historical. On October 20,
+the Postmark adapter/worker path was added locally and tested; Auth SMTP/code recovery
+worked with user confirmation; fresh destination email queues were installed empty.
+Functions are not yet deployed and app mail is inactive. See the completion plan for
+remaining release gates and the fresh-agent review.
 
-## Preserve the existing app capabilities
 
-The plan is to keep the features people already use: signing in with Google,
-generating safety talks and extracting information from documents with AI, sending
-safety-talk text messages, reading talks aloud, and turning recordings into text.
-Password login and application emails remain part of the same preservation baseline.
-**All of these features stay in scope. No feature removal or deferral is authorized.**
-The user does not need to make a feature choice for preparation to continue.
+This supersedes the earlier all-features launch plan. The user selected login,
+jobs, files, time off, truck requests and safety reports as essentials. AI, SMS,
+speech and celebrations email are deferred; preserve their records and files.
+Google is not a launch prerequisite: existing-account password login and recovery
+must work independently. Deferred entry points still need explicit UI/backend
+controls; they are not yet disabled throughout the application.
 
-Moving hosting does not automatically replace the services behind those features.
-We can prepare the code and synthetic tests now; company account owners, provider
-access and any spending decisions still need to be established. This plan authorizes
-neither paid infrastructure nor provider usage. The deferral column below is only a
-contingency if the user explicitly requests a scope change later.
+## Data baseline
 
-| Capability | Readiness and dependencies | Work to preserve it at launch | Only if later explicitly deferred | Owner/access decision |
-| --- | --- | --- | --- | --- |
-| Existing-user password login and account/role continuity | Required preservation baseline; private database export and copied-user login are unproved. Source Auth mail configuration is incomplete. | Restore compatible users/hashes/identities and application relationships, configure redirects and policy, privately prove a permitted copied-account login. Synthetic signup/reset/admin-create tests remain separate. | Cannot silently drop account continuity. Any alternate account recovery approach needs a specific user decision and migration plan. | Destination Auth admin; full export; authorized login tester and secure credential handling. |
-| Auth and transactional email | Core workflow readiness unproved. Lovable email worker processes Auth and transactional queues; actual Auth enqueue hook is still unknown. | Select independent transport, configure verified sender and Auth delivery, preserve suppression/unsubscribe and send state, prove synthetic deliveries/retries. Test each used template class. | Requires explicit acceptance of every affected workflow and a defined alternative; disabling transport alone can strand confirmations/resets and queued business messages. | Company mail account and DNS owner; provider choice; actual Auth hook/SMTP configuration. |
-| Google sign-in | **In scope; readiness unproved.** Lovable broker in `src/integrations/lovable/index.ts`; destination client/origins and continuity not proved. | Replace with independent OAuth implementation; configure company Google client; synthetic login and redirect test, followed by private continuity assessment. | Show the method as unavailable or remove its entry point consistently; ensure password login works for the affected users. Do not assume all users know a password merely because source identities were recorded as email. | Company Google Cloud owner, OAuth client and approved origins. |
-| AI generation/extraction | **In scope; readiness unproved.** Five functions use Lovable AI; toolbox generation includes text and image. | Choose independent provider/model contract; adapt five functions and image response handling; test authorization, malformed responses, timeouts and fabricated inputs. | Disable each generation/extraction action clearly while preserving existing generated talks, briefs, scopes, images and documents. Verify manual workflows remain usable; no silent blank results. | Provider/account owner, model/data-handling choice and usage budget. |
-| Safety-talk SMS | **In scope; readiness unproved.** `notify-talk-attendees` depends on Lovable Twilio connector and a preview default URL. | Adapt transport to owned SMS account/number, set app base URL, test authorized delivery via stub then approved test number; verify error/retry behavior. | Disable the SMS path visibly while preserving any in-app notification behavior; check caller messaging does not claim successful SMS. Existing records must remain. | SMS account/number owner, permitted test recipient and sender configuration. |
-| Speech playback (TTS) | **In scope; readiness unproved.** Deepgram primary, ElevenLabs fallback in `speak-toolbox-talk`. | Retain direct integrations with independent keys and supported voice/output settings; test fallback, error display and fabricated text. | Disable playback action with clear status; retain readable talk text and existing media. Do not equate STT readiness with TTS readiness. | Provider account owner and permitted usage. |
-| Speech transcription (STT) | **In scope; readiness unproved.** Direct ElevenLabs integration in `transcribe-toolbox-talk`. | Configure independent key; test fabricated recording, authorization, transcript result and provider failure. | Disable transcription entry points and establish the intended manual text workflow; preserve stored recordings/transcripts. | Provider account owner and permitted usage. |
+The user reports the source app has been unused for three months with no data
+changes. Use the already restored and verified hub-rehearsal copy as the migration
+baseline. This is a user-reported source inactivity claim, not a fresh source query.
+Do not repeat the full export/import automatically and do not build change capture.
+Keep the original private exports recoverable. Final reconciliation must distinguish
+the approved rehearsal password/admin-role changes and reviewed database fixes from
+unintended changes. If new source writes are discovered, resolve them before cutover.
 
-The full [integration matrix](migration-integration-map.md#replacement-and-verification-matrix)
-also covers inbound SWPPP, schedules, Realtime, frontend hosting and external
-services. They remain migration gates alongside the capabilities above.
-Do not assume email approval also covers SMS, AI, speech or inbound routing.
+## Essential workflow dependency map
 
-## Implementation sequence
+Inspected current branch code on 2026-10-20. These are repository dependencies,
+not a claim that functions have been deployed or that hosted workflows pass.
 
-1. **Proceed with the preservation baseline.** Keep Google, AI, SMS, speech playback
-   and transcription in scope alongside core Auth/email. Identify the company owners
-   and account access needed for each. Inventory required email and inbound workflows;
-   unresolved access does not authorize dropping a feature.
-2. **Prepare contracts and synthetic tests.** On a feature branch targeting
-   `develop`, isolate provider transports from business logic. Capture authorization,
-   request/response and failure behavior with stubs, fake recipients, fabricated
-   documents and synthetic recordings. Preserve queue, suppression and audit semantics.
-3. **Implement core Auth/mail first.** Replace the required broker/transport paths,
-   configure destination redirects and provider webhooks in a synthetic
-   environment, and prove confirmation/reset/delivery behavior. Source email continues
-   unchanged. Capture actual deployed source parity before trusting repo assumptions.
-4. **Prepare the other existing features in parallel.** Google, AI and speech
-   adapters can be separate changes. SMS work must account for shared in-app notification
-   behavior. Provision credentials only through a private channel when owner access is
-   available; no production keys or service-role credentials in browser settings.
-5. **Verify complete feature coverage.** Check that every existing entry point has
-   a working independent service path and useful error handling. No deferral is approved.
-   If the user later explicitly changes scope, gate both UI and server behavior, preserve
-   existing data, and test the agreed alternative; hiding a button alone is insufficient.
-6. **Run relevant verification.** Use pinned Bun and the repo's app/backend/lint/edge/
-   browser groups as appropriate to the implementation. Passing stub/local tests does
-   not establish provider delivery, production parity or copied-user continuity.
-7. **Complete real-data rehearsal when export access returns.** Lock down the
-   destination before import, disable all outbound execution, restore and validate
-   independently. Preserve business/Auth/files/delivery state; destination scheduler
-   execution history alone starts empty, source history stays untouched.
-8. **Request separate production release authorization after readiness evidence.**
-   Include restore results, retained-feature tests, accepted deferrals, access owners,
-   final-copy procedure and rollback criteria. No merge into `main`, DNS switch or
-   Lovable cancellation is part of this preparation.
+| Workflow | Runtime path | Remaining launch work |
+| --- | --- | --- |
+| Login | Supabase Auth, profiles, user_roles; Auth.tsx | Existing password login observed. Configure destination Auth SMTP and reset redirects; prove recovery and account setup. Managed new-user trigger still needs hosted installation/verification. Keep public signup off. |
+| Jobs | Direct database reads/writes under RLS; job detail components | Reads observed. Exercise authorized edits and role boundaries. Preserve manual scope/brief entry while disabling AI extraction. |
+| Files | Supabase Storage with signed URLs in job file components | One photo download matched archive. Complete plan/PDF and permitted upload checks; resolve two known synthetic accident-photo failures. Safety.tsx stored media URLs need private destination handling. |
+| Time off | time_off_requests direct writes; send-transactional-email on approval | Synthetic browser workflow passes. Prove hosted request/decision and required notification using controlled acceptance records/recipients. |
+| Truck requests | request-truck, decide-truck-request; jobs, truck_requests, dispatch_orders; send-transactional-email | Deploy reviewed functions to destination, test request/decision and failure handling. Inspect settings for destination recipients and app links. |
+| Safety reports | submit-accident-report, submit-safety-violation, request-safety-inspection; report tables/files; send-transactional-email | Deploy reviewed functions; prove report persistence, file access, role limits and notification. Inspection success must distinguish email enqueue from actual delivery. |
 
-## Evidence required before a feature is called ready
+## First implementation batch: independent application email
 
-For each capability, record the reviewed code change, synthetic environment,
-test date/result, failure-path result, owner of the independent account, and unresolved
-differences. Provider delivery tests require an approved controlled endpoint/recipient.
-Store evidence without private payloads, tokens, hashes or employee contact details.
+The current process-email-queue imports @lovable.dev/email-js and requires
+LOVABLE_API_KEY. This is a shared blocker across the essential workflows.
+The existing send-transactional-email function uses enqueue_email, suppression
+records, unsubscribe tokens and email_send_log; deploying the function alone is
+insufficient without the queue/RPC dependencies.
 
-If the user later explicitly defers a capability, record the user's decision, the visible disabled
-behavior, the tested alternative and a later enablement dependency. A deferral is
-accepted scope, not a passed integration test. No capability is marked ready by this
-document; no implementation or provider test has been executed for this workstream.
+1. Bring across only reviewed email transport code/tests from
+   codex/independent-integration-preparation. Do not merge the entire older branch
+   over this restore checkpoint. That selective import has since been completed; remaining integration gates are in the completion plan.
+2. Connect Postmark to the existing worker while preserving retries, dead-letter
+   handling, suppression and send logging. No new delivery-tracking service.
+   Document the existing possible duplicate-send behavior on uncertain outcomes.
+3. Keep Auth on Supabase SMTP, separate from the app queue. Do not start consuming
+   archived Auth mail or replay old business notifications. Preserve archived state;
+   review pending queue contents privately before any activation.
+4. Adapt or explicitly replace the Lovable-authenticated suppression webhook;
+   retain working unsubscribe behavior. Synthetic tests first, then one controlled
+   destination delivery. No bulk sends or scheduled workers during preparation.
 
-## Checks performed
+Postmark DNS and a recovery delivery were previously verified in the separate
+email-test project. That does not prove hub-rehearsal SMTP or application delivery.
+Credentials must be entered privately and never included in frontend configuration.
 
-Rechecked the feature branch, integration map, current Auth Google entry point and
-SMS function's connector/configuration path. Earlier integration-map inspection
-covered the linked AI/speech/mail sources. Verified local document link targets and
-whitespace. This documentation-only work did not run application tests or access
-provider accounts, production data, secrets or the private export.
+## Destination deployment boundary
+
+The initial business-function set is request-truck, decide-truck-request,
+submit-accident-report, submit-safety-violation and request-safety-inspection,
+plus the reviewed email enqueue/worker/unsubscribe/suppression path. Review
+create-employee and convert-employee-contact with the new-user Auth trigger for
+owner-managed onboarding; these currently create accounts rather than email invites.
+Safety-talk completion and attendance are separate from basic incident reports:
+preserve existing content and do not advertise unavailable talk integrations.
+
+supabase/config.toml still points to the SOURCE project. Never use an implicit
+project deployment or deploy-all command. Any deployment must explicitly target
+acgqjjbrnkmeazswdnzp with reviewed gateway/auth settings and destination secrets.
+Do not deploy optional AI/SMS/speech/celebrations functions or activate their schedules.
+Destination scheduler execution history starts empty; source history is untouched.
+
+## Remaining sequence
+
+1. Implement and synthetically validate the required email path and function set.
+2. Apply explicit launch controls for deferred features; retain manual workflows
+   and existing content. Complete private media compatibility.
+3. Configure independent frontend hosting and Auth URLs using an existing approved
+   account. Hosting provider/account is not established by this code inspection.
+4. Run the six essential workflows end to end against the destination with approved
+   test records and controlled recipients. Check access boundaries and Realtime only
+   where those workflows depend on it. Record remaining defects, not just login success.
+5. Reconcile the existing baseline, review the release diff and obtain explicit
+   production cutover approval. No automatic new export or change-capture system.
+6. Keep Lovable available for rollback for about a week after cutover. A rollback
+   after destination writes needs reconciliation; switching DNS alone loses those
+   writes. Confirm the recoverable payroll archive before separately authorizing
+   cancellation. Cancellation and paid provisioning are not authorized here.

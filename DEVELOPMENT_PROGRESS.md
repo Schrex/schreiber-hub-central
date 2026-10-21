@@ -3,6 +3,140 @@
 Updated: 2026-10-20. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 
+## Completion plan independently reviewed — 2026-10-20
+
+Created docs/migration-completion-plan.md from current repository/live evidence and
+user decisions. Fresh agent received concise relevant context without conversation
+history, inspected code and reviewed the plan. Incorporated concrete gaps including
+unsubscribe atomicity, real-recipient fan-out, ignored enqueue errors, worker role
+boundary, dispatcher activation, final release pinning, deferred onboarding controls
+and rollback after writes. Second review approved the revised execution checklist,
+with final ordinary-user worker-denial/no-side-effects gate incorporated.
+
+Scope/readiness documents now direct readers to this current checklist. No runtime
+or hosted changes during planning. No release approval inferred. Documentation
+links and whitespace checks pass; no redundant application test run for prose edits.
+
+## Step 2: destination email queues — 2026-10-20
+
+User prioritized backend functions/notifications and deferred onboarding. User
+reported successful code recovery/password update/sign-in; this is user-reported
+acceptance, not an agent-observed password change.
+
+Live destination inventory: no deployed Edge Functions. pgmq and pg_cron absent;
+email logs/state/suppression/unsubscribe tables and four public queue wrappers
+present. Installed pgmq plus empty transactional_emails and transactional_emails_dlq
+queues in one transaction, matching the standalone candidate. No source queue
+contents copied, no cron/net/schedule installed, no secrets or business rows changed.
+Independent SELECT verifies both queue counts zero and pg_cron absent.
+
+Queue RPC ACL inspection revealed service_role also lacks execution permission;
+anon/authenticated are denied. Prepared separate service-only grants candidate,
+not applied pending action-time authorization. Deployment helper targets the fixed
+rehearsal ref, installs EMAIL_DELIVERY_ENABLED=false before eight function deploys,
+and leaves schedules absent. CLI preflight failed AccessTokenRequiredError: user
+asked to complete private `npx --yes supabase@2.121.0 login`.
+
+Synthetic rollback-only local queue smoke test passed enqueue/claim/visibility/DLQ
+and rollback cleanup. Static Edge checks now cover unsubscribe as well (17 entry
+points pass). Shell syntax and diff checks pass. No deployed worker or notification
+send yet. Provider token (use a fresh token, not the one exposed earlier), suppression
+webhook compatibility, queue RPC/table permissions and controlled delivery remain.
+
+## Recovery code fallback — 2026-10-20
+
+User confirmed inbox delivery, but original and fresh link both returned invalid/
+expired-link screen. Exact upstream cause not established. Default template used
+single-use ConfirmationURL; email prefetch consumption is a documented possibility,
+not a confirmed diagnosis. Kept invalid-link/session protection intact.
+
+Added email/code verification using verifyOtp(type=recovery) before password entry.
+Saved destination recovery template using Token only, no auto-consuming link;
+dashboard confirmed successful update. Existing password-update route retained.
+Five recovery tests including rejected/accepted code transitions pass; total 58 tests,
+app typecheck/build and lint pass (30 existing warnings). No production changes.
+Requested one new controlled code; user must enter it and password privately.
+Hosted verification/password update/login completion remains pending.
+
+## Controlled recovery request accepted — 2026-10-20
+
+After explicit approval, saved exact Auth redirect
+http://127.0.0.1:8083/reset-password on hub-rehearsal. Dashboard confirmed one URL
+added. Default Site URL remains localhost:3000; app sends explicit redirectTo.
+Submitted one recovery request for the authorized owner's rehearsal account through
+the ordinary frontend. App returned its success confirmation (no SDK error).
+This proves request acceptance, not inbox delivery or completed password reset.
+User must open the email on this computer and complete password entry privately.
+No repeat send, production change, queue activation or role change performed.
+
+## Recovery flow prepared before controlled delivery — 2026-10-20
+
+Pre-send inspection found destination Site URL still localhost:3000, no allowed
+redirects, and no application reset-password handler. Added public forgot-password
+and reset-password routes with Supabase recovery/update calls, server-validated
+session, password confirmation/minimum length, generic request confirmation and
+expired-link handling. The reset screen does not redirect an authenticated recovery
+session away before password entry. No role updates or admin credentials are used.
+
+Four synthetic component tests pass; all 57 app tests and build pass. Initial
+typecheck found missing jest-dom matcher types in the new test; added the explicit
+Vitest matcher import and reran typecheck. Browser verified the rehearsal recovery
+request screen. Exact 127.0.0.1:8083/reset-password allowlist entry prepared but not
+saved, pending browser action-time authorization. No reset email sent yet.
+The default Site URL has not changed; request uses explicit redirectTo.
+
+## Rehearsal Auth SMTP routing enabled — 2026-10-20
+
+User saved Postmark SMTP credentials directly. Dashboard verified custom SMTP on,
+smtp.postmarkapp.com:587, Schreiber Hub Rehearsal sender name and stored password
+indicator; no credentials captured. Following explicit action-time approval,
+disabled (did not delete) rehearsal_guard.block_email Send Email hook. Dashboard
+returned to hook list with DISABLED status. Auth can now use configured SMTP.
+No email sent during this action; credentials/delivery/reset flow remain untested.
+App queue remains undeployed/inactive. No source production settings changed.
+Next: controlled reset delivery and redirect/login acceptance, then separate app
+queue deployment/configuration and delivery acceptance.
+
+## Postmark connection implementation — 2026-10-20
+
+User authorized connecting both Auth SMTP and the app notification queue.
+Prepared hub-rehearsal SMTP form (previously off) using existing verified sender
+subdomain, port 587 and Schreiber Hub Rehearsal display name. Credentials/save are
+pending user entry. Read-only Auth Hooks inspection confirms rehearsal_guard Send
+Email hook remains enabled, so SMTP alone will not deliver. No hook changed.
+
+Added reviewed Postmark adapter and 34 synthetic tests from preparation branch;
+connected it to existing worker with explicit provider selection, disabled default
+Postmark delivery, transactional-only processing, destination sender override,
+delivery-time suppression lookup and existing bounded retries/DLQ/logs. No new
+tracking infrastructure. No hosted deployment, schedule, secret installation or
+email send. Activation still needs queue inventory, private token, webhook review
+and controlled acceptance; this is not a completed connection.
+
+Checks: app typecheck/build and 53 tests pass; lint 0 errors/30 existing warnings.
+Added worker to Edge verification; fixed previously unchecked client generic and
+callback typing, all 16 entries pass. Original sandbox network checker stalled;
+network-enabled static checker completed. No employee data used in tests.
+See docs/migration-postmark-adapter.md for configuration and remaining gates.
+
+## Launch scope and existing baseline — 2026-10-20
+
+User reports no source usage or changes for three months. Accepted the verified
+restored copy as the migration baseline; a fresh full export/import is not an
+automatic cutover prerequisite. Source inactivity is user-reported. Preserve the
+private originals and reconcile deliberate password/role/schema changes before
+release. No change-capture system will be built.
+
+Re-inspected the six essential workflow call sites. Truck and safety functions
+share send-transactional-email, whose queue worker still uses Lovable transport.
+The independent Postmark adapter is on a separate preparation branch, not this
+checkout. Updated docs/migration-launch-scope.md with exact function dependencies,
+first email implementation batch, deferred features, explicit destination targeting
+(the tracked CLI config still points to source), and hosting/release gates.
+No runtime change, hosted action, deployment or application test performed in this
+planning pass. Git began clean on codex/export-capture. Migration is not complete.
+Earlier mandatory fresh-copy/all-features launch notes are superseded by this scope.
+
 ## Approved rehearsal administrator grant — 2026-10-20
 
 User explicitly authorized adding admin to their existing rehearsal account.

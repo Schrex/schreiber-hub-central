@@ -1,5 +1,43 @@
 # Standalone Postmark adapter preparation
 
+## Current implementation — 2026-10-20
+
+The adapter and its 34 synthetic tests have now been brought onto the restore
+branch and connected to process-email-queue. Earlier standalone-only statements
+below describe the preparation phase. No function has been deployed or activated.
+
+Destination-only configuration required before deployment:
+
+- EMAIL_PROVIDER=postmark (unset preserves the existing Lovable path).
+- POSTMARK_SERVER_TOKEN entered privately as a server secret; not an SMTP password.
+- POSTMARK_MESSAGE_STREAM=outbound and POSTMARK_FROM=no-reply@mail.schrex.com.
+- EMAIL_DELIVERY_ENABLED remains unset/false until queue state, recipient selection,
+  suppression/unsubscribe and a controlled delivery are ready. Disabled mode does
+  not claim messages or write send logs. No schedule is enabled by this code.
+
+Postmark mode processes only transactional_emails; Auth uses separate Supabase SMTP.
+The worker overrides archived sender addresses with POSTMARK_FROM and derives the
+unsubscribe handler from the destination SUPABASE_URL. Local suppression is checked
+again at send time. Permanent rejects/suppressed recipients enter the existing DLQ;
+configuration errors stop processing without discarding queued messages; rate limits
+retain the existing cooldown handling. Uncertain acceptance follows the existing
+bounded retry policy and can duplicate delivery. No new tracking infrastructure.
+Provider acceptance remains logged as sent, not proof of inbox delivery.
+
+Remaining activation work: destination queue/RPC inventory, private server token,
+review of old queued messages (do not replay them), independently authenticated
+Postmark suppression webhook, worker integration acceptance and controlled send.
+Do not use the existing Lovable webhook verifier for Postmark events.
+Static Edge checks now include the worker. App verification (53 tests/typecheck/
+build), lint (0 errors/30 existing warnings) and all 16 Edge entry checks pass.
+These checks do not prove hosted delivery or queue integration.
+
+Auth SMTP form in hub-rehearsal was initially OFF. Prepared sender/host/port without
+saving credentials. User must enter SMTP credentials directly and save. The
+rehearsal_guard Send Email hook is still enabled; SMTP delivery requires reviewing
+and disabling that hook after SMTP configuration. Signup remains disabled.
+
+
 **Review status:** optional companion runtime work, not part of the audit-only PR.
 Further delivery-tracking infrastructure is paused. Current plan: Supabase Auth
 SMTP and the existing notification queue; this module is not an activation gate
