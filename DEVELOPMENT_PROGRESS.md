@@ -1,5 +1,28 @@
 # Development progress
 
+## GitHub retirement cleanup — 2026-10-22
+
+Read-only GitHub inspection confirmed default branch main, an empty repository
+About description/homepage, and open PR #11 targeting develop with conflicts.
+Its branch has three commits not patch-equivalent to origin/develop; retain it
+for review. Both codex/job-files and cursor/migration-audit-4b4b have zero commits
+outside origin/develop. The latter remains the upstream of the dirty primary
+checkout, so branch removal is deferred until its local work is preserved and
+tracking is repaired. The job-files branch also has an attached local worktree.
+
+Prepared a documentation-only cleanup from origin/develop in an isolated
+codex/github-retirement-cleanup branch. README now links the live custom hostname,
+describes Cloudflare/Supabase hosting, and replaces Lovable editing/main-push
+instructions with the develop integration workflow. Runtime integrations,
+applied migration history, main, and the primary checkout were not modified.
+Validation: diff whitespace check and README local-link existence check.
+No application verification groups are needed for these prose-only edits.
+
+Remaining: review unique PR #11 changes; preserve the primary checkout's two
+local commits and uncommitted migration evidence; reconcile main separately
+under explicit release authorization. This cleanup does not restore onboarding
+or certify deferred external integrations.
+
 Updated: 2026-10-21. This is the current status record; update it after each meaningful
 verification or change. A successful local check never marks a production step done.
 

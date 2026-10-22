@@ -1,18 +1,23 @@
 # Schreiber Field
 
-Let's create an app for Schreiber Excavatijg employees to access all the functions they need to
+Employee field app for Schreiber Excavating.
 
-This project was built with [Lovable](https://lovable.dev).
+**Live app:** [app.schreiberexcavating.com](https://app.schreiberexcavating.com)
 
-**Live app**: https://schreiber-hub-central.lovable.app
+## Hosting and source control
 
-## Build with Lovable
+The live frontend is hosted on Cloudflare Pages with an independent Supabase
+backend. Lovable hosting and repository sync have been retired. The former
+Lovable URL and editor are no longer the deployment or development workflow.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/be4f9bee-f0ea-4d93-8142-1b82027df08c).
+- Start feature branches named `codex/*` from `develop`; target `develop` in pull requests.
+- `main` is reserved for explicitly authorized production releases. Do not push or merge to it as part of routine development.
+- Production deployment is a separate, explicitly authorized operation; merging a pull request does not establish a release.
+- See [project guidance](AGENTS.md), [development progress](DEVELOPMENT_PROGRESS.md), and [hosting and recovery notes](docs/migration-hosting-recovery.md).
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+Historical migration records and deferred integration code still reference Lovable.
+Those references are retained for recovery and follow-up work; they do not mean
+Lovable repository sync is active.
 
 ## Development
 
