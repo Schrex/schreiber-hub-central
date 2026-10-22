@@ -1,5 +1,9 @@
 # Rehearsal destination audit
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 **Latest:** destination isolation was applied on 2026-10-19: signup and Email provider
 off, Data API disabled, blocking Send Email hook enabled. See
 [runner/isolation details](migration-import-runner.md). Historical read-only snapshots

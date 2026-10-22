@@ -1,5 +1,9 @@
 # SMS transport preparation
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Prepared 2026-10-19. Safety-talk text messages remain in scope. The existing
 Lovable/Twilio connector has been isolated behind a testable transport boundary;
 no independent provider has been selected or configured and no SMS was sent.

@@ -1,5 +1,9 @@
 # Controlled email proof and inactive dispatcher
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 ## Consolidated status — October 22, 2026
 
 Retained evidence confirms one approved-inbox enqueue/worker/Postmark delivery,

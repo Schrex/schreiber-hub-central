@@ -1,5 +1,9 @@
 # Email guard local database validation — 2026-10-19
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 `node scripts/local-email-delivery-guard.mjs` passes against the existing synthetic
 `schreiber-local` backend. The script obtains credentials through `localStatus`,
 which rejects every API origin except `http://127.0.0.1:55321`. It accepts no external

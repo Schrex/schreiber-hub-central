@@ -1,5 +1,9 @@
 # Migration audit — Schreiber field app off Lovable
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 **Current launch plan (2026-10-20):** see [launch scope](migration-launch-scope.md).
 Use the verified restored baseline: the user reports no source use/changes for
 three months. No automatic repeat export/import or change capture. Six essential

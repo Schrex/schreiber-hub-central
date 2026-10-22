@@ -1,5 +1,9 @@
 # Speech migration preparation — 2026-10-19
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Extracted the existing speech HTTP requests into
 `supabase/functions/_shared/speech-transport.ts` and connected both
 `speak-toolbox-talk` and `transcribe-toolbox-talk` to it. The helper accepts explicit

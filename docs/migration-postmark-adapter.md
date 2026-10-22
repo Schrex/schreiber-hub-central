@@ -1,5 +1,9 @@
 # Postmark adapter and activation status
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 ## Current implementation — 2026-10-20
 
 The adapter and its 34 synthetic tests have now been brought onto the restore

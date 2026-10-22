@@ -1,5 +1,9 @@
 # Migration readiness — 2026-10-20
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 **Current release checklist:** [migration completion plan](migration-completion-plan.md).
 The detailed report below retains historical evidence, not current task ordering.
 Auth SMTP/code recovery is user-confirmed; app mail remains inactive, fresh queues

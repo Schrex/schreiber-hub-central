@@ -1,5 +1,9 @@
 # Integration preparation for the independent copy
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Prepared 2026-10-19 from the current `codex/migration-audit-live-findings` checkout,
 the [migration audit](migration-audit.md), and the current progress record. This is
 a repository-backed dependency map and test plan, not evidence that replacement

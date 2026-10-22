@@ -1,5 +1,9 @@
 # Independent launch scope — 2026-10-20
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 **Current execution checklist:** [migration completion plan](migration-completion-plan.md).
 This scope document's earlier implementation notes are historical. On October 20,
 the Postmark adapter/worker path was added locally and tested; Auth SMTP/code recovery

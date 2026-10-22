@@ -3,8 +3,9 @@
 - `main` is production. Do not commit to, merge into, or push to main. Work on
   `codex/*` feature branches and target `develop` for integration. A future production
   release requires an explicit user instruction; general continuation is not authorization.
-- Before edits, check the current branch. The foundation was merged into develop through PR #7. Start new feature
-  branches from develop; browser-test work is on codex/time-off-browser-test. Uncommitted changes are not branch-isolated
+- Before edits, check the current branch. Read docs/production-baseline.md for the
+  verified production starting point. Start new feature branches from current origin/develop.
+  Historical migration notes are evidence, not authorization to rerun changes. Uncommitted changes are not branch-isolated
   until committed; preserve them when switching and do not switch back to main to edit.
 
 - Read DEVELOPMENT_PROGRESS.md and local/README.md before infrastructure work.

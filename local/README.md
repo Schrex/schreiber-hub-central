@@ -1,6 +1,8 @@
 # Isolated local development
 
-This is the first local-backend proof, not a complete staging or release system.
+This is the disposable synthetic development environment. The hosted project
+`acgqjjbrnkmeazswdnzp` is production, even where historical tooling calls it rehearsal.
+See the [production baseline](../docs/production-baseline.md) for current operations.
 Production Cloud configuration and migration files are not changed by these commands.
 See [audit findings and verification results](AUDIT.md) for the current baseline.
 The current milestone and release checklist are tracked in
@@ -104,8 +106,8 @@ and passes frontend settings only to the child Vite process. It does not write
 credentials to tracked files or change the production `.env` file. A service-role
 key is used only by the smoke test for cleanup, never passed to Vite.
 
-**Use `dev:local`, not `dev`, for isolated work.** The original `dev` command is
-preserved for the existing Lovable workflow and uses existing environment files,
+**Use `dev:local`, not `dev`, for isolated work.** The original `dev` command
+uses existing environment files,
 which may point at production. `build` likewise uses existing build settings.
 
 ## Stop or recreate
@@ -166,9 +168,9 @@ emails go to the local capture service. Public weather/map services and external
 links in the frontend still exist; this is not a fully offline app.
 
 Browser sign-in and a synthetic time-off submission were also checked manually.
-Next: automate the browser workflow, add safe integration substitutes, expand permission
-tests, verify live-schema parity through an approved read-only audit, and establish
-CI/staging/release controls. Do not use a successful local smoke test as production
+Browser workflows and manual release controls are implemented. Expand feature-specific
+coverage and verify hosted behavior only through separately approved checks.
+Do not use a successful local smoke test as production
 release approval.
 
 The candidate `local/candidate-migrations/20261016210000_time_off_request_permissions.sql` is applied

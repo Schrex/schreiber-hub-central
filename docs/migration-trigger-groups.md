@@ -1,5 +1,9 @@
 # Migration trigger groups
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 All 70 public business triggers are accounted for below. The managed Auth new-user
 trigger and queue/scheduler hooks are separate migration work; they are not included
 in these 70. Production remains untouched. Real-data rehearsal stays isolated.

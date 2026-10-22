@@ -1,5 +1,9 @@
 # Postmark setup record — 2026-10-19
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 ## Current verified status
 
 DKIM and Return-Path for mail.schrex.com are verified. Account approval is complete.

@@ -4,6 +4,9 @@ Employee field app for Schreiber Excavating.
 
 **Live app:** [app.schreiberexcavating.com](https://app.schreiberexcavating.com)
 
+**Production starts here:** [verified October 22 baseline](docs/production-baseline.md).
+It identifies the deployed release, retained recovery evidence, and rules for future changes.
+
 ## Hosting and source control
 
 The live frontend is hosted on Cloudflare Pages with an independent Supabase
