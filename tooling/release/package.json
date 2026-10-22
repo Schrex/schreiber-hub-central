@@ -1,0 +1,6 @@
+{
+  "name": "schreiber-release-tools",
+  "private": true,
+  "packageManager": "bun@1.3.14",
+  "dependencies": { "wrangler": "4.152.0" }
+}

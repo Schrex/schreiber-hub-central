@@ -1,5 +1,54 @@
 # Development progress
 
+## Manual upload and native recovery implemented, inactive — 2026-10-22
+
+PR #19 passed all five checks and merged into develop (679e4f6), retaining main's
+approved build-only ancestry and evidence. Started codex/manual-upload-recovery
+from fetched develop; production main was not changed in this implementation.
+
+Added a main-only manual Production candidate build using explicit public anon
+configuration and the guarded independent builder, with a per-file SHA256 manifest.
+Added manual deploy/recover operations defaulting to plan. Plans read GitHub and
+verify artifacts/history but never contact Cloudflare or mutate the deployment ledger.
+Execution remains disabled without explicit activation, credentials, exact confirmation
+and a durable recovery reference. No setting or credential was configured here.
+
+Uploads validate the exact successful candidate run/artifact, approved manifest digest,
+all files and backend identity. They reject dry-run artifacts, links and server/config
+files. Wrangler 4.152.0 has a separate frozen Bun lock and installs without lifecycle
+scripts or credentials. The credential-bearing process builds nothing and executes
+no artifact code. Shared concurrency, repeated main/current-deployment checks and a
+persistent monotonic GitHub Deployments ledger prevent stale queued/repeated runs,
+including rollback returning to an earlier UUID. Ledger failures stop before upload.
+Out-of-band provider mutations remain a race: pause other deploy clients during use.
+
+Native recovery selects an exact successful static production deployment and verifies
+its immutable build identity and main ancestry before rollback. It works even when
+the current frontend cannot serve build-info. Both operations retain receipts and
+verify live identity/availability afterward; neither retries mutations nor automatically
+rolls back after smoke failures. Frontend recovery does not undo backend changes.
+
+Validation: all five local groups passed (153 app tests, six backend suites, five
+browser workflows, Edge checks, lint with 0 errors/30 existing warnings). Release
+unit tests cover trust boundaries and injected state-machine dependencies; final
+suite contains 45 release tests. YAML, shell syntax and whitespace checks passed.
+Separate toolchain frozen install and Wrangler CLI option checks passed. Official
+checksum-verified actionlint 1.7.12 caught runner.temp at unsupported job env scope;
+moved it to step env, then all workflows passed actionlint. Clean
+706a6a5 candidate packaging with an invalid-signature synthetic key and non-GitHub
+run ID passed manifest verification; the fixture was deleted immediately. This is
+an offline packaging proof, not an approved production candidate. Later ledger
+changes were validated by the expanded unit suite. No Cloudflare API mutation,
+GitHub deployment record write, real key use or production test was performed.
+
+Remaining: PR review/remote CI, separately authorized main integration, production
+configuration and scoped token, verified durable recovery copy, GitHub deployment
+record write availability/event-consumer review, and authorized provider acceptance.
+The existing private-plan review/protection limitation is unchanged. Plan mode does
+not prove provider readiness. See docs/manual-frontend-operations.md for inputs,
+permissions, state/failure handling and activation gates. Add Employee remains separate.
+
+
 ## Main build-only release workflow proven — 2026-10-22
 
 PR #17 merged into develop at d378d627260b45c328a266fe3831fbe7eddd913f
