@@ -1,5 +1,38 @@
 # Development progress
 
+## Independent release-readiness review and recheck — 2026-10-22
+
+At the owner's request, a separate review agent challenged the activation plan.
+Fresh read-only checks reproduced HTTP 302 to Cloudflare Access for the immutable
+build-info URL and HTTP 200 with clean ea05047 identity at the custom domain.
+The controller sends no Access credentials and rejects redirects (release-operation
+lines 81-91). Deployment would stop at its first identity read before ledger/upload;
+recovery would stop at the target identity read before rollback. This is a confirmed
+readiness failure, not a failed production deployment. Activation remains absent;
+GitHub still lists zero deployment records.
+
+Candidate 39842209233 and plan 39842415484 remain successful on main 75fd4cf.
+The candidate's 12 file hashes reverified. Bun 1.3.14 / Node 26.8.2 rerun passed
+153 application tests and 45 release tests. Plan deliberately returns before
+Cloudflare/ledger calls, and release state-machine tests mock those dependencies;
+neither proves authentication or GitHub ledger write capability.
+
+Corrections to the earlier proposed fix: a rebuild is a new recovery artifact,
+not the original ZIP or proof of matching its recorded checksum (build-info stamps
+a new time). Native Cloudflare rollback reuses a retained production deployment
+and does not upload a ZIP; a durable copy is our additional release policy. Exact
+archive search again found no copy in known locations, but the deletion cause is
+unknown. Do not attribute it to the independent builder, which clears only
+dist/independent. GitHub ledger write readiness was omitted from the short plan
+and remains unproven. No live configuration or deployment was changed by this review.
+
+Corrected sequence: add narrowly scoped Access service authentication and a
+non-mutating provider preflight; verify current/recovery build identities and
+authentication failure behavior; establish a verified durable recovery package
+with truthful provenance; separately verify Actions-token ledger write capability
+after event-consumer review; then run fresh candidate/preflight/plan before asking
+for the live release. Do not disable Access or treat a green plan as readiness.
+
 ## Production workflow integration and credential setup — 2026-10-22
 
 PR #20 merged into develop at cc4c8f7 after its five checks passed. The owner
