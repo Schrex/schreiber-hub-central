@@ -13,7 +13,7 @@ function setup(operation = 'deploy', mode = 'execute') {
   const receipts = [];
   const deps = { main: vi.fn(async () => revision), ancestor: vi.fn(async () => true), candidate: vi.fn(async () => {}),
     current: vi.fn(async () => ({ id: previous, info: identity(older) })), target: vi.fn(async () => ({ info: identity(revision) })),
-    reserve: vi.fn(async () => 42), status: vi.fn(async () => {}),
+    checkLedger: vi.fn(async () => {}), reserve: vi.fn(async () => 42), status: vi.fn(async () => {}),
     upload: vi.fn(async () => target), rollback: vi.fn(async () => target), verify: vi.fn(async () => {}),
     record: value => receipts.push(structuredClone(value)) };
   return { input, deps, receipts };
@@ -22,7 +22,32 @@ describe('manual release state machine (no network)', () => {
   it.each(['deploy', 'recover'])('plans %s without contacting Cloudflare', async operation => {
     const { input, deps } = setup(operation, 'plan'); input.enabled = ''; input.confirmation = '';
     expect((await perform(input, deps)).outcome).toBe('planned');
-    for (const method of ['current', 'target', 'upload', 'rollback', 'verify', 'reserve', 'status']) expect(deps[method]).not.toHaveBeenCalled();
+    for (const method of ['current', 'target', 'upload', 'rollback', 'verify', 'checkLedger', 'reserve', 'status']) expect(deps[method]).not.toHaveBeenCalled();
+  });
+  it.each(['deploy', 'recover'])('preflights %s with provider reads but no mutations', async operation => {
+    const { input, deps } = setup(operation, 'preflight'); input.enabled = ''; input.confirmation = '';
+    const receipt = await perform(input, deps);
+    expect(receipt.outcome).toBe('preflight-passed');
+    expect(receipt.ledgerWriteVerified).toBe(false);
+    expect(deps.current).toHaveBeenCalled(); expect(deps.checkLedger).toHaveBeenCalled();
+    if (operation === 'deploy') expect(deps.verify).toHaveBeenCalledWith(expect.objectContaining({ revision: older }), previous);
+    else expect(deps.target).toHaveBeenCalledWith(target);
+    for (const method of ['upload', 'rollback', 'reserve', 'status']) expect(deps[method]).not.toHaveBeenCalled();
+  });
+  it('preflight fails on provider authentication failure without mutating', async () => {
+    const { input, deps } = setup('deploy', 'preflight'); deps.current.mockRejectedValue(new Error('Access denied'));
+    await expect(perform(input, deps)).rejects.toThrow('Access denied');
+    expect(deps.reserve).not.toHaveBeenCalled(); expect(deps.upload).not.toHaveBeenCalled();
+  });
+  it.each(['ledger', 'main', 'deployment', 'target', 'identity'])('preflight fails closed on %s failure', async failure => {
+    const { input, deps } = setup(['target', 'identity'].includes(failure) ? 'recover' : 'deploy', 'preflight');
+    if (failure === 'ledger') deps.checkLedger.mockRejectedValue(new Error('Ledger read denied'));
+    if (failure === 'main') deps.main.mockResolvedValueOnce(revision).mockResolvedValueOnce(older);
+    if (failure === 'deployment') deps.current.mockResolvedValueOnce({ id: previous, info: identity(older) }).mockRejectedValueOnce(new Error('Deployment changed'));
+    if (failure === 'target') deps.target.mockRejectedValue(new Error('Target unavailable'));
+    if (failure === 'identity') deps.target.mockResolvedValue({ info: { ...identity(revision), project: 'wrong' } });
+    await expect(perform(input, deps)).rejects.toThrow();
+    for (const method of ['upload', 'rollback', 'reserve', 'status']) expect(deps[method]).not.toHaveBeenCalled();
   });
   it.each(['enabled', 'confirmation', 'recoveryReference'])('requires execution %s', async field => {
     const { input, deps } = setup(); input[field] = '';

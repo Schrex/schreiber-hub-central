@@ -10,10 +10,10 @@ on:
         description: Forward upload or native recovery
       mode:
         type: choice
-        options: [plan, execute]
+        options: [plan, preflight, execute]
         default: plan
         required: true
-        description: Plan never accesses Cloudflare; execution needs separate activation
+        description: Plan validates artifacts; preflight reads live state; execute changes production
       commit:
         type: string
         required: true
@@ -97,13 +97,15 @@ jobs:
           RELEASE_PAYLOAD: ${{ runner.temp }}/release-payload
           GH_TOKEN: ${{ github.token }}
         run: node scripts/release-operation.mjs
-      - name: Execute separately authorized operation
-        if: inputs.mode == 'execute'
+      - name: Read provider readiness or execute separately authorized operation
+        if: inputs.mode == 'preflight' || inputs.mode == 'execute'
         env:
           RELEASE_PAYLOAD: ${{ runner.temp }}/release-payload
           GH_TOKEN: ${{ github.token }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
+          CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+          CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
         run: node scripts/release-operation.mjs
       - name: Retain operation receipt, including uncertain mutation outcome
         if: always()
