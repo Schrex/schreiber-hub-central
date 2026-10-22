@@ -1,5 +1,39 @@
 # Development progress
 
+## Manual release foundation — 2026-10-22
+
+Implemented a dispatch-only, build-only frontend workflow on a feature branch from
+fresh origin/develop 54e2dad. It requires current main's full SHA and a successful
+exact-source main push Verification run with all five successful jobs. Action
+versions are SHA-pinned, dependencies frozen, Git credentials not persisted, and
+permissions read-only. Production concurrency is reserved; no uploader or production
+credentials exist. Synthetic invalid-signature anon configuration exercises the
+independent builder without hosted calls. Artifacts explicitly say non-deployable.
+
+Verification now runs PRs and main/develop pushes without duplicate codex pushes.
+Documentation-only changes intentionally retain all five groups. Chromium install
+has bounded download/process/step timeouts and infrastructure diagnostics. Updated
+the release contract for no permanent staging, completed branch reconciliation,
+owner authorization, exact-source evidence and separately reviewed recovery/upload.
+
+Local validation: frozen install, app typecheck/build, 153 existing tests plus 18
+release-guard cases, all six backend checks, lint (existing warnings), Edge static
+checks and five browser workflows passed. Initial sandboxed Edge tooling failed on
+network access; the authorized tooling rerun passed. Both workflow YAML files parse;
+whitespace check passes. Clean 526b24c packaging passed with archive SHA256
+03eb0202bc4204ee7a6616c8f97719b88e6d38619bc10ce78587d20bbb2729e3.
+This is a local synthetic artifact, not production acceptance or a deployable build.
+
+Read-only GitHub inspection: private repo, current operator admin, Actions enabled,
+all actions permitted, no enforced SHA-pinning setting, zero environments. Main
+protection API still returns 403 plan restriction. No access/settings were changed.
+Remote PR verification and dispatch from main remain to be observed; the latter
+requires a separately authorized release PR into main. Credentials, upload code,
+durable recovery storage, verified reviewer restrictions and stale-deployment state
+are activation gates, described concretely in docs/release-process.md. Production,
+backend settings, email, onboarding and Add Employee remain unchanged.
+
+
 ## Consolidated operating status and evidence cleanup — 2026-10-22
 
 This summary replaces uncommitted migration-session narratives. Hosted observations
