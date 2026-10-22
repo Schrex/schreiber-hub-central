@@ -1,5 +1,38 @@
 # Development progress
 
+## Main build-only release workflow proven — 2026-10-22
+
+PR #17 merged into develop at d378d627260b45c328a266fe3831fbe7eddd913f
+only after all five remote checks passed (run 39834877058). Both develop push
+39835530208 and release PR 39835589305 then passed all five groups. The owner
+explicitly approved PR #18 main integration and a manual synthetic test build,
+not a production deployment. PR #18 merged main at
+6db89ad573016bb9a83dca767f28c03b25682146; exact-main push Verification
+39836219405 passed all five groups.
+
+Manual Release build only run 39836824903 succeeded, including its exact-source
+verification guard. Downloaded the generated artifact and independently checked
+its archive SHA256 d2f1f2c2e99487642e14666528c5b16a9fe3ac016f654d363097f427c97f2547,
+source/workflow revision, verification-run URL, clean state, independent mode,
+backend acgqjjbrnkmeazswdnzp and embedded deployable=false/synthetic-key markers.
+This artifact is deliberately not usable for production; Actions retains it for
+14 days. It is not the durable recovery copy required before automated deployment.
+
+Public build-info read after main integration still returned clean
+ea0504798c9985ea44ad32d674579b15ae6f0c66, independent mode and backend
+acgqjjbrnkmeazswdnzp. No Cloudflare upload, backend mutation, email activation,
+onboarding enablement or permission change occurred. Repository access read-back
+showed one admin and one read-only collaborator, read-only default workflow token
+permissions and workflow PR approval disabled. Plan-restricted protection remains
+an explicit limitation; no enforced independent reviewer gate is claimed.
+
+This evidence branch retains main's merge ancestry for reconciliation into develop.
+Remaining: reviewed upload/recovery implementation, secure Cloudflare token and
+explicit public-client configuration, durable recovery artifact, stale-release
+protection and separate production release authorization. Add Employee remains
+subsequent feature work with its known hosted creation/permission gaps unresolved.
+
+
 ## Release CI infrastructure follow-up — 2026-10-22
 
 PR #17 first remote run passed app/lint/Edge but failed before backend/browser

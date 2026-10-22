@@ -31,8 +31,11 @@ run all five groups: no path exclusions, skipped-check equivalents or waived lin
 Install, browser dependency and job timeouts fail closed. Chromium errors identify
 infrastructure failure separately from acceptance failure; retries require diagnosis.
 
-`Release build only` is dispatch-only and must run from main after this foundation
-has entered main through a separately authorized release PR. Select the full
+`Release build only` is dispatch-only and runs from main. The owner-authorized
+PR #18 integrated it at `6db89ad573016bb9a83dca767f28c03b25682146`. All five
+exact-main checks passed, and [manual run 39836824903](https://github.com/Schrex/schreiber-hub-central/actions/runs/39836824903)
+produced a hash-verified non-deployable artifact. This proved the build-only path;
+production upload remains absent. Select the full
 40-character **current main tip**. The guard rejects older commits, branch names,
 PR runs, fork evidence, missing/skipped jobs and unsuccessful latest runs.
 It queries GitHub's Verification workflow for that exact main push, then builds a
