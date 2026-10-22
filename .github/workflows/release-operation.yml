@@ -1,0 +1,113 @@
+name: Manual frontend upload or recovery
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [deploy, recover]
+        default: deploy
+        required: true
+        description: Forward upload or native recovery
+      mode:
+        type: choice
+        options: [plan, execute]
+        default: plan
+        required: true
+        description: Plan never accesses Cloudflare; execution needs separate activation
+      commit:
+        type: string
+        required: true
+        description: Full approved source SHA (current main for deploy; target for recovery)
+      expected_deployment:
+        type: string
+        required: true
+        description: Current production deployment UUID; rejects stale queued operations
+      candidate_run:
+        type: string
+        description: Successful Production candidate build run ID (deploy only)
+      artifact_sha256:
+        type: string
+        description: Approved release.json SHA256 from candidate summary (deploy only)
+      recovery_deployment:
+        type: string
+        description: Exact previous successful production deployment UUID (recover only)
+      confirmation:
+        type: string
+        description: For execute, enter DEPLOY or RECOVER followed by a space and the full SHA
+      recovery_reference:
+        type: string
+        description: HTTPS reference to reviewed durable recovery evidence; required for execute
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: production-frontend
+  cancel-in-progress: false
+jobs:
+  operation:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      RELEASE_OPERATION: ${{ inputs.operation }}
+      RELEASE_MODE: ${{ inputs.mode }}
+      RELEASE_SHA: ${{ inputs.commit }}
+      EXPECTED_DEPLOYMENT: ${{ inputs.expected_deployment }}
+      CANDIDATE_RUN: ${{ inputs.candidate_run }}
+      ARTIFACT_SHA256: ${{ inputs.artifact_sha256 }}
+      RECOVERY_DEPLOYMENT: ${{ inputs.recovery_deployment }}
+      RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
+      RECOVERY_REFERENCE: ${{ inputs.recovery_reference }}
+      PRODUCTION_FRONTEND_ENABLED: ${{ vars.PRODUCTION_FRONTEND_ENABLED }}
+      RELEASE_PAYLOAD: ${{ runner.temp }}/release-payload
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        if: inputs.operation == 'deploy' && inputs.mode == 'execute'
+        with:
+          bun-version-file: package.json
+      - name: Install only locked release tools without credentials
+        if: inputs.operation == 'deploy' && inputs.mode == 'execute'
+        timeout-minutes: 5
+        run: bun install --cwd tooling/release --frozen-lockfile --ignore-scripts
+      - name: Resolve trusted immutable candidate artifact
+        if: inputs.operation == 'deploy'
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-github.mjs
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        if: inputs.operation == 'deploy'
+        with:
+          artifact-ids: ${{ steps.candidate.outputs.artifact_id }}
+          run-id: ${{ inputs.candidate_run }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/release-payload
+          merge-multiple: true
+      - name: Validate and record plan without Cloudflare access
+        if: inputs.mode == 'plan'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-operation.mjs
+      - name: Execute separately authorized operation
+        if: inputs.mode == 'execute'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}
+        run: node scripts/release-operation.mjs
+      - name: Retain operation receipt, including uncertain mutation outcome
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: frontend-operation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dist/release-operation/
+          if-no-files-found: ignore
+          retention-days: 90
