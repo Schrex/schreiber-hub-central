@@ -19,6 +19,8 @@ Historical migration records and deferred integration code still reference Lovab
 Those references are retained for recovery and follow-up work; they do not mean
 Lovable repository sync is active.
 
+For the branch-to-production workflow, see [the release process](docs/release-process.md).
+
 ## Development
 
 Use Bun **1.3.14**, pinned in `package.json`, and Node from `.nvmrc`.
