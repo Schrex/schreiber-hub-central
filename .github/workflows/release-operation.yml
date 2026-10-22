@@ -60,7 +60,6 @@ jobs:
       RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
       RECOVERY_REFERENCE: ${{ inputs.recovery_reference }}
       PRODUCTION_FRONTEND_ENABLED: ${{ vars.PRODUCTION_FRONTEND_ENABLED }}
-      RELEASE_PAYLOAD: ${{ runner.temp }}/release-payload
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -95,11 +94,13 @@ jobs:
       - name: Validate and record plan without Cloudflare access
         if: inputs.mode == 'plan'
         env:
+          RELEASE_PAYLOAD: ${{ runner.temp }}/release-payload
           GH_TOKEN: ${{ github.token }}
         run: node scripts/release-operation.mjs
       - name: Execute separately authorized operation
         if: inputs.mode == 'execute'
         env:
+          RELEASE_PAYLOAD: ${{ runner.temp }}/release-payload
           GH_TOKEN: ${{ github.token }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_API_TOKEN }}

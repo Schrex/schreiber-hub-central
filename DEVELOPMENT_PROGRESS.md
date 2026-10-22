@@ -32,7 +32,9 @@ Validation: all five local groups passed (153 app tests, six backend suites, fiv
 browser workflows, Edge checks, lint with 0 errors/30 existing warnings). Release
 unit tests cover trust boundaries and injected state-machine dependencies; final
 suite contains 45 release tests. YAML, shell syntax and whitespace checks passed.
-Separate toolchain frozen install and Wrangler CLI option checks passed. Clean
+Separate toolchain frozen install and Wrangler CLI option checks passed. Official
+checksum-verified actionlint 1.7.12 caught runner.temp at unsupported job env scope;
+moved it to step env, then all workflows passed actionlint. Clean
 706a6a5 candidate packaging with an invalid-signature synthetic key and non-GitHub
 run ID passed manifest verification; the fixture was deleted immediately. This is
 an offline packaging proof, not an approved production candidate. Later ledger
