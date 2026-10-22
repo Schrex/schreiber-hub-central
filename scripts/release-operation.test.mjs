@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { perform } from './release-operation.mjs';
-import { backend, digest, fileManifest, verifyPayload, validateCandidateRun, validateDeployment, validateIdentity } from './release-policy.mjs';
+import { backend, digest, fileManifest, verifyPayload, validateCandidateRun, validateDeployment, validateIdentity, validateSequence } from './release-policy.mjs';
 const revision = 'a'.repeat(40), older = 'b'.repeat(40);
 const previous = '11111111-1111-1111-1111-111111111111', target = '22222222-2222-2222-2222-222222222222';
 const identity = sha => ({ revision: sha, dirty: false, project: backend, mode: 'independent' });
@@ -13,6 +13,7 @@ function setup(operation = 'deploy', mode = 'execute') {
   const receipts = [];
   const deps = { main: vi.fn(async () => revision), ancestor: vi.fn(async () => true), candidate: vi.fn(async () => {}),
     current: vi.fn(async () => ({ id: previous, info: identity(older) })), target: vi.fn(async () => ({ info: identity(revision) })),
+    reserve: vi.fn(async () => 42), status: vi.fn(async () => {}),
     upload: vi.fn(async () => target), rollback: vi.fn(async () => target), verify: vi.fn(async () => {}),
     record: value => receipts.push(structuredClone(value)) };
   return { input, deps, receipts };
@@ -21,16 +22,26 @@ describe('manual release state machine (no network)', () => {
   it.each(['deploy', 'recover'])('plans %s without contacting Cloudflare', async operation => {
     const { input, deps } = setup(operation, 'plan'); input.enabled = ''; input.confirmation = '';
     expect((await perform(input, deps)).outcome).toBe('planned');
-    for (const method of ['current', 'target', 'upload', 'rollback', 'verify']) expect(deps[method]).not.toHaveBeenCalled();
+    for (const method of ['current', 'target', 'upload', 'rollback', 'verify', 'reserve', 'status']) expect(deps[method]).not.toHaveBeenCalled();
   });
   it.each(['enabled', 'confirmation', 'recoveryReference'])('requires execution %s', async field => {
     const { input, deps } = setup(); input[field] = '';
     await expect(perform(input, deps)).rejects.toThrow(); expect(deps.upload).not.toHaveBeenCalled();
   });
+  it('refuses mutation if ledger reservation fails', async () => {
+    const { input, deps } = setup(); deps.reserve.mockRejectedValue(new Error('Ledger unavailable'));
+    await expect(perform(input, deps)).rejects.toThrow('Ledger unavailable'); expect(deps.upload).not.toHaveBeenCalled();
+  });
+  it('rejects old queued and repeated runs even after rollback restored the original deployment ID', () => {
+    const entries = [{ payload: { schema: 'schreiber-frontend-v1', runNumber: '12' } }];
+    for (const number of ['10', '12']) expect(() => validateSequence(number, entries)).toThrow('Older');
+    expect(() => validateSequence('13', entries)).not.toThrow();
+    expect(() => validateSequence('13', [{ payload: {} }])).toThrow();
+  });
   it('uploads exactly once and verifies before reporting success', async () => {
     const { input, deps, receipts } = setup(); expect((await perform(input, deps)).outcome).toBe('verified');
-    expect(deps.upload).toHaveBeenCalledTimes(1); expect(deps.current).toHaveBeenCalledTimes(2);
-    expect(receipts.map(r => r.outcome)).toEqual(['planned', 'mutation-outcome-unknown', 'applied-unverified', 'verified']);
+    expect(deps.upload).toHaveBeenCalledTimes(1); expect(deps.current).toHaveBeenCalledTimes(3);
+    expect(receipts.map(r => r.outcome)).toEqual(['planned', 'reserved', 'mutation-outcome-unknown', 'applied-unverified', 'verified']);
   });
   it('rejects stale dispatch workflow before credential operations', async () => {
     const { input, deps } = setup(); input.workflowRevision = older;
@@ -60,6 +71,12 @@ describe('manual release state machine (no network)', () => {
     const { input, deps, receipts } = setup(); deps.upload.mockRejectedValue(new Error('timeout'));
     await expect(perform(input, deps)).rejects.toThrow('Inspect receipt');
     expect(deps.upload).toHaveBeenCalledTimes(1); expect(deps.rollback).not.toHaveBeenCalled(); expect(receipts.at(-1).outcome).toBe('mutation-outcome-unknown');
+  });
+  it('preserves verified frontend outcome when ledger status publication fails', async () => {
+    const { input, deps, receipts } = setup(); deps.status.mockRejectedValue(new Error('API unavailable'));
+    await expect(perform(input, deps)).rejects.toThrow('Frontend verified');
+    expect(receipts.at(-1).outcome).toBe('verified'); expect(receipts.at(-1).ledgerStatus).toBe('update-failed');
+    expect(deps.upload).toHaveBeenCalledTimes(1); expect(deps.rollback).not.toHaveBeenCalled();
   });
   it('does not automatically roll back after a smoke failure', async () => {
     const { input, deps, receipts } = setup(); deps.verify.mockRejectedValue(new Error('unavailable'));

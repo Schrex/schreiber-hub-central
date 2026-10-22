@@ -1,9 +1,10 @@
 import { appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { requireValue, validateCandidateRun, shaPattern } from './release-policy.mjs';
-export async function github(route) {
+export async function github(route, body) {
   const response = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/${route}`, {
-    headers: { Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }, signal: AbortSignal.timeout(30000),
+    method: body ? 'POST' : 'GET', redirect: 'error', body: body ? JSON.stringify(body) : undefined,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }, signal: AbortSignal.timeout(30000),
   });
   requireValue(response.ok, `GitHub evidence request failed (${response.status}).`); return response.json();
 }

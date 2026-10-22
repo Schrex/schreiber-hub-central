@@ -57,8 +57,21 @@ source in Git history. Duplicate/backward forward uploads fail.
 
 Immediately before upload, main and canonical deployment are read again. All manual
 uploads, recovery and original dry-run builds share `production-frontend` concurrency.
-A stale queued operation fails when its expected deployment no longer matches;
-serialization alone is not FIFO protection. Cloudflare offers no atomic comparison
+A stale queued operation fails when its expected deployment no longer matches.
+A persistent GitHub Deployments ledger also rejects old/repeated workflow run numbers,
+including the case where recovery restored the original deployment UUID. The token
+has deployments:write solely for this ledger; repository contents remain read-only.
+A reservation is persisted before Cloudflare mutation, and the last main/provider
+checks run after reservation. Ledger read/write failure prevents mutation. A reserved
+run cannot be rerun to mutate: inspect state and dispatch a new approved run instead.
+The ledger's run-number namespace is this workflow: do not delete/reset its history
+or rename/recreate the workflow without an explicit state migration. Reading is
+bounded at 1,000 records, after which an explicit ledger migration is required.
+GitHub deployment events may notify integrations; inspect installed consumers before
+activation. This implementation does not grant environment review enforcement or
+prove that deployment-record writes are available on the current plan. No ledger
+record has been written as part of implementation/testing. Serialization alone is
+not FIFO protection. Cloudflare offers no atomic comparison
 and upload operation here: **pause out-of-band dashboard/CLI deployments during
 execution**. An external actor can race the final check. This is a documented
 operational boundary, not a claimed atomic lock across all Cloudflare clients.
@@ -95,8 +108,8 @@ necessary; matching the project ID alone cannot establish schema compatibility.
 
 ## Receipts, failures and access limits
 
-Each plan writes receipt.json. Before a mutation it records previous ID, source,
-artifact digest (deploy), target (recover), run and workflow revision. Outcome is
+Each plan writes receipt.json without a GitHub deployment mutation. Before a mutation it records previous ID, source,
+artifact digest (deploy), target (recover), run and workflow revision. Execution first records `reserved` with its ledger ID. Outcome is then
 `mutation-outcome-unknown` until a response identifies the deployment, then
 `applied-unverified`, then `verified` only after live checks. Receipt artifacts are
 retained for 90 days, including when a step fails. A runner termination can prevent

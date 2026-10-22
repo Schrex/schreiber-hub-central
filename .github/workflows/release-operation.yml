@@ -40,6 +40,7 @@ on:
 permissions:
   contents: read
   actions: read
+  deployments: write # Persistent sequence ledger; no contents write. Plan never writes it.
 concurrency:
   group: production-frontend
   cancel-in-progress: false

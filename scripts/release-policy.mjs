@@ -72,3 +72,12 @@ export function validateOperation(input) {
   else requireValue(/^[1-9][0-9]*$/.test(input.run ?? '') && /^[a-f0-9]{64}$/.test(input.hash ?? ''), 'Approved candidate run and manifest digest required.');
   if (input.mode === 'execute') requireValue(input.enabled === 'true' && input.confirmation === `${input.operation.toUpperCase()} ${input.revision}` && /^https:\/\/\S+$/.test(input.recoveryReference ?? ''), 'Execution needs activation, exact confirmation and a durable recovery reference.');
 }
+
+export function validateSequence(runNumber, entries) {
+  requireValue(/^[1-9][0-9]*$/.test(runNumber ?? ''), 'Operation sequence required.');
+  for (const entry of entries) {
+    const data = typeof entry.payload === 'string' ? JSON.parse(entry.payload) : entry.payload;
+    requireValue(data?.schema === 'schreiber-frontend-v1' && /^[1-9][0-9]*$/.test(data.runNumber ?? '') &&
+      BigInt(runNumber) > BigInt(data.runNumber), 'Older/repeated operation refused by persistent release ledger. Dispatch a new reviewed operation.');
+  }
+}

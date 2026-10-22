@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { backend, project, requireValue, validateOperation, verifyPayload, validateIdentity, validateDeployment } from './release-policy.mjs';
+import { backend, project, requireValue, validateOperation, verifyPayload, validateIdentity, validateDeployment, validateSequence } from './release-policy.mjs';
 import { github, candidateSource } from './release-github.mjs';
 
 export async function perform(input, deps) {
@@ -19,7 +19,7 @@ export async function perform(input, deps) {
   const receipt = { operation: input.operation, mode: input.mode, revision: input.revision, backend,
     expectedPrevious: input.previous, target: input.target || null, manifestSHA256: input.hash || null,
     artifactId, candidateRun: input.run || null, workflowRevision: input.workflowRevision,
-    run: input.operationRun, recoveryReference: input.recoveryReference || null, outcome: 'planned' };
+    run: input.operationRun, actor: input.actor, recoveryReference: input.recoveryReference || null, outcome: 'planned' };
   deps.record(receipt);
   if (input.mode === 'plan') return receipt; // No Cloudflare credential or API required.
   const current = await deps.current(input.previous);
@@ -35,6 +35,10 @@ export async function perform(input, deps) {
   // No API CAS exists: out-of-band dashboard/CLI operators must pause during this lane.
   requireValue(await deps.main() === main, 'Main changed during preparation; dispatch again.');
   await deps.current(input.previous);
+  receipt.ledger = await deps.reserve(input);
+  receipt.outcome = 'reserved'; deps.record(receipt);
+  requireValue(await deps.main() === main, 'Main changed after ledger reservation.');
+  await deps.current(input.previous);
   receipt.previous = current.id;
   receipt.outcome = 'mutation-outcome-unknown';
   deps.record(receipt); // Preserve this even if the network response is lost.
@@ -43,8 +47,14 @@ export async function perform(input, deps) {
     receipt.outcome = 'applied-unverified'; deps.record(receipt);
     await deps.verify(input, receipt.deployment);
     receipt.outcome = 'verified'; deps.record(receipt);
+    await deps.status(receipt.ledger, 'success', receipt.deployment);
     return receipt;
   } catch {
+    if (receipt.outcome === 'verified') {
+      receipt.ledgerStatus = 'update-failed'; deps.record(receipt);
+      throw new Error('Frontend verified, but ledger status publication failed. Inspect receipt; do not repeat the mutation.');
+    }
+    await deps.status(receipt.ledger, 'error', receipt.deployment).catch(() => {});
     deps.record(receipt);
     throw new Error('Release operation failed or is unverified. Inspect receipt/provider state before any retry; no automatic rollback was attempted.');
   }
@@ -56,7 +66,7 @@ async function main() {
   const input = { operation: env.RELEASE_OPERATION, mode: env.RELEASE_MODE, revision: env.RELEASE_SHA,
     previous: env.EXPECTED_DEPLOYMENT, target: env.RECOVERY_DEPLOYMENT, run: env.CANDIDATE_RUN,
     hash: env.ARTIFACT_SHA256, enabled: env.PRODUCTION_FRONTEND_ENABLED, confirmation: env.RELEASE_CONFIRMATION,
-    recoveryReference: env.RECOVERY_REFERENCE, workflowRevision: env.GITHUB_WORKFLOW_SHA, operationRun: env.GITHUB_RUN_ID };
+    recoveryReference: env.RECOVERY_REFERENCE, workflowRevision: env.GITHUB_WORKFLOW_SHA, operationRun: env.GITHUB_RUN_ID, actor: env.GITHUB_ACTOR, runNumber: env.GITHUB_RUN_NUMBER };
   const payload = path.resolve(env.RELEASE_PAYLOAD ?? 'dist/release-payload');
   const recordDir = path.resolve('dist/release-operation');
   mkdirSync(recordDir, { recursive: true });
@@ -92,6 +102,30 @@ async function main() {
         new RegExp(`^https://github.com/${env.GITHUB_REPOSITORY}/actions/runs/[0-9]+$`).test(manifest.verification), 'Candidate provenance mismatch.');
       return artifact.id;
     },
+    reserve: async value => {
+      const entries = [];
+      for (let page = 1; page <= 10; page++) {
+        const batch = await github(`deployments?environment=production-frontend&task=schreiber-frontend&per_page=100&page=${page}`);
+        entries.push(...batch);
+        if (batch.length < 100) break;
+        requireValue(page < 10, 'Release ledger exceeds review limit; migrate it explicitly.');
+      }
+      validateSequence(value.runNumber, entries);
+      const deployment = await github('deployments', {
+        ref: value.workflowRevision, task: 'schreiber-frontend', environment: 'production-frontend',
+        auto_merge: false, required_contexts: [], production_environment: true,
+        description: `Manual frontend ${value.operation}`,
+        payload: { schema: 'schreiber-frontend-v1', runNumber: value.runNumber, run: value.operationRun,
+          operation: value.operation, revision: value.revision, previous: value.previous, target: value.target || null, hash: value.hash || null },
+      });
+      requireValue(Number.isSafeInteger(deployment.id), 'Release ledger reservation not confirmed.');
+      await github(`deployments/${deployment.id}/statuses`, { state: 'in_progress', auto_inactive: false,
+        log_url: `https://github.com/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}` });
+      return deployment.id;
+    },
+    status: async (id, state, deployment) => github(`deployments/${id}/statuses`, { state, auto_inactive: false,
+      description: deployment ? `Cloudflare ${deployment}; inspect receipt for verification outcome` : 'Outcome unknown; inspect provider before retry',
+      log_url: `https://github.com/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}` }),
     record: value => writeFileSync(path.join(recordDir, 'receipt.json'), JSON.stringify(value, null, 2) + '\n'),
     current,
     target: async id => {
