@@ -19,6 +19,7 @@
     "test:local:permissions": "node scripts/local-permissions.mjs",
     "test:local:hr": "node scripts/local-hr.mjs",
     "test:local:storage": "node scripts/local-storage-permissions.mjs",
+    "test:local:employee": "node scripts/local-employee-creation.mjs",
     "test:local:roles": "node scripts/local-role-boundaries.mjs",
     "local:audit-schema": "node scripts/schema-audit.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
