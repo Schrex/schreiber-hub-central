@@ -1,5 +1,9 @@
 # AI migration preparation — 2026-10-19
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Implemented a small provider-neutral request boundary in
 `supabase/functions/_shared/ai-json-chat.ts`, used by the representative
 `suggest-safety-topic` function. The helper takes an endpoint, key, model, messages

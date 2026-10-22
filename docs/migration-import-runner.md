@@ -1,5 +1,9 @@
 # Restricted database baseline runner
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Prepared 2026-10-19 for **hub-rehearsal only**, `acgqjjbrnkmeazswdnzp`.
 This is the first database load, not a complete functional restore or production cutover.
 The corrected operator retry reported **Baseline committed** in private run

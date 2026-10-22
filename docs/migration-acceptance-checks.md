@@ -1,5 +1,9 @@
 # Independent restore acceptance
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 **Update 2026-10-20:** business/Auth data was restored into isolated hub-rehearsal
 and all 62 COPY sections independently reconciled. All 23 files and their ownership/
 content metadata passed verification; 15 buckets remain private. All 70 reviewed

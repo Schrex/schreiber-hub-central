@@ -1,5 +1,9 @@
 # Migration completion plan
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Prepared October 20, 2026. Planning only: no production deployment, main merge,
 paid provisioning or cancellation is authorized by this document.
 

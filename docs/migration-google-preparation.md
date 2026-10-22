@@ -1,5 +1,9 @@
 # Independent Google sign-in preparation
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Prepared 2026-10-19. Google sign-in stays in the migration scope. The application
 now has an opt-in independent Supabase OAuth path; the existing Lovable path stays
 the default. No hosted Auth setting, Google client, deployment or credential was

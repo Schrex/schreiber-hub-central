@@ -1,5 +1,9 @@
 # Offline restore preparation tooling
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 **Update 2026-10-19:** the export is now privately captured and inspected. See the
 [restore selection plan](migration-restore-plan.md) for current evidence and next
 steps. Earlier unavailable-export statements below are historical; restore remains

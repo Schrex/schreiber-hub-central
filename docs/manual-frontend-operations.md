@@ -3,10 +3,11 @@
 The workflows are integrated into main through approved PR #21. The account ID,
 public backend configuration and encrypted Pages deployment token are configured.
 The token expires January 20, 2027. All workflows remain manual and main-only.
-Live execution is not activated: the new reader requires a separate Access service
-credential and policy, and the historical recovery archive has not been located.
-Configure authenticated verification and verify recovery evidence
-before enabling execution. No upload or rollback was performed during setup.
+Access credentials and policy are configured. The owner approved activation and
+live execution 39846752862, which verified deployment
+2c110f18-7411-4f63-9d09-3cc291a54470 at revision ac61bb6 on October 22, 2026.
+Read-only recovery preflight 39847008622 passed; no rollback was performed.
+A verified reconstructed recovery archive is retained; the original ZIP is missing.
 The prior dry-run build remains available and remains non-deployable.
 
 ## Authenticated readiness checks
@@ -73,7 +74,7 @@ package lifecycle scripts. No application build/install receives the Cloudflare 
 
 A later, separately authorized `execute` dispatch additionally requires:
 
-- `PRODUCTION_FRONTEND_ENABLED=true` repository variable (not configured by this PR).
+- `PRODUCTION_FRONTEND_ENABLED=true` repository variable (enabled with owner approval).
 - `CLOUDFLARE_ACCOUNT_ID` variable and `CLOUDFLARE_PAGES_API_TOKEN` secret entered
   through secure provider/GitHub settings, never chat or source files.
 - Exact confirmation `DEPLOY <full SHA>` and an HTTPS `recovery_reference` to
@@ -100,9 +101,9 @@ The ledger's run-number namespace is this workflow: do not delete/reset its hist
 or rename/recreate the workflow without an explicit state migration. Reading is
 bounded at 1,000 records, after which an explicit ledger migration is required.
 GitHub deployment events may notify integrations; inspect installed consumers before
-activation. This implementation does not grant environment review enforcement or
-prove that deployment-record writes are available on the current plan. No ledger
-record has been written as part of implementation/testing. Serialization alone is
+activation. Consumers were inspected before probe 39845601264 and live release
+39846752862 verified deployment/status writes. This implementation does not grant
+environment review enforcement. Serialization alone is
 not FIFO protection. Cloudflare offers no atomic comparison
 and upload operation here: **pause out-of-band dashboard/CLI deployments during
 execution**. An external actor can race the final check. This is a documented

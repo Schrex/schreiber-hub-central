@@ -1,5 +1,9 @@
 # Independent restore plan — inspected backup, 2026-10-19
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Latest: destination isolation and the restricted database-baseline runner are now
 prepared; see [runner details](migration-import-runner.md). No real-data import has
 run. The original plan below predates the authorized destination control changes.
