@@ -1,5 +1,75 @@
 # Development progress
 
+## Consolidated operating status and evidence cleanup — 2026-10-22
+
+This summary replaces uncommitted migration-session narratives. Hosted observations
+below are retained October 21–22 evidence, not newly repeated provider checks.
+Main and develop were synchronized through PRs #14/#15; their file trees matched.
+The live frontend remained clean ea0504798c9985ea44ad32d674579b15ae6f0c66; branch
+reconciliation was not a redeployment. Permanent staging is deferred by the owner;
+local synthetic testing and an explicitly triggered release workflow are the intended
+next steps. Deployment automation is not yet implemented.
+
+- Cloudflare Pages production deployment 82bbfce8-7a2f-412f-b3b4-62af659022ef served
+  the independent frontend. Custom domain app.schreiberexcavating.com was Active
+  with SSL; admin sign-in persisted after reload and an existing contract PDF opened.
+- Wix app DNS was changed to CNAME schreiber-hub-preview.pages.dev. Supabase project
+  acgqjjbrnkmeazswdnzp serves production, not disposable staging. Auth Site URL is
+  the custom hostname with its exact /reset-password redirect; prior redirects retained.
+- Lovable project sync/domain were disconnected and its frontend unpublished.
+  The old daily-celebrations job was disabled, both queue-wake triggers disabled,
+  and dispatch/wake/read-email-batch RPC execution restricted to postgres. Working
+  email queues and pending pg_net queue were empty at the recorded check.
+- Old backend pause was requested and accepted, but stable paused completion was
+  not verified. Billing cancellation, organization GitHub access removal, shared
+  credential revocation and unknown external-caller retirement remain unresolved.
+  Do not infer that unpublishing stopped all backend callers or reverse retirement
+  controls automatically. Other Lovable projects and retained source data remain.
+
+### Evidence worth retaining
+
+- Hosted four-role accident-photo proof passed per operator output; the remaining
+  14-bucket harness was operator-reported PASS. Later independent catalog inspection
+  found no run-owned Storage fixtures. Do not upgrade these to independently observed
+  permission tests or assume all browser/reconnect cases passed.
+- Recorded admin/office/foreman file checks covered selected uploads, rendering,
+  version labels and downloads with exact fixture cleanup. Hidden contract UI does
+  not establish Storage HTTP denial: existing contract reads were authenticated-wide.
+- Independent Office/Foreman Whiteboard sessions proved explicit Refresh insertion
+  and deletion plus writer reload persistence; exact synthetic row cleanup passed.
+  An Office-only notification fixture proved display, mark-read and reload persistence;
+  database read_at and cleanup were verified. These were not business-producer tests.
+- Three explicitly approved synthetic Auth/profile/role accounts were created during
+  acceptance. Automatic user profile/role creation failed for the first account and
+  required explicit setup. Service-role employee_contacts SELECT was also denied.
+  These are essential onboarding gaps to recheck before enabling Add Employee; neither
+  synthetic account setup nor existing-user login proves onboarding works.
+
+### Remaining boundaries
+
+Automatic application email remains OFF at the last confirmed state. One approved
+inbox delivery, suppression webhook and synthetic unsubscribe checks passed; actual
+business producers, recipient review and dispatcher installation/proof remain open.
+Auth SMTP is separate. Time-off/truck/Safety triggers can create real-recipient in-app
+notifications even with email OFF, so routine synthetic tests must stay local.
+Last hosted Realtime audit had zero published tables; explicit refresh/polling is
+implemented, while native reconnect and full hosted workflow coverage remain incomplete.
+Onboarding, Google login and other deferred integrations were not enabled by migration.
+Finalized destination backup plus isolated restore proof is not recorded; original
+archive integrity and frontend checksum checks do not establish complete recovery.
+
+### Cleanup verification
+
+Eight untracked session reports and four operator-only Storage proof/test scripts
+were removed from the working tree after consolidating their key findings here.
+They were not referenced by app imports, package commands or CI. All 16 original
+modified/untracked files and the original tracked diff were copied into a timestamped,
+SHA256-verified local Git-metadata archive before cleanup. This is local recovery,
+not a pushed backup. Four concise documentation updates retain current operations,
+email limits and recovery cautions. No runtime code, applied migrations, credentials,
+hosted records or deployment changed. Whitespace, local-link and removed-path
+reference checks are the applicable validation; runtime suites were not rerun.
+
 ## Production branch reconciliation prepared — 2026-10-22
 
 Live HTTPS build-info read confirmed clean ea0504798c9985ea44ad32d674579b15ae6f0c66,
