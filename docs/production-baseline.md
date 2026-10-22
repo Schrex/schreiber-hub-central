@@ -68,6 +68,9 @@ Other projects, paused data, and billing were preserved. Billing cancellation wa
 previously deferred by the owner.
 
 Remaining items are tracked in [development progress](../DEVELOPMENT_PROGRESS.md):
-legacy provider credential inventory/revocation, full backend backup/restore proof,
+full backend backup/restore proof,
 the two open SheetJS advisories, and deferred integration/feature acceptance.
-Add Employee remains disabled until its separate onboarding work passes review.
+Deepgram/ElevenLabs features are out of scope by owner instruction. Their saved
+API secrets were removed from the paused old Lovable project and absence verified.
+Provider-side key revocation was not performed. Add Employee remains disabled until
+its separate onboarding work passes review.

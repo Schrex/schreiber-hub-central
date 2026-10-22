@@ -27,6 +27,9 @@ read-only recovery preflight passed. No actual rollback was performed.
   Unique historical integration/export commits remain recoverable from the bundle.
 - Two clean worktrees (job-files and release-reconciliation) belong to other chats.
   The app refused archive/attachment from this chat; their directories were preserved.
+- Repository webhooks and deploy keys are empty; the three Actions secrets are
+  required by the current release workflow. Removed disposable dist, Python cache,
+  and browser outputs after retaining local verification evidence.
 - Full local verification passed: app, backend, lint, Edge and five browser workflows.
   Lint retains 30 existing warnings and zero errors. No runtime files changed.
 
@@ -41,8 +44,9 @@ Any hosted fix or new frontend release requires its own explicit authorization.
 
 ## Outstanding operational items
 
-- Shared legacy provider credential revocation needs an exact inventory of keys and
-  their consumers; do not revoke a key still used by another app.
+- Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved
+  API secrets from the paused old Lovable project and verified their absence.
+  This does not claim vendor-side key revocation; no vendor account was accessed.
 - Lovable billing cancellation remains deferred by the owner's prior choice.
 - Destination database/Auth/Storage backup and isolated restore proof remain open;
   frontend recovery archives do not cover them.
