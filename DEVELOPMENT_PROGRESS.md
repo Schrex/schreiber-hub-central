@@ -1,5 +1,72 @@
 # Development progress
 
+## Final candidate and authenticated readiness passed — 2026-10-22
+
+Exact-main Verification 39845598579 passed all five groups at
+ac61bb695304d2cb319f5c3605d43f446ed99bca. Candidate build 39846243630 passed;
+artifact 12455596746 and all 12 file hashes independently verified. Manifest SHA256:
+b54e868d656e45d8eaeac7d7c80236bf5bf5a8505ae625fec360b15ba4267317.
+The exact candidate ZIP/checksum is retained in private draft release
+https://github.com/Schrex/schreiber-hub-central/releases/tag/untagged-f7b9309f916047b4e8bf
+and downloaded back, verifying ZIP, manifest digest and all file hashes.
+
+Authenticated GitHub Actions preflight 39846405152 passed against expected current
+Cloudflare deployment 82bbfce8-7a2f-412f-b3b4-62af659022ef. Receipt confirms clean
+ea05047 current identity, correct backend and preflight-passed. This performs
+actual provider reads and immutable/public identity and availability checks.
+Its ledgerWriteVerified=false is intentional; separate probe 39845601264 supplies
+the actual successful write proof. Final plan 39846432048 also passed with the
+same candidate/digest/current UUID. Both receipts were downloaded and inspected.
+Unauthenticated immutable requests still receive HTTP 302; protection remains.
+
+All preparation gaps are resolved with stated recovery limitations. Production
+ledger remains empty; activation and live upload have not occurred. The remaining
+step is explicit authorization to enable execution and upload this exact candidate,
+followed by provider/identity verification and recording the resulting deployment.
+
+## Main readiness release and ledger proof — 2026-10-22
+
+PR #23 passed both verification runs and merged main at
+ac61bb695304d2cb319f5c3605d43f446ed99bca under the owner's explicit approval.
+Actions ledger permission probe 39845601264 succeeded using github.token.
+Downloaded receipt outcome is ledger-write-verified, productionMutation=false,
+diagnostic deployment ID 7262369156. GitHub API confirms environment
+release-ledger-readiness, task schreiber-ledger-probe, non-production/transient,
+and status history in_progress then inactive. No production sequencing record or
+Cloudflare mutation was made. This resolves the previously unproven ledger-write
+permission, not live upload/rollback acceptance.
+
+## Access and recovery setup verified — 2026-10-22
+
+Owner explicitly approved the 90-day Access identity/policy, encrypted Actions
+secrets, promotion of PR #22 through develop/main after checks, authenticated
+preflight and the non-production ledger probe; live upload remains excluded.
+Created schreiber-github-release-verification (2160 hours) and attached Service
+Auth policy 83598975-cf57-4569-bb43-abcdc82052cf to the existing Pages application,
+allowing only that identity. Destinations remain schreiber-hub-preview.pages.dev
+and its subdomains; existing member policy remains. The actual new reader fetched
+and validated the immutable live ea05047 identity successfully. Access ID/secret
+are in encrypted Actions secrets; temporary local credential file was removed.
+
+Rebuilt clean ea05047 in an isolated managed worktree with its frozen Bun lock.
+All nine publicly served static files match the live app byte-for-byte. All 12
+packaged files and ZIP integrity passed; new build-info timestamp is explicit,
+and _headers/_redirects are source-derived, not certified historical provider rules.
+Replacement ZIP SHA256: 49ed9bf4c279b520d59751fa24ddc383c89fc01c0b1982c5dea44b623a3a04fd.
+Stored ZIP, per-file evidence and checksum in the private draft release
+https://github.com/Schrex/schreiber-hub-central/releases/tag/untagged-0a06433c5cabc53168ac
+and downloaded them back, rechecking the ZIP digest and all file hashes. This is
+durable reconstructed recovery evidence, not the missing original artifact or a
+production restoration test.
+
+Repository and organization webhook inventories are empty. Installed app settings
+were reviewed after owner reauthentication: Lovable and Claude have no deployment
+permission; Cursor has deployment-read, not deployment-write. This inspection does
+not claim access to third-party internal handlers. No repository workflow subscribes
+to deployment events. The final independent code review found no blocking issue
+in the ledger probe. PR #22 passed five remote checks and merged develop at
+46dc438; approved main integration PR #23 is pending verification.
+
 ## Authenticated readiness implementation — 2026-10-22
 
 Added a dedicated identity reader with Cloudflare Access headers confined to

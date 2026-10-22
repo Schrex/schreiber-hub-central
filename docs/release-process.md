@@ -89,8 +89,12 @@ Upload/recovery implementation is now described in [manual frontend operations](
    queued run overwriting a newer deployment. Recovery is a separate explicit action.
 
 [Cloudflare Direct Upload CI documentation](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)
-describes Wrangler and the account-scoped token. Credentials and production activation remain absent. The separate manual uploader
-and native recovery controller are implemented for review and mock testing.
+describes Wrangler and the account-scoped token. Pages and Access credentials are
+now configured. PR #23 integrated authenticated preflight and the isolated ledger
+probe into main. Probe 39845601264 confirmed Actions deployment/status writes with
+an inactive non-production diagnostic record. Production activation and live upload
+remain separate owner-authorized steps. See DEVELOPMENT_PROGRESS.md for current
+candidate, provider and recovery evidence; mock tests alone are not readiness proof.
 
 ## Recovery preparation and current baseline
 
@@ -102,6 +106,16 @@ Recovery archive: `dist/schreiber-hub-preview-ea05047.zip`, SHA256
 `6a2150347ca964d9fff6627915d07b410ebe9a287b8d6555ead6d8783ff6abf2`.
 These are retained observations, not fresh live validation or durable remote backup.
 See [hosting recovery](migration-hosting-recovery.md).
+
+The original ZIP was not located. A clean rebuild of ea05047 is retained as a
+clearly labelled replacement in the [private recovery draft release](https://github.com/Schrex/schreiber-hub-central/releases/tag/untagged-0a06433c5cabc53168ac).
+Replacement ZIP SHA256 is
+`49ed9bf4c279b520d59751fa24ddc383c89fc01c0b1982c5dea44b623a3a04fd`.
+All nine publicly served static files match the live baseline; build-info has a
+new timestamp, and header/redirect files are source-derived. The downloaded remote
+copy passed ZIP integrity and all 12 file hashes. This is not recovery of the old
+checksum or proof of a production restore. Native rollback uses the retained
+Cloudflare deployment, not this rebuilt archive.
 
 Manual recovery must select an exact previous immutable deployment/artifact,
 validate its hash and backend compatibility, record owner authorization and current
