@@ -1,5 +1,99 @@
 # Development progress
 
+## Authenticated readiness implementation — 2026-10-22
+
+Added a dedicated identity reader with Cloudflare Access headers confined to
+validated immutable hosts for schreiber-hub-preview. Public-domain reads send no
+Access credentials; redirects, HTML login responses and unexpected hosts fail.
+Added preflight mode with real provider/identity/ledger reads and no provider or
+ledger mutation. Separate ledger-probe workflow tests the real Actions token by
+creating and deactivating a distinct non-production diagnostic record, without
+Cloudflare secrets or production sequencing fields.
+
+Independent reviewer found no blocking defect in the Access/preflight changes;
+added their requested ledger/main/deployment/recovery failure cases. Bun 1.3.14 /
+Node 26.8.2 passed all five local verification groups: 153 app tests, 71 release
+tests, six backend suites, five browser workflows, Edge checks, lint 0 errors /
+30 existing warnings. The real loopback redirect test passed with networking
+permission. All workflows passed actionlint and whitespace checks.
+
+Still required: remote integration/checks, Access service credential and policy
+setup, authenticated provider preflight, Actions ledger-write probe, durable
+replacement recovery package validation, and exact-main candidate/plan. Neither
+new workflow has run in GitHub yet. Live activation/upload remain unperformed.
+
+## Independent release-readiness review and recheck — 2026-10-22
+
+At the owner's request, a separate review agent challenged the activation plan.
+Fresh read-only checks reproduced HTTP 302 to Cloudflare Access for the immutable
+build-info URL and HTTP 200 with clean ea05047 identity at the custom domain.
+The controller sends no Access credentials and rejects redirects (release-operation
+lines 81-91). Deployment would stop at its first identity read before ledger/upload;
+recovery would stop at the target identity read before rollback. This is a confirmed
+readiness failure, not a failed production deployment. Activation remains absent;
+GitHub still lists zero deployment records.
+
+Candidate 39842209233 and plan 39842415484 remain successful on main 75fd4cf.
+The candidate's 12 file hashes reverified. Bun 1.3.14 / Node 26.8.2 rerun passed
+153 application tests and 45 release tests. Plan deliberately returns before
+Cloudflare/ledger calls, and release state-machine tests mock those dependencies;
+neither proves authentication or GitHub ledger write capability.
+
+Corrections to the earlier proposed fix: a rebuild is a new recovery artifact,
+not the original ZIP or proof of matching its recorded checksum (build-info stamps
+a new time). Native Cloudflare rollback reuses a retained production deployment
+and does not upload a ZIP; a durable copy is our additional release policy. Exact
+archive search again found no copy in known locations, but the deletion cause is
+unknown. Do not attribute it to the independent builder, which clears only
+dist/independent. GitHub ledger write readiness was omitted from the short plan
+and remains unproven. No live configuration or deployment was changed by this review.
+
+Corrected sequence: add narrowly scoped Access service authentication and a
+non-mutating provider preflight; verify current/recovery build identities and
+authentication failure behavior; establish a verified durable recovery package
+with truthful provenance; separately verify Actions-token ledger write capability
+after event-consumer review; then run fresh candidate/preflight/plan before asking
+for the live release. Do not disable Access or treat a green plan as readiness.
+
+## Production workflow integration and credential setup — 2026-10-22
+
+PR #20 merged into develop at cc4c8f7 after its five checks passed. The owner
+explicitly approved PR #21 main integration, a 90-day account-scoped Pages Write
+token, encrypted GitHub secret storage, and a candidate build/plan, excluding a
+live upload. PR #21 passed all five checks and merged into main at
+75fd4cf2b53e48252d5d59f256c0a33c55e16ce6. No application deployment occurred.
+
+Configured CLOUDFLARE_ACCOUNT_ID and PRODUCTION_SUPABASE_ANON_KEY repository
+variables. The public anon configuration was recovered from the currently served
+frontend and checked for destination project, anon role and expiry without logging
+its value. Created schreiber-hub-github-production with Pages Write only for the
+verified account, expiring January 20, 2027, and stored it as the encrypted
+CLOUDFLARE_PAGES_API_TOKEN Actions secret. Its temporary local copy was removed.
+Authenticated provider read confirmed schreiber-hub-preview, production branch
+main, no Git source, both expected domains, no Functions, and canonical deployment
+82bbfce8-7a2f-412f-b3b4-62af659022ef. Public custom-domain build-info still reports
+clean ea0504798c9985ea44ad32d674579b15ae6f0c66 and the fixed destination backend.
+
+Live execution remains disabled. Readiness inspection found Cloudflare Access
+redirects on the immutable pages.dev build-info URL; the controller's current
+unauthenticated immutable checks cannot pass. Access authentication must be added
+without removing that protection before execution/recovery is usable. The recorded
+ea05047 recovery ZIP was not found in dist, temporary files, Downloads, Schrex
+archive/code folders or managed worktrees; no durable recovery copy is certified.
+Repository webhooks are empty; installed-app consumer inspection returned 404 and
+ledger write capability remains unproven. These are readiness gaps, not successful
+production acceptance.
+
+Exact-main Verification 39841634456 passed all five groups. Production candidate
+build 39842209233 succeeded; its downloaded artifact passed all 12 file hashes,
+layout, clean source and destination identity checks. Manifest SHA256:
+32c52b47136f6bff5a945a2d4693e5d03dc4c07c74606b40c566c9735424e303.
+Manual deployment plan 39842415484 succeeded and retained receipt outcome planned,
+candidate artifact ID 12453048215 and the expected current deployment UUID. Plan
+does not contact Cloudflare or write a deployment ledger; this is not live acceptance.
+Candidate retention is 90 days. The owner-approved merge/setup/build/plan is complete;
+live activation and deployment remain outstanding for the readiness gaps above.
+
 ## Manual upload and native recovery implemented, inactive — 2026-10-22
 
 PR #19 passed all five checks and merged into develop (679e4f6), retaining main's

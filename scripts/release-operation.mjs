@@ -5,6 +5,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { backend, project, requireValue, validateOperation, verifyPayload, validateIdentity, validateDeployment, validateSequence } from './release-policy.mjs';
 import { github, candidateSource } from './release-github.mjs';
+import { buildReader } from './release-http.mjs';
 
 export async function perform(input, deps) {
   validateOperation(input);
@@ -30,6 +31,18 @@ export async function perform(input, deps) {
     const target = await deps.target(input.target);
     validateIdentity(target.info, input.revision);
     receipt.targetBuildInfo = target.info;
+  }
+  if (input.mode === 'preflight') {
+    // Real provider reads, but never reserve a ledger entry or mutate Cloudflare.
+    await deps.checkLedger(input);
+    if (input.operation === 'deploy') await deps.verify({ ...input, revision: current.info.revision }, current.id);
+    requireValue(await deps.main() === main, 'Main changed during preflight.');
+    await deps.current(input.previous);
+    receipt.outcome = 'preflight-passed';
+    receipt.ledgerWriteVerified = false;
+    receipt.currentBuildInfo = current.info;
+    deps.record(receipt);
+    return receipt;
   }
   // Compare Cloudflare's persistent canonical deployment immediately before mutation.
   // No API CAS exists: out-of-band dashboard/CLI operators must pause during this lane.
@@ -78,10 +91,7 @@ async function main() {
     requireValue(response.ok, `Cloudflare request failed (${response.status}); inspect provider state before retry.`);
     const body = await response.json(); requireValue(body.success, 'Cloudflare operation not confirmed.'); return body.result;
   };
-  const readInfo = async origin => {
-    const response = await fetch(`${origin}/build-info.json`, { redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(15000) });
-    requireValue(response.ok, 'Build identity unavailable.'); return response.json();
-  };
+  const readInfo = buildReader(env);
   const current = async (expected, readIdentity = input.operation === 'deploy') => {
     const state = await cf();
     requireValue(state.name === project && state.production_branch === 'main' && !state.source && state.uses_functions !== true &&
@@ -102,7 +112,7 @@ async function main() {
         new RegExp(`^https://github.com/${env.GITHUB_REPOSITORY}/actions/runs/[0-9]+$`).test(manifest.verification), 'Candidate provenance mismatch.');
       return artifact.id;
     },
-    reserve: async value => {
+    checkLedger: async value => {
       const entries = [];
       for (let page = 1; page <= 10; page++) {
         const batch = await github(`deployments?environment=production-frontend&task=schreiber-frontend&per_page=100&page=${page}`);
@@ -111,6 +121,9 @@ async function main() {
         requireValue(page < 10, 'Release ledger exceeds review limit; migrate it explicitly.');
       }
       validateSequence(value.runNumber, entries);
+    },
+    reserve: async value => {
+      await deps.checkLedger(value);
       const deployment = await github('deployments', {
         ref: value.workflowRevision, task: 'schreiber-frontend', environment: 'production-frontend',
         auto_merge: false, required_contexts: [], production_environment: true,
