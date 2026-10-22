@@ -1,5 +1,9 @@
 # Private rehearsal file restore
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Current status (2026-10-19): byte copy and ownership correction completed. Do not rerun
 the upload/correction commands below. Fresh independent read-only comparison passes
 all 23 paths, both owner fields, sizes, MIME/cache settings and empty custom metadata.

@@ -1,5 +1,9 @@
 # File-access acceptance evidence
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Verified 2026-10-21. Destination: **schreiber-hub** (`acgqjjbrnkmeazswdnzp`).
 Production/source, employee files and hosted role assignments were not changed.
 

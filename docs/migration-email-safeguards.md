@@ -1,5 +1,9 @@
 # Delivery-time email safeguards
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 ## Consolidated status — October 22, 2026
 
 The design notes below describe an earlier implementation stage. Retained later

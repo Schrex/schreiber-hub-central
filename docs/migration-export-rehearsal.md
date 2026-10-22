@@ -1,5 +1,9 @@
 # Private export and independent restore preparation
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Status: database export requested, 2026-10-19 14:33 UTC. Lovable confirmed
 “Database export started”; completion and download were initially pending; see capture milestone below. No restore or
 infrastructure provisioning performed. Earlier preparation observations below

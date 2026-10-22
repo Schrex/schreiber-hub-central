@@ -1,5 +1,9 @@
 # Rehearsal connection readiness — 2026-10-19
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Dashboard access to `hub-rehearsal` (`acgqjjbrnkmeazswdnzp`) was rechecked.
 During initial inspection no password was collected or database query sent.
 The operator subsequently completed the read-only login check below; no remote

@@ -1,5 +1,9 @@
 # Email replacement preparation
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Prepared 2026-10-19 on the migration feature branch. No provider request, secret
 lookup, deployment, hosted setting change or real message was sent in this work.
 

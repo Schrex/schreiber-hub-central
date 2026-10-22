@@ -1,5 +1,9 @@
 # Synthetic migration validation — 2026-10-19
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Status: local checks pass; independent real-data restoration remains unproved.
 These results use only the existing `schreiber-local` Docker backend on
 `http://127.0.0.1:55321`. `hub-rehearsal` is reserved for the separate restricted

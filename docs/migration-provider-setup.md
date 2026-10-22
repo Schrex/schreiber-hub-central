@@ -1,5 +1,9 @@
 # Independent provider setup
 
+> Historical migration record. For current production identity and operating rules,
+> use [production baseline](production-baseline.md). Do not rerun migration steps
+> or treat earlier pending-state descriptions as current status.
+
 Preparation record, 2026-10-19. No provider selected, account created, DNS changed,
 credential entered, message sent or paid resource provisioned by this work.
 All existing app capabilities remain in scope.
