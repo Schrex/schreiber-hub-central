@@ -1,5 +1,44 @@
 # Independent frontend and recovery runbook
 
+## Operating status — October 22, 2026
+
+The cutover has occurred. Earlier preparation sections below are historical;
+statements that production is a placeholder or the live hostname is still Lovable
+must not be used as current instructions. See DEVELOPMENT_PROGRESS.md for the
+consolidated acceptance evidence and remaining gaps. This is retained evidence,
+not a new live provider audit.
+
+- Frontend: https://app.schreiberexcavating.com, Cloudflare Pages direct-upload project
+  schreiber-hub-preview. Production deployment: 82bbfce8-7a2f-412f-b3b4-62af659022ef.
+- Deployed revision: ea0504798c9985ea44ad32d674579b15ae6f0c66, clean, independent mode.
+  Retained ZIP: dist/schreiber-hub-preview-ea05047.zip; SHA256
+  6a2150347ca964d9fff6627915d07b410ebe9a287b8d6555ead6d8783ff6abf2.
+- Wix DNS: app CNAME to schreiber-hub-preview.pages.dev, TTL one hour. Apex/www and
+  mail records were retained. Custom hostname Active/SSL, admin reload persistence
+  and an existing contract PDF were verified on October 22.
+- Production Supabase: acgqjjbrnkmeazswdnzp. Site URL is the custom hostname; its
+  exact /reset-password redirect was saved, retaining previous allowed redirects.
+- Lovable frontend/domain/project Git sync were retired. Source daily-celebrations
+  job 4 was disabled, email_queue_wake_auth and email_queue_wake_transactional
+  disabled, and email_queue_dispatch(), email_queue_wake(), and
+  read_email_batch(text,integer,integer) execution restricted to postgres.
+  Prior grants were postgres/anon/authenticated/service_role for dispatch and wake,
+  postgres/service_role for read_email_batch, and no PUBLIC grant. Both triggers
+  previously had enabled state O. Restoring any of these may send queued mail.
+  Source database pause completion was not verified after the accepted request.
+
+Retain original private exports and the prior frontend artifact. The October 19
+DB/Storage archive integrity checks passed; a finalized destination recovery point,
+independent backup copy and full isolated restore proof are not recorded complete.
+Do not rerun the empty-target importer on production. Frontend rollback does not
+undo database, Auth or file changes; DNS reversal alone cannot reconcile writes.
+Recheck current provider state and preserve new data before any approved recovery.
+
+Permanent staging has been deferred. A historical preview URL can still point at
+the production backend; never use it for routine destructive or employee-data tests.
+GitHub verification is configured; deployment automation is not yet implemented.
+Application delivery remains OFF; Auth SMTP and unknown external callers are separate.
+
 Prepared October 20, 2026. Local preparation only. No hosting account, Pages
 project, DNS, hosted Auth setting, production deployment or cutover was changed.
 The [completion plan](migration-completion-plan.md) remains the release gate.

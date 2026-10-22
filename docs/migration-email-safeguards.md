@@ -1,5 +1,18 @@
 # Delivery-time email safeguards
 
+## Consolidated status — October 22, 2026
+
+The design notes below describe an earlier implementation stage. Retained later
+proof covers Postmark inbox delivery, the verified suppression webhook and synthetic
+unsubscribe/replay. Current unsubscribe code persists suppression before consuming
+the token; the worker checks success-log and queue-operation errors.
+
+Automatic delivery remains OFF; dispatcher installation/proof and business-recipient
+review remain unresolved. A 30-second visibility lease and uncertain provider/log
+outcomes still permit duplicate delivery; no exactly-once claim is made. Email OFF
+does not suppress database-generated in-app notifications, and Auth SMTP is separate.
+See [development progress](../DEVELOPMENT_PROGRESS.md) for consolidated evidence.
+
 **Review status:** optional companion runtime work, not part of the audit-only PR.
 Further delivery-tracking infrastructure is paused. Current plan: Supabase Auth
 SMTP and the existing notification queue; this module is not an activation gate

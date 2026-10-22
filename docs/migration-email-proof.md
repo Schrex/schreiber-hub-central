@@ -1,5 +1,18 @@
 # Controlled email proof and inactive dispatcher
 
+## Consolidated status — October 22, 2026
+
+Retained evidence confirms one approved-inbox enqueue/worker/Postmark delivery,
+verified suppression webhook configuration and synthetic unsubscribe/replay checks.
+Automatic application email remains OFF at the last confirmed state. Business-producer
+acceptance, effective-recipient review, inactive dispatcher installation/proof and
+old credential retirement remain unresolved; Auth SMTP is a separate path.
+
+Historical pending statements below do not override completed evidence. Do not
+repeat sends or webhook setup merely because an older section says pending. Source
+now handles notification enqueue failures separately from saved business work.
+See [development progress](../DEVELOPMENT_PROGRESS.md) for consolidated limits.
+
 Updated October 20, 2026. Single-recipient inbox proof completed.
 
 Approved recipient sumanth@schrex.com confirmed inbox receipt. Enqueue, worker

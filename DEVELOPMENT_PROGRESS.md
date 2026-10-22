@@ -1,5 +1,122 @@
 # Development progress
 
+## Release CI infrastructure follow-up — 2026-10-22
+
+PR #17 first remote run passed app/lint/Edge but failed before backend/browser
+acceptance: Bun installation timed out at five minutes on one runner; browser
+APT downloads from azure.archive.ubuntu.com stalled on fonts and reached the
+six-minute process timeout. No check was waived or merge performed. Added two
+bounded two-minute frozen-install attempts, skipped cleanup when backend startup
+was skipped, and selected the standard HTTPS Ubuntu archive in place of only the
+slow Azure mirror on disposable runners. APT connections/retries remain bounded.
+Playwright runs the locked local CLI and downloads only the headless shell used
+by these tests. YAML/shell syntax checks and a synthetic install-retry harness
+(success, recovery, exhausted retries) passed. Remote rerun is the Linux proof.
+
+## Manual release foundation — 2026-10-22
+
+Implemented a dispatch-only, build-only frontend workflow on a feature branch from
+fresh origin/develop 54e2dad. It requires current main's full SHA and a successful
+exact-source main push Verification run with all five successful jobs. Action
+versions are SHA-pinned, dependencies frozen, Git credentials not persisted, and
+permissions read-only. Production concurrency is reserved; no uploader or production
+credentials exist. Synthetic invalid-signature anon configuration exercises the
+independent builder without hosted calls. Artifacts explicitly say non-deployable.
+
+Verification now runs PRs and main/develop pushes without duplicate codex pushes.
+Documentation-only changes intentionally retain all five groups. Chromium install
+has bounded download/process/step timeouts and infrastructure diagnostics. Updated
+the release contract for no permanent staging, completed branch reconciliation,
+owner authorization, exact-source evidence and separately reviewed recovery/upload.
+
+Local validation: frozen install, app typecheck/build, 153 existing tests plus 18
+release-guard cases, all six backend checks, lint (existing warnings), Edge static
+checks and five browser workflows passed. Initial sandboxed Edge tooling failed on
+network access; the authorized tooling rerun passed. Both workflow YAML files parse;
+whitespace check passes. Clean 526b24c packaging passed with archive SHA256
+03eb0202bc4204ee7a6616c8f97719b88e6d38619bc10ce78587d20bbb2729e3.
+This is a local synthetic artifact, not production acceptance or a deployable build.
+
+Read-only GitHub inspection: private repo, current operator admin, Actions enabled,
+all actions permitted, no enforced SHA-pinning setting, zero environments. Main
+protection API still returns 403 plan restriction. No access/settings were changed.
+Remote PR verification and dispatch from main remain to be observed; the latter
+requires a separately authorized release PR into main. Credentials, upload code,
+durable recovery storage, verified reviewer restrictions and stale-deployment state
+are activation gates, described concretely in docs/release-process.md. Production,
+backend settings, email, onboarding and Add Employee remain unchanged.
+
+
+## Consolidated operating status and evidence cleanup — 2026-10-22
+
+This summary replaces uncommitted migration-session narratives. Hosted observations
+below are retained October 21–22 evidence, not newly repeated provider checks.
+Main and develop were synchronized through PRs #14/#15; their file trees matched.
+The live frontend remained clean ea0504798c9985ea44ad32d674579b15ae6f0c66; branch
+reconciliation was not a redeployment. Permanent staging is deferred by the owner;
+local synthetic testing and an explicitly triggered release workflow are the intended
+next steps. Deployment automation is not yet implemented.
+
+- Cloudflare Pages production deployment 82bbfce8-7a2f-412f-b3b4-62af659022ef served
+  the independent frontend. Custom domain app.schreiberexcavating.com was Active
+  with SSL; admin sign-in persisted after reload and an existing contract PDF opened.
+- Wix app DNS was changed to CNAME schreiber-hub-preview.pages.dev. Supabase project
+  acgqjjbrnkmeazswdnzp serves production, not disposable staging. Auth Site URL is
+  the custom hostname with its exact /reset-password redirect; prior redirects retained.
+- Lovable project sync/domain were disconnected and its frontend unpublished.
+  The old daily-celebrations job was disabled, both queue-wake triggers disabled,
+  and dispatch/wake/read-email-batch RPC execution restricted to postgres. Working
+  email queues and pending pg_net queue were empty at the recorded check.
+- Old backend pause was requested and accepted, but stable paused completion was
+  not verified. Billing cancellation, organization GitHub access removal, shared
+  credential revocation and unknown external-caller retirement remain unresolved.
+  Do not infer that unpublishing stopped all backend callers or reverse retirement
+  controls automatically. Other Lovable projects and retained source data remain.
+
+### Evidence worth retaining
+
+- Hosted four-role accident-photo proof passed per operator output; the remaining
+  14-bucket harness was operator-reported PASS. Later independent catalog inspection
+  found no run-owned Storage fixtures. Do not upgrade these to independently observed
+  permission tests or assume all browser/reconnect cases passed.
+- Recorded admin/office/foreman file checks covered selected uploads, rendering,
+  version labels and downloads with exact fixture cleanup. Hidden contract UI does
+  not establish Storage HTTP denial: existing contract reads were authenticated-wide.
+- Independent Office/Foreman Whiteboard sessions proved explicit Refresh insertion
+  and deletion plus writer reload persistence; exact synthetic row cleanup passed.
+  An Office-only notification fixture proved display, mark-read and reload persistence;
+  database read_at and cleanup were verified. These were not business-producer tests.
+- Three explicitly approved synthetic Auth/profile/role accounts were created during
+  acceptance. Automatic user profile/role creation failed for the first account and
+  required explicit setup. Service-role employee_contacts SELECT was also denied.
+  These are essential onboarding gaps to recheck before enabling Add Employee; neither
+  synthetic account setup nor existing-user login proves onboarding works.
+
+### Remaining boundaries
+
+Automatic application email remains OFF at the last confirmed state. One approved
+inbox delivery, suppression webhook and synthetic unsubscribe checks passed; actual
+business producers, recipient review and dispatcher installation/proof remain open.
+Auth SMTP is separate. Time-off/truck/Safety triggers can create real-recipient in-app
+notifications even with email OFF, so routine synthetic tests must stay local.
+Last hosted Realtime audit had zero published tables; explicit refresh/polling is
+implemented, while native reconnect and full hosted workflow coverage remain incomplete.
+Onboarding, Google login and other deferred integrations were not enabled by migration.
+Finalized destination backup plus isolated restore proof is not recorded; original
+archive integrity and frontend checksum checks do not establish complete recovery.
+
+### Cleanup verification
+
+Eight untracked session reports and four operator-only Storage proof/test scripts
+were removed from the working tree after consolidating their key findings here.
+They were not referenced by app imports, package commands or CI. All 16 original
+modified/untracked files and the original tracked diff were copied into a timestamped,
+SHA256-verified local Git-metadata archive before cleanup. This is local recovery,
+not a pushed backup. Four concise documentation updates retain current operations,
+email limits and recovery cautions. No runtime code, applied migrations, credentials,
+hosted records or deployment changed. Whitespace, local-link and removed-path
+reference checks are the applicable validation; runtime suites were not rerun.
+
 ## Production branch reconciliation prepared — 2026-10-22
 
 Live HTTPS build-info read confirmed clean ea0504798c9985ea44ad32d674579b15ae6f0c66,
