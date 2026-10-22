@@ -66,7 +66,7 @@ export function validateDeployment(deployment, expectedId) {
   return deploymentURL(deployment);
 }
 export function validateOperation(input) {
-  requireValue(['plan', 'execute'].includes(input.mode) && ['deploy', 'recover'].includes(input.operation), 'Invalid operation/mode.');
+  requireValue(['plan', 'preflight', 'execute'].includes(input.mode) && ['deploy', 'recover'].includes(input.operation), 'Invalid operation/mode.');
   requireValue(shaPattern.test(input.revision) && idPattern.test(input.previous), 'Exact revision and current deployment ID required.');
   if (input.operation === 'recover') requireValue(idPattern.test(input.target) && input.target !== input.previous, 'Select a different recovery deployment.');
   else requireValue(/^[1-9][0-9]*$/.test(input.run ?? '') && /^[a-f0-9]{64}$/.test(input.hash ?? ''), 'Approved candidate run and manifest digest required.');

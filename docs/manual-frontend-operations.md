@@ -3,11 +3,39 @@
 The workflows are integrated into main through approved PR #21. The account ID,
 public backend configuration and encrypted Pages deployment token are configured.
 The token expires January 20, 2027. All workflows remain manual and main-only.
-Live execution is not activated: Cloudflare Access currently blocks the controller's
-unauthenticated immutable-URL checks, and the historical recovery archive has not
-been located. Configure authenticated verification and verify recovery evidence
+Live execution is not activated: the new reader requires a separate Access service
+credential and policy, and the historical recovery archive has not been located.
+Configure authenticated verification and verify recovery evidence
 before enabling execution. No upload or rollback was performed during setup.
 The prior dry-run build remains available and remains non-deployable.
+
+## Authenticated readiness checks
+
+The controller supports `mode=preflight` in addition to plan and execute. Plan
+continues to validate source/artifact evidence without provider access. Preflight
+uses the Pages API token and a separate Cloudflare Access service identity to read
+the current deployment, immutable build identity and ledger. Deploy preflight also
+checks the public domain's identity and availability; recover preflight checks the
+selected recovery target and works when the current frontend is unavailable.
+It never uploads, rolls back, reserves a ledger entry or writes ledger status.
+The receipt records `preflight-passed` and `ledgerWriteVerified=false`.
+
+Configure `CLOUDFLARE_ACCESS_CLIENT_ID` and `CLOUDFLARE_ACCESS_CLIENT_SECRET` as
+Actions secrets. The Access application's Service Auth policy must permit only
+that service token for this project's protected deployment hosts. The reader sends
+these headers only to validated HTTPS deployment hosts ending exactly in
+`.schreiber-hub-preview.pages.dev`. It sends neither header to the public custom
+domain or provider API, rejects redirects and rejects HTML login pages. Keep Access
+protection enabled. The Pages API token alone does not authenticate Access requests.
+
+After inspecting deployment-event consumers, run **Release ledger permission probe**
+from current main. This is a GitHub metadata write, not a read-only check. It uses
+the real Actions token with no Cloudflare secrets, creates a non-production,
+transient record under environment `release-ledger-readiness` and task
+`schreiber-ledger-probe`, then marks only that record inactive. It never writes the
+production sequencing ledger. Retained receipts prove record/status write access;
+they do not prove a live deployment or rollback. If status publication fails, use
+the recorded ID to inspect the diagnostic record rather than assume no write occurred.
 
 ## Candidate build (no Cloudflare credentials)
 

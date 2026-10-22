@@ -1,5 +1,27 @@
 # Development progress
 
+## Authenticated readiness implementation — 2026-10-22
+
+Added a dedicated identity reader with Cloudflare Access headers confined to
+validated immutable hosts for schreiber-hub-preview. Public-domain reads send no
+Access credentials; redirects, HTML login responses and unexpected hosts fail.
+Added preflight mode with real provider/identity/ledger reads and no provider or
+ledger mutation. Separate ledger-probe workflow tests the real Actions token by
+creating and deactivating a distinct non-production diagnostic record, without
+Cloudflare secrets or production sequencing fields.
+
+Independent reviewer found no blocking defect in the Access/preflight changes;
+added their requested ledger/main/deployment/recovery failure cases. Bun 1.3.14 /
+Node 26.8.2 passed all five local verification groups: 153 app tests, 71 release
+tests, six backend suites, five browser workflows, Edge checks, lint 0 errors /
+30 existing warnings. The real loopback redirect test passed with networking
+permission. All workflows passed actionlint and whitespace checks.
+
+Still required: remote integration/checks, Access service credential and policy
+setup, authenticated provider preflight, Actions ledger-write probe, durable
+replacement recovery package validation, and exact-main candidate/plan. Neither
+new workflow has run in GitHub yet. Live activation/upload remain unperformed.
+
 ## Independent release-readiness review and recheck — 2026-10-22
 
 At the owner's request, a separate review agent challenged the activation plan.
