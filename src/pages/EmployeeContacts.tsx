@@ -315,7 +315,6 @@ const EmployeeContacts = () => {
   }, [contacts, search, deptFilter]);
 
   const openAdd = () => {
-    if (independentLaunch) return;
     setWizardOpen(true);
   };
 
@@ -753,7 +752,7 @@ const EmployeeContacts = () => {
         {canEdit && (
           <>
             <div className="flex gap-2">
-              <Button disabled={independentLaunch} title={independentLaunch ? "Employee onboarding is paused" : undefined} onClick={openAdd} className="flex-1">
+              <Button onClick={openAdd} className="flex-1">
                 <Plus className="mr-1 h-4 w-4" /> Add Employee
               </Button>
               <Button
@@ -1231,7 +1230,7 @@ const EmployeeContacts = () => {
       <AddEmployeeWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
-        canCreateLogin={canConvert && !independentLaunch}
+        canCreateLogin={canConvert}
         onCreated={load}
       />
 

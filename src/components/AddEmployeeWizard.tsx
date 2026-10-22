@@ -1,4 +1,3 @@
-import { independentLaunch } from "@/lib/launchScope";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,11 +72,13 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
   const [payRate, setPayRate] = useState("");
   const [positions, setPositions] = useState<PositionRow[]>([]);
   const [saving, setSaving] = useState(false);
+  const [needsReview, setNeedsReview] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     // Reset whenever opened
     setForm(emptyForm);
+    setNeedsReview(false);
     setCreateLogin(false);
     setLoginEmail("");
     setPassword("");
@@ -102,14 +103,15 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
   }, [createLogin, form.email, loginEmail]);
 
   const submit = async () => {
+    if (saving || needsReview) return;
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
       toast({ title: "Check the form", description: parsed.error.errors[0].message, variant: "destructive" });
       return;
     }
     if (createLogin) {
-      if (!loginEmail.trim()) {
-        toast({ title: "Login email required", variant: "destructive" });
+      if (!z.string().email().safeParse(loginEmail.trim()).success) {
+        toast({ title: "Enter a valid login email", variant: "destructive" });
         return;
       }
       if (password.length < 8) {
@@ -127,13 +129,12 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
         return;
       }
       const r = parseFloat(payRate);
-      if (isNaN(r) || r < 0) {
+      if (!Number.isFinite(r) || r < 0) {
         toast({ title: "Enter a valid pay rate", variant: "destructive" });
         return;
       }
     }
 
-    if (independentLaunch) return;
     setSaving(true);
     const fullName = [parsed.data.first_name, parsed.data.last_name].filter(Boolean).join(" ").trim();
     const payload: Record<string, unknown> = {
@@ -160,28 +161,36 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
       payload.payRate = parseFloat(payRate);
     }
 
-    const { data, error } = await supabase.functions.invoke("create-employee", { body: payload });
-    setSaving(false);
-
-    const errMsg = (data as { error?: string } | null)?.error ?? error?.message;
-    if (errMsg) {
-      toast({ title: "Couldn't create employee", description: errMsg, variant: "destructive" });
-      return;
+    try {
+      const { data, error } = await supabase.functions.invoke("create-employee", { body: payload });
+      let result = data as { success?: boolean; error?: string; cleanupRequired?: boolean; contactId?: string; userId?: string } | null;
+      // FunctionsHttpError carries the actionable server response in its context.
+      if (error && "context" in error && error.context instanceof Response) {
+        try { result = await error.context.json(); } catch { /* Use transport message below. */ }
+      }
+      if (error || result?.error || result?.success !== true) {
+        if (result?.cleanupRequired || !result?.error) setNeedsReview(true);
+        const detail = result?.error ?? "The result could not be confirmed. Check the directory before retrying.";
+        const reference = result?.cleanupRequired ? ` Contact reference: ${result.contactId ?? "unknown"}. Login reference: ${result.userId ?? "unknown"}.` : "";
+        toast({ title: "Couldn't create employee", description: detail + reference, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Employee created", description: createLogin ? "Login is ready." : "Contact added." });
+      setPassword("");
+      onOpenChange(false);
+      onCreated();
+    } catch {
+      setNeedsReview(true);
+      toast({ title: "Couldn't confirm employee creation", description: "Check the directory before retrying.", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
-    const warning = (data as { warning?: string } | null)?.warning;
-    toast({
-      title: "Employee created",
-      description: warning ?? (createLogin ? "Login is ready." : "Contact added."),
-      variant: warning ? "destructive" : undefined,
-    });
-    onOpenChange(false);
-    onCreated();
   };
 
   const selectedPos = positions.find((p) => p.id === positionId);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => { if (!saving) onOpenChange(next); }}>
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Employee</DialogTitle>
@@ -278,7 +287,7 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">App login</h3>
                   <p className="text-[11px] text-muted-foreground">Create an account so this person can sign in.</p>
                 </div>
-                <Switch checked={createLogin} onCheckedChange={setCreateLogin} />
+                <Switch aria-label="Create app login" checked={createLogin} onCheckedChange={(enabled) => { setCreateLogin(enabled); if (!enabled) setAssignPosition(false); }} />
               </div>
               {createLogin && (
                 <div className="space-y-3">
@@ -288,7 +297,7 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
                   </div>
                   <div>
                     <Label htmlFor="ae-pwd">Default password *</Label>
-                    <Input id="ae-pwd" type="text" placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <Input id="ae-pwd" type="password" autoComplete="new-password" placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
                     <p className="mt-1 text-[11px] text-muted-foreground">Share this with the employee — they should change it on first sign-in.</p>
                   </div>
                   <div>
@@ -316,7 +325,7 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Starting position & pay</h3>
                   <p className="text-[11px] text-muted-foreground">Assign their job title and hourly rate. Requires a login.</p>
                 </div>
-                <Switch checked={assignPosition} onCheckedChange={setAssignPosition} disabled={!createLogin} />
+                <Switch aria-label="Assign starting position" checked={assignPosition} onCheckedChange={setAssignPosition} disabled={!createLogin} />
               </div>
               {assignPosition && createLogin && (
                 <div className="space-y-3">
@@ -357,7 +366,7 @@ export function AddEmployeeWizard({ open, onOpenChange, canCreateLogin, onCreate
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-          <Button onClick={submit} disabled={saving}>{saving ? "Creating…" : "Create employee"}</Button>
+          <Button onClick={submit} disabled={saving || needsReview}>{saving ? "Creating…" : "Create employee"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

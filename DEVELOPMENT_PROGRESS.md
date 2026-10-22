@@ -33,14 +33,30 @@ read-only recovery preflight passed. No actual rollback was performed.
 - Full local verification passed: app, backend, lint, Edge and five browser workflows.
   Lint retains 30 existing warnings and zero errors. No runtime files changed.
 
-## Next feature: Add Employee (not started)
+## Add Employee implementation candidate — October 22, 2026
 
-Keep onboarding disabled until synthetic local tests and reviewed fixes cover
-contact creation, optional Auth login, profile/role creation, position assignment,
-authorization, and cleanup on failure. Retained hosted evidence identified failed
-automatic profile/role creation and denied service-role employee_contacts SELECT.
-Do not treat the frontend button change as sufficient evidence of working onboarding.
-Any hosted fix or new frontend release requires its own explicit authorization.
+- Branch `codex/add-employee-enablement` starts from current origin/develop
+  (`fe907989f4885d6a0dd386f3f09af6fb9192309e`); production baseline is unchanged.
+- Replaced unchecked profile/role writes and partial-success position warnings
+  with explicit service-only RPCs and checked Auth compensation. The candidate
+  works with signup trigger enabled or disabled and without broad service-role
+  employee_contacts SELECT access. No existing trigger is activated.
+- Kept admin/office/foreman contact creation and admin-only login/position rules.
+  Fixed actionable Edge error display, pending/uncertain submission handling,
+  hidden position-toggle state and masked initial-password entry.
+- First full verification passed all five groups: 153 app tests, 71 release tests,
+  backend checks including synthetic onboarding, Deno checks, and six browser
+  workflows. Fresh synthetic migration replay and all five groups also passed.
+  Expanded concurrency, failed cleanup and lost reservation/Auth response checks
+  passed, followed by the employee browser regression. Lint retains 30 existing
+  warnings and zero errors.
+- [Exact release and recovery scope](docs/add-employee-release.md) covers only
+  three additive candidate RPCs, create-employee Edge function, and frontend.
+  Applied migration history is unchanged; SQL remains in local/candidate-migrations.
+- Production execution, frontend enablement and real-employee creation remain
+  unauthorized. No real employee details have been supplied. Login uses the
+  existing admin-entered initial password flow; no invitation or forced password
+  change has been added. Hosted gateway and actual employee acceptance remain open.
 
 ## Outstanding operational items
 

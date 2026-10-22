@@ -205,3 +205,14 @@ No production credentials are passed to the browser; the local service key stays
 in the Node test process for cleanup. Traces are disabled to avoid capturing auth
 payloads. Failure artifacts are ignored by Git and are not uploaded to CI artifacts.
 The browser CI job creates its own fresh backend and installs Chromium automatically.
+
+## Add Employee candidate
+
+`bun run test:local:employee` exercises the production handler against fixed local
+Auth/REST. It applies only the employee-creation candidate locally, temporarily
+probes signup-trigger disabled/enabled and denied service-role SELECT, restores
+those states, and cleans its synthetic records. `local:prepare` includes this
+candidate in disposable replay. Run tests serially while the fault probes execute.
+The browser suite adapts the same handler because local Edge runtime is disabled.
+See [Add Employee release scope](../docs/add-employee-release.md) for exact candidate,
+production execution/recovery gates and remaining acceptance limits.
