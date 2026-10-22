@@ -1,5 +1,18 @@
 # Development progress
 
+## Release CI infrastructure follow-up — 2026-10-22
+
+PR #17 first remote run passed app/lint/Edge but failed before backend/browser
+acceptance: Bun installation timed out at five minutes on one runner; browser
+APT downloads from azure.archive.ubuntu.com stalled on fonts and reached the
+six-minute process timeout. No check was waived or merge performed. Added two
+bounded two-minute frozen-install attempts, skipped cleanup when backend startup
+was skipped, and selected the standard HTTPS Ubuntu archive in place of only the
+slow Azure mirror on disposable runners. APT connections/retries remain bounded.
+Playwright runs the locked local CLI and downloads only the headless shell used
+by these tests. YAML/shell syntax checks and a synthetic install-retry harness
+(success, recovery, exhausted retries) passed. Remote rerun is the Linux proof.
+
 ## Manual release foundation — 2026-10-22
 
 Implemented a dispatch-only, build-only frontend workflow on a feature branch from

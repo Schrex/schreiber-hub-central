@@ -34,10 +34,26 @@ jobs:
           bun-version-file: package.json
       - name: Install locked dependencies
         timeout-minutes: 5
-        run: bun install --frozen-lockfile
+        run: |
+          for attempt in 1 2; do
+            if timeout --kill-after=10s 120s bun install --frozen-lockfile; then
+              exit 0
+            fi
+            echo "::warning::Locked dependency install attempt $attempt failed or timed out."
+          done
+          echo "::error::Locked dependency installation failed twice; verification did not run."
+          exit 1
       - name: Build disposable backend from migrations and synthetic seed
+        id: backend
         if: matrix.group == 'backend' || matrix.group == 'browser'
         run: bun run local:start
+      - name: Configure bounded Ubuntu package downloads
+        if: matrix.group == 'browser'
+        run: |
+          # The Azure mirror stalled fetching fonts in run 39833516006.
+          # Change only that mirror on this disposable hosted runner.
+          sudo find /etc/apt -type f \( -name '*.sources' -o -name '*.list' -o -name 'apt-mirrors.txt' \) -exec sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' {} +
+          echo 'Acquire::http::Timeout "30"; Acquire::https::Timeout "30"; Acquire::Retries "1";' | sudo tee /etc/apt/apt.conf.d/80-ci-timeouts
       - name: Install Chromium for browser test
         if: matrix.group == 'browser'
         timeout-minutes: 7
@@ -45,17 +61,17 @@ jobs:
           PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: '60000'
         run: |
           set +e
-          timeout --kill-after=15s 360s bunx --no-install playwright install --with-deps chromium
+          timeout --kill-after=15s 360s node node_modules/@playwright/test/cli.js install --with-deps --only-shell chromium
           result=$?
           if [ "$result" -ne 0 ]; then
             echo "::error::Chromium dependency installation failed (exit $result). Check apt/CDN output above; acceptance tests have not run."
             df -h / /tmp
-            bunx --no-install playwright --version
+            node node_modules/@playwright/test/cli.js --version
           fi
           exit "$result"
       - name: Run verification
         run: bun run verify:${{ matrix.group }}
       - name: Stop disposable backend
-        if: always() && (matrix.group == 'backend' || matrix.group == 'browser')
+        if: always() && steps.backend.outcome != 'skipped' && (matrix.group == 'backend' || matrix.group == 'browser')
         timeout-minutes: 3
         run: bun run local:stop
