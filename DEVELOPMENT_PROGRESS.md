@@ -1,5 +1,20 @@
 # Development progress
 
+## Production branch reconciliation prepared — 2026-10-22
+
+Live HTTPS build-info read confirmed clean ea0504798c9985ea44ad32d674579b15ae6f0c66,
+independent mode, destination acgqjjbrnkmeazswdnzp. Develop df2314d differs only in
+two documentation files. Main fca1a73 has two unique commits changing the Lovable
+preview storage helper. An isolated codex/release-reconciliation branch merges
+main ancestry while resolving that file to the existing deployed develop version.
+The main-only history is preserved; no runtime change is introduced by reconciliation.
+
+Added docs/release-process.md with branch responsibilities, verification, preview,
+explicit release approval, exact-commit build identity, deployment verification,
+and reconciliation back into develop. Existing verification CI is not deployment
+automation. Production main merge/deployment remain pending; no backend, Auth,
+onboarding or email settings changed. Primary uncommitted evidence is preserved.
+
 ## GitHub retirement cleanup — 2026-10-22
 
 Read-only GitHub inspection confirmed default branch main, an empty repository
