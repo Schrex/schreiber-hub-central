@@ -1,5 +1,31 @@
 # Development progress
 
+## Production frontend deployed and workflow verified — 2026-10-22
+
+The owner explicitly approved the exact ac61bb6 candidate for live frontend upload.
+PRODUCTION_FRONTEND_ENABLED is now true. Execution run 39846752862 succeeded with
+outcome verified, deploying ac61bb695304d2cb319f5c3605d43f446ed99bca as Cloudflare
+2c110f18-7411-4f63-9d09-3cc291a54470, replacing
+82bbfce8-7a2f-412f-b3b4-62af659022ef. GitHub production ledger 7262555368 records
+success. Independent public build-info matches the clean approved revision and
+backend acgqjjbrnkmeazswdnzp; homepage and reset-password returned HTTP 200.
+No backend changes, blind retry or rollback occurred.
+
+Read-only recovery preflight 39847008622 passed after deployment: the new current
+deployment matches expectations and the retained prior deployment's authenticated
+identity matches clean ea05047. This verifies recovery readiness, not an actual
+rollback. The reconstructed recovery archive remains separately retained; the
+original historical ZIP was not recovered.
+
+The verified candidate ZIP, checksum and live receipt are retained in private draft
+release https://github.com/Schrex/schreiber-hub-central/releases/tag/untagged-84e4b6fab976d10ab158
+(tag production-candidate-ac61bb6-20261022). This URL supersedes the earlier draft
+URL below. Candidate download integrity, all five exact-main verification groups,
+authenticated deploy preflight, ledger writes and live execution passed. The
+production deployment workflow is complete. External integrations, Realtime and
+full employee feature acceptance are not certified by these deployment checks.
+Future uploads and rollback executions still require explicit owner authorization.
+
 ## Final candidate and authenticated readiness passed — 2026-10-22
 
 Exact-main Verification 39845598579 passed all five groups at

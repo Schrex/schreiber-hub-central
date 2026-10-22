@@ -68,7 +68,7 @@ depend on plan and private/public visibility; environment availability alone doe
 not imply required reviewers. Manual dispatch is an intentional action by a writer,
 not an enforced owner-only reviewer gate. Review who has write access before activation.
 
-Upload/recovery implementation is now described in [manual frontend operations](manual-frontend-operations.md). It is not activated. Before production use, separately review/authorize:
+Upload/recovery implementation is described in [manual frontend operations](manual-frontend-operations.md). The owner authorized activation and release 39846752862 completed successfully. Future releases still require explicit approval and these controls:
 
 1. A deployment job using a fixed, reviewed Wrangler version and the existing
    Direct Upload project `schreiber-hub-preview`; no new project is needed.
@@ -92,20 +92,24 @@ Upload/recovery implementation is now described in [manual frontend operations](
 describes Wrangler and the account-scoped token. Pages and Access credentials are
 now configured. PR #23 integrated authenticated preflight and the isolated ledger
 probe into main. Probe 39845601264 confirmed Actions deployment/status writes with
-an inactive non-production diagnostic record. Production activation and live upload
-remain separate owner-authorized steps. See DEVELOPMENT_PROGRESS.md for current
+an inactive non-production diagnostic record. Owner-authorized live upload
+39846752862 and read-only recovery preflight 39847008622 passed. See DEVELOPMENT_PROGRESS.md for current
 candidate, provider and recovery evidence; mock tests alone are not readiness proof.
 
 ## Recovery preparation and current baseline
 
 Main/develop reconciliation completed through PRs #14/#15; PR #16 retained essential
-migration evidence. It did not redeploy. Last recorded live frontend is clean
+migration evidence. It did not redeploy. The retained pre-release baseline is clean
 `ea0504798c9985ea44ad32d674579b15ae6f0c66`, independent mode, project
 `acgqjjbrnkmeazswdnzp`, deployment `82bbfce8-7a2f-412f-b3b4-62af659022ef`.
 Recovery archive: `dist/schreiber-hub-preview-ea05047.zip`, SHA256
 `6a2150347ca964d9fff6627915d07b410ebe9a287b8d6555ead6d8783ff6abf2`.
 These are retained observations, not fresh live validation or durable remote backup.
 See [hosting recovery](migration-hosting-recovery.md).
+
+Current live frontend is clean ac61bb695304d2cb319f5c3605d43f446ed99bca,
+deployment 2c110f18-7411-4f63-9d09-3cc291a54470, verified by run 39846752862.
+Recovery preflight 39847008622 confirmed the prior deployment is still available.
 
 The original ZIP was not located. A clean rebuild of ea05047 is retained as a
 clearly labelled replacement in the [private recovery draft release](https://github.com/Schrex/schreiber-hub-central/releases/tag/untagged-0a06433c5cabc53168ac).
