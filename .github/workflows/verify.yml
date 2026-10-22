@@ -3,7 +3,7 @@ name: Verification
 on:
   pull_request:
   push:
-    branches: [main, develop, "codex/**"]
+    branches: [main, develop]
   workflow_dispatch:
 
 permissions:
@@ -23,25 +23,39 @@ jobs:
       matrix:
         group: [app, backend, lint, edge, browser]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version-file: .nvmrc
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version-file: package.json
       - name: Install locked dependencies
+        timeout-minutes: 5
         run: bun install --frozen-lockfile
       - name: Build disposable backend from migrations and synthetic seed
         if: matrix.group == 'backend' || matrix.group == 'browser'
         run: bun run local:start
       - name: Install Chromium for browser test
         if: matrix.group == 'browser'
-        run: bunx --no-install playwright install --with-deps chromium
+        timeout-minutes: 7
+        env:
+          PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: '60000'
+        run: |
+          set +e
+          timeout --kill-after=15s 360s bunx --no-install playwright install --with-deps chromium
+          result=$?
+          if [ "$result" -ne 0 ]; then
+            echo "::error::Chromium dependency installation failed (exit $result). Check apt/CDN output above; acceptance tests have not run."
+            df -h / /tmp
+            bunx --no-install playwright --version
+          fi
+          exit "$result"
       - name: Run verification
         run: bun run verify:${{ matrix.group }}
       - name: Stop disposable backend
         if: always() && (matrix.group == 'backend' || matrix.group == 'browser')
+        timeout-minutes: 3
         run: bun run local:stop

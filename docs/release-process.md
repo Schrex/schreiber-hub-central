@@ -1,74 +1,113 @@
 # Release process
 
-## Branch responsibilities
+## Contract and authority
 
-- `main`: approved production source baseline. Changes enter through a reviewed release PR; a merge does not deploy the app.
-- `develop`: integrated changes for the next release.
-- `codex/*`: feature, fix, or release preparation branches starting from develop.
+Feature branch → reviewed PR into develop → five checks and local synthetic
+acceptance → explicitly approved release PR into main → manual release action.
+The owner authorizes each release; automation executes it. Merging main never
+deploys. There is no permanent staging environment. Preview URLs do not isolate
+data. Routine acceptance uses only disposable local Supabase.
 
-## Current deployment mechanism
+Each release PR must record this contract before owner approval:
 
-GitHub Actions runs app, backend, lint, Edge static, and browser verification.
-It does not deploy. Cloudflare Pages uses direct uploads, with no repository Git
-integration in the recorded deployment setup. Supabase database migrations,
-Edge Functions, Auth configuration, and email activation are separate operations.
-Do not infer that a frontend release updates any of those services.
+- Full candidate SHA; after merge, record the resulting exact main SHA and its
+  successful push Verification run. PR merge-ref checks alone do not qualify.
+- App, backend, lint, Edge and browser results plus feature-specific local
+  acceptance evidence and remaining limitations.
+- Scope: frontend files, explicit backend project, and backend changes (normally
+  none). Database, Edge, Auth, Storage and email changes need separate reviewed
+  ordering, authorization and recovery. Never blindly push historical migrations.
+- Owner's explicit release authorization, selected artifact SHA256 and workflow
+  run; previous deployment ID and retained artifact/recovery reference.
+- After an authorized upload: new deployment ID, live build-info revision,
+  project, mode and dirty=false; root/deep-link availability and scoped acceptance.
+  Availability checks alone do not establish feature correctness.
 
-## Normal change and release cycle
+## Implemented build-only foundation
 
-1. Describe the change and acceptance criteria in an issue or PR.
-2. Implement on a feature branch from current develop; open a PR into develop.
-3. Require all five verification groups to pass and review the change.
-4. Merge into develop. Build a clean, pinned commit using the guarded independent
-   builder described in migration-hosting-recovery.md. Keep the independent launch
-   controls until each deferred feature is explicitly restored and tested.
-5. Test a protected preview. Document its backend target: preview hosting does not
-   isolate production data. Use synthetic local data for routine tests; do not
-   run those tests against the live backend.
-6. Prepare a release PR into main. Record the candidate commit, preview results,
-   backend/configuration changes (or none), artifact checksum, and recovery plan.
-7. Obtain explicit approval for the main merge and production deployment. If the
-   merge creates a new commit, build that exact clean commit and verify its artifact
-   before upload. Never label a different commit's binary as the new release.
-8. Upload the approved frontend artifact to Cloudflare Pages Production. Confirm
-   the live /build-info.json revision, destination project and independent mode;
-   check sign-in and the changed workflow. Record deployment ID and artifact hash.
-9. Tag the verified release and record release notes. Reconcile main back into
-   develop through a PR so release-only changes and history remain shared.
+Verification runs on PRs and main/develop pushes, plus manual dispatch. Feature
+pushes alone no longer duplicate PR checks. Documentation-only PRs deliberately
+run all five groups: no path exclusions, skipped-check equivalents or waived lint.
+Install, browser dependency and job timeouts fail closed. Chromium errors identify
+infrastructure failure separately from acceptance failure; retries require diagnosis.
 
-A failed release is not repaired by moving Git branches alone. Restore a known
-working frontend deployment when appropriate; database/data recovery requires its
-own reviewed procedure. Retain the prior artifact and deployment identifier.
+`Release build only` is dispatch-only and must run from main after this foundation
+has entered main through a separately authorized release PR. Select the full
+40-character **current main tip**. The guard rejects older commits, branch names,
+PR runs, fork evidence, missing/skipped jobs and unsuccessful latest runs.
+It queries GitHub's Verification workflow for that exact main push, then builds a
+clean checkout. Shared production-frontend concurrency serializes runs; GitHub
+concurrency is not FIFO. This version has no uploader, so cannot overwrite a release.
 
-## Initial migration reconciliation: prepared, not released
+The workflow uses pinned action commits, Node from .nvmrc, Bun from package.json,
+frozen dependencies, read-only contents/actions permissions and no persisted Git
+credential. GitHub's token is passed only to the evidence step. No production
+secret or Cloudflare token is needed. Source .env is ignored by the independent
+builder. The fixed production project is acgqjjbrnkmeazswdnzp, but its anon JWT is
+**synthetic with an invalid signature**. The resulting artifact is NOT deployable
+and must never be uploaded. No production API request or login is part of this build.
 
-On 2026-10-22 the live build-info endpoint reported:
+The 14-day Actions artifact contains a tarball and release.json with SHA256,
+revision, dirty state, backend, workflow revision and verification URL. Build-info
+also marks deployable=false. This exercises packaging and provenance, not hosted
+acceptance or recovery. Artifact expiry is not a durable release archive.
+Local packaging validation requires a clean commit and `RELEASE_SHA=$(git rev-parse HEAD)
+node scripts/release-dry-run.mjs`. It makes no hosted requests.
 
-- Revision: ea0504798c9985ea44ad32d674579b15ae6f0c66
-- Dirty: false
-- Backend project: acgqjjbrnkmeazswdnzp
-- Mode: independent
-- Build time: 2026-10-21T13:56:10.684Z
+## Activation gates and secure configuration
 
-Develop at df2314d differs from that revision only in README.md and
-DEVELOPMENT_PROGRESS.md. Main at fca1a73 has two unique commits, 7b80fe9 and its
-merge fca1a73, changing only src/integrations/supabase/previewAuthStorage.ts.
-Those changes type and refactor the Lovable preview broker. The independent
-custom hostname uses localStorage rather than that broker.
+Read-only inspection on October 22: Actions enabled, all actions allowed, SHA
+pinning not required by repository settings, zero configured environments. The
+main branch-protection API returned HTTP 403 with a plan restriction. Do not
+claim enforced review/protection or change visibility/purchase a plan to bypass it.
+[GitHub's environment rules](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments)
+depend on plan and private/public visibility; environment availability alone does
+not imply required reviewers. Manual dispatch is an intentional action by a writer,
+not an enforced owner-only reviewer gate. Review who has write access before activation.
 
-The reconciliation branch incorporates main's ancestry and explicitly retains
-develop's deployed previewAuthStorage.ts. This preserves the reviewed production
-runtime instead of introducing an untested legacy-preview refactor. Both main
-commits remain in history for future inspection. No history rewrite is needed.
+Before adding upload code, separately review/authorize:
 
-The intended release contains develop's existing application and documentation
-plus this process record. No new runtime changes, database migrations, Edge
-Function deployments, public signup, onboarding, or email activation are included.
-The primary checkout's uncommitted migration evidence is outside this release and
-must remain preserved for a separate reviewed documentation/proof change.
+1. A deployment job using a fixed, reviewed Wrangler version and the existing
+   Direct Upload project `schreiber-hub-preview`; no new project is needed.
+2. Account ID and project settings read-back, including production branch and custom
+   domain. Supply the public destination legacy anon key through explicit reviewed
+   configuration; never use service_role or let source .env select the backend.
+3. A Cloudflare token entered directly in the provider/GitHub secure settings,
+   never chat or tracked files. Use Account / Cloudflare Pages / Edit restricted
+   to the intended account; document that this may cover other Pages projects in
+   that account. Do not claim project-level isolation without verifying it.
+4. A credential-bearing job that never executes PR/untrusted source and downloads
+   only the exact approved immutable artifact from the trusted build run, verifies
+   its SHA256/provenance and rejects dry-run artifacts. Grant credentials only to
+   upload, not dependency installation/build. No automatic deploy on push/merge.
+5. Recheck selected main tip immediately before upload, serialize upload/recovery
+   in the same lane and compare a durable last-deployed source record to reject
+   stale or duplicate forward releases. Concurrency alone cannot prevent an older
+   queued run overwriting a newer deployment. Recovery is a separate explicit action.
 
-Main merge and live deployment remain pending explicit release approval and
-candidate verification. The live app remains the recorded ea05047 artifact until
-an actual deployment is independently verified. Branch protection, automatic
-preview builds, and an approval-gated deployment workflow are future configuration
-work, not capabilities provided by this document.
+[Cloudflare Direct Upload CI documentation](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)
+describes Wrangler and the account-scoped token. Credentials, uploader and production
+activation are deliberately absent in this first PR.
+
+## Recovery preparation and current baseline
+
+Main/develop reconciliation completed through PRs #14/#15; PR #16 retained essential
+migration evidence. It did not redeploy. Last recorded live frontend is clean
+`ea0504798c9985ea44ad32d674579b15ae6f0c66`, independent mode, project
+`acgqjjbrnkmeazswdnzp`, deployment `82bbfce8-7a2f-412f-b3b4-62af659022ef`.
+Recovery archive: `dist/schreiber-hub-preview-ea05047.zip`, SHA256
+`6a2150347ca964d9fff6627915d07b410ebe9a287b8d6555ead6d8783ff6abf2`.
+These are retained observations, not fresh live validation or durable remote backup.
+See [hosting recovery](migration-hosting-recovery.md).
+
+Future manual recovery must select an exact previous immutable deployment/artifact,
+validate its hash and backend compatibility, record owner authorization and current
+previous deployment, then restore and verify live build-info and availability.
+No automatic rollback on transient smoke failures in v1. Frontend recovery does
+not undo database/Auth/Storage/Edge changes. Preserve a verified durable recovery
+copy before the first automated production release.
+
+Add Employee follows these foundations as a separate feature. Its profile-trigger
+and service-role employee_contacts SELECT failures remain open. Onboarding, Google
+and deferred integrations stay disabled; automatic application email stays OFF.
+Business triggers may still notify real recipients, so synthetic testing stays local.
