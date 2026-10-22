@@ -31,13 +31,16 @@ run all five groups: no path exclusions, skipped-check equivalents or waived lin
 Install, browser dependency and job timeouts fail closed. Chromium errors identify
 infrastructure failure separately from acceptance failure; retries require diagnosis.
 
-`Release build only` is dispatch-only and must run from main after this foundation
-has entered main through a separately authorized release PR. Select the full
+`Release build only` is dispatch-only and runs from main. The owner-authorized
+PR #18 integrated it at `6db89ad573016bb9a83dca767f28c03b25682146`. All five
+exact-main checks passed, and [manual run 39836824903](https://github.com/Schrex/schreiber-hub-central/actions/runs/39836824903)
+produced a hash-verified non-deployable artifact. This proved the build-only path;
+the original test-build workflow still never uploads. Select the full
 40-character **current main tip**. The guard rejects older commits, branch names,
 PR runs, fork evidence, missing/skipped jobs and unsuccessful latest runs.
 It queries GitHub's Verification workflow for that exact main push, then builds a
 clean checkout. Shared production-frontend concurrency serializes runs; GitHub
-concurrency is not FIFO. This version has no uploader, so cannot overwrite a release.
+concurrency is not FIFO. This test-build workflow has no uploader, so cannot overwrite a release.
 
 The workflow uses pinned action commits, Node from .nvmrc, Bun from package.json,
 frozen dependencies, read-only contents/actions permissions and no persisted Git
@@ -65,7 +68,7 @@ depend on plan and private/public visibility; environment availability alone doe
 not imply required reviewers. Manual dispatch is an intentional action by a writer,
 not an enforced owner-only reviewer gate. Review who has write access before activation.
 
-Before adding upload code, separately review/authorize:
+Upload/recovery implementation is now described in [manual frontend operations](manual-frontend-operations.md). It is not activated. Before production use, separately review/authorize:
 
 1. A deployment job using a fixed, reviewed Wrangler version and the existing
    Direct Upload project `schreiber-hub-preview`; no new project is needed.
@@ -86,8 +89,8 @@ Before adding upload code, separately review/authorize:
    queued run overwriting a newer deployment. Recovery is a separate explicit action.
 
 [Cloudflare Direct Upload CI documentation](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)
-describes Wrangler and the account-scoped token. Credentials, uploader and production
-activation are deliberately absent in this first PR.
+describes Wrangler and the account-scoped token. Credentials and production activation remain absent. The separate manual uploader
+and native recovery controller are implemented for review and mock testing.
 
 ## Recovery preparation and current baseline
 
@@ -100,7 +103,7 @@ Recovery archive: `dist/schreiber-hub-preview-ea05047.zip`, SHA256
 These are retained observations, not fresh live validation or durable remote backup.
 See [hosting recovery](migration-hosting-recovery.md).
 
-Future manual recovery must select an exact previous immutable deployment/artifact,
+Manual recovery must select an exact previous immutable deployment/artifact,
 validate its hash and backend compatibility, record owner authorization and current
 previous deployment, then restore and verify live build-info and availability.
 No automatic rollback on transient smoke failures in v1. Frontend recovery does

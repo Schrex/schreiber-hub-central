@@ -1,0 +1,56 @@
+name: Production candidate build
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Full current main SHA to build (does not deploy)
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: production-candidate
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+      - name: Require successful exact-main verification
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ inputs.commit }}
+        run: node scripts/release-guard.mjs
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+      - name: Install locked app dependencies without deployment credentials
+        timeout-minutes: 5
+        run: |
+          for attempt in 1 2; do
+            if timeout --kill-after=10s 120s bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::Frozen install attempt $attempt failed."
+          done
+          exit 1
+      - name: Build explicit production candidate (no upload)
+        env:
+          RELEASE_SHA: ${{ inputs.commit }}
+          VERIFICATION_URL: ${{ steps.guard.outputs.verification_url }}
+          PRODUCTION_SUPABASE_ANON_KEY: ${{ vars.PRODUCTION_SUPABASE_ANON_KEY }}
+        run: node scripts/release-candidate.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: production-candidate-${{ github.run_id }}-${{ inputs.commit }}
+          path: dist/release-candidate/
+          if-no-files-found: error
+          retention-days: 90
