@@ -194,7 +194,7 @@ const Schedule = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    let [{ data: a }, { data: j }, { data: c }, { data: pr }, { data: t }, { data: rolesData }] = await Promise.all([
+    const [{ data: initialAssignments }, { data: j }, { data: c }, { data: pr }, { data: t }, { data: rolesData }] = await Promise.all([
       supabase
         .from("schedule_assignments")
         .select("*, jobs(id,name,address,job_number)")
@@ -216,6 +216,8 @@ const Schedule = () => {
         .gte("end_date", selectedDate),
       supabase.from("user_roles").select("user_id, role"),
     ]);
+
+    let a = initialAssignments;
 
     // Auto carry-forward: if this day has no assignments and is today/future,
     // copy the most recent prior day's assignments forward (once per session per date).
@@ -305,7 +307,7 @@ const Schedule = () => {
     const byUserId = new Map(
       unified.filter((u) => u.user_id).map((u) => [u.user_id as string, u] as const),
     );
-    const enriched: Assignment[] = (a ?? []).map((row: any) => ({
+    const enriched: Assignment[] = (a ?? []).map((row) => ({
       ...row,
       profile_name: byUserId.get(row.user_id)?.display_name ?? "Unknown",
       contact_id: byUserId.get(row.user_id)?.contact_id ?? null,

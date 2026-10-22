@@ -1,3 +1,4 @@
+import { useResumeRefresh } from "@/hooks/useResumeRefresh";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Users, Moon, Copy, Truck } from "lucide-react";
@@ -72,6 +73,15 @@ const Whiteboard = () => {
   const [copyOpen, setCopyOpen] = useState(false);
   const tempCounter = useRef(0);
   const ignoreRealtimeUntilRef = useRef(0);
+  const loadGeneration = useRef(0);
+  const pendingMutations = useRef(0);
+  const [saving, setSaving] = useState(false);
+  const interactionActive = useRef(false);
+  interactionActive.current = !!activeId || copyOpen;
+  const currentWeek = useRef(weekStart);
+  currentWeek.current = weekStart;
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState(false);
   const [showOffice, setShowOffice] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("schedule.showOffice") === "1";
@@ -106,10 +116,16 @@ const Whiteboard = () => {
 
   const markLocalChange = () => {
     ignoreRealtimeUntilRef.current = Date.now() + 2500;
+    // Invalidate reads that began before an optimistic edit.
+    loadGeneration.current += 1;
+    setRefreshing(false);
   };
 
-  const load = async ({ showLoading = true }: { showLoading?: boolean } = {}) => {
+  const load = async ({ showLoading = true, afterCopy = false }: { showLoading?: boolean; afterCopy?: boolean } = {}) => {
+    if (!canUse || pendingMutations.current > 0 || (interactionActive.current && !afterCopy)) return;
+    const generation = ++loadGeneration.current;
     if (showLoading) setLoading(true);
+    setRefreshing(true);
     const weekEnd = format(addDays(parseISO(weekStart), 6), "yyyy-MM-dd");
     const [tilesRes, jobsRes, profilesRes, rolesRes, dispatchRes] = await Promise.all([
       supabase.from("whiteboard_tiles").select("*").eq("week_start", weekStart).order("sort_order"),
@@ -122,7 +138,16 @@ const Whiteboard = () => {
         .gte("dispatch_date", weekStart)
         .lte("dispatch_date", weekEnd),
     ]);
-    if (tilesRes.error) toast({ title: "Couldn't load board", description: tilesRes.error.message, variant: "destructive" });
+    if (generation !== loadGeneration.current || currentWeek.current !== weekStart) return;
+    setRefreshing(false);
+    const error = tilesRes.error ?? jobsRes.error ?? profilesRes.error ?? rolesRes.error ?? dispatchRes.error;
+    if (error) {
+      // A failed background request must not erase the last successful board.
+      setRefreshError(true);
+      setLoading(false);
+      return;
+    }
+    setRefreshError(false);
 
     const rolesByUser = new Map<string, Set<string>>();
     ((rolesRes.data ?? []) as { user_id: string; role: string }[]).forEach((r) => {
@@ -149,9 +174,15 @@ const Whiteboard = () => {
   };
 
   useEffect(() => {
-    if (canUse) load();
+    setTiles([]);
+    setDispatches([]);
+    if (canUse) void load();
+    return () => { loadGeneration.current += 1; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart, canUse]);
+
+  const refreshBoard = () => { if (!copyOpen) return load({ showLoading: false }); };
+  useResumeRefresh(refreshBoard);
 
   // Realtime: background refresh on external changes, but don't refetch after our own optimistic moves.
   useEffect(() => {
@@ -265,132 +296,169 @@ const Whiteboard = () => {
   };
 
   const optimisticInsert = async (row: Omit<Tile, "id">) => {
+    pendingMutations.current += 1;
+    setSaving(true);
     markLocalChange();
-    const tempId = `tmp-${++tempCounter.current}`;
-    const optimistic: Tile = { ...row, id: tempId };
-    setTiles((prev) => [...prev, optimistic]);
-    const { data, error } = await supabase
-      .from("whiteboard_tiles")
-      .insert({
-        week_start: row.week_start,
-        day_index: row.day_index,
-        section: row.section,
-        kind: row.kind,
-        ref_id: row.ref_id,
-        label: row.label,
-        sort_order: row.sort_order,
-        parent_tile_id: row.parent_tile_id,
-        created_by: user?.id ?? null,
-      })
-      .select("*")
-      .maybeSingle();
-    if (error || !data) {
-      setTiles((prev) => prev.filter((t) => t.id !== tempId));
-      toast({ title: "Couldn't place tile", description: error?.message ?? "Unknown error", variant: "destructive" });
-      return null;
+    try {
+      const tempId = `tmp-${++tempCounter.current}`;
+      const optimistic: Tile = { ...row, id: tempId };
+      setTiles((prev) => [...prev, optimistic]);
+      const { data, error } = await supabase
+        .from("whiteboard_tiles")
+        .insert({
+          week_start: row.week_start,
+          day_index: row.day_index,
+          section: row.section,
+          kind: row.kind,
+          ref_id: row.ref_id,
+          label: row.label,
+          sort_order: row.sort_order,
+          parent_tile_id: row.parent_tile_id,
+          created_by: user?.id ?? null,
+        })
+        .select("*")
+        .maybeSingle();
+      if (error || !data) {
+        setTiles((prev) => prev.filter((t) => t.id !== tempId));
+        toast({ title: "Couldn't place tile", description: error?.message ?? "Unknown error", variant: "destructive" });
+        return null;
+      }
+      setTiles((prev) => prev.map((t) => (t.id === tempId ? (data as Tile) : t)));
+      // Mirror crew-under-job placements into the regular schedule
+      if (row.kind === "crew" && row.section === "crew" && row.ref_id) {
+        const jobId = jobRefForParent(row.parent_tile_id);
+        if (jobId) await syncAddAssignment(jobId, row.ref_id, row.day_index);
+      }
+      return data as Tile;
+    } finally {
+      pendingMutations.current -= 1;
+      if (pendingMutations.current === 0) setSaving(false);
     }
-    setTiles((prev) => prev.map((t) => (t.id === tempId ? (data as Tile) : t)));
-    // Mirror crew-under-job placements into the regular schedule
-    if (row.kind === "crew" && row.section === "crew" && row.ref_id) {
-      const jobId = jobRefForParent(row.parent_tile_id);
-      if (jobId) await syncAddAssignment(jobId, row.ref_id, row.day_index);
-    }
-    return data as Tile;
   };
 
   const optimisticUpdate = async (id: string, patch: Partial<Tile>) => {
-    const prevTile = tiles.find((t) => t.id === id);
-    if (!prevTile) return;
+    pendingMutations.current += 1;
+    setSaving(true);
     markLocalChange();
-    setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
-    if (id.startsWith("tmp-")) return;
-    const { error } = await supabase.from("whiteboard_tiles").update(patch).eq("id", id);
-    if (error) {
-      setTiles((prev) => prev.map((t) => (t.id === id ? prevTile : t)));
-      toast({ title: "Move failed", description: error.message, variant: "destructive" });
-      return;
-    }
-    // Sync schedule_assignments when a crew tile changes job/day
-    if (prevTile.kind === "crew" && prevTile.ref_id) {
-      const newSection = patch.section ?? prevTile.section;
-      const newParent = patch.parent_tile_id !== undefined ? patch.parent_tile_id : prevTile.parent_tile_id;
-      const newDay = patch.day_index ?? prevTile.day_index;
-      const oldJobId = prevTile.section === "crew" ? jobRefForParent(prevTile.parent_tile_id) : null;
-      const newJobId = newSection === "crew" ? jobRefForParent(newParent) : null;
-      const sameSpot =
-        oldJobId === newJobId && prevTile.day_index === newDay;
-      if (!sameSpot) {
-        if (oldJobId) await syncRemoveAssignment(oldJobId, prevTile.ref_id, prevTile.day_index);
-        if (newJobId) await syncAddAssignment(newJobId, prevTile.ref_id, newDay);
+    try {
+      const prevTile = tiles.find((t) => t.id === id);
+      if (!prevTile) return;
+      setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+      if (id.startsWith("tmp-")) return;
+      const { error } = await supabase.from("whiteboard_tiles").update(patch).eq("id", id);
+      if (error) {
+        setTiles((prev) => prev.map((t) => (t.id === id ? prevTile : t)));
+        toast({ title: "Move failed", description: error.message, variant: "destructive" });
+        return;
       }
+      // Sync schedule_assignments when a crew tile changes job/day
+      if (prevTile.kind === "crew" && prevTile.ref_id) {
+        const newSection = patch.section ?? prevTile.section;
+        const newParent = patch.parent_tile_id !== undefined ? patch.parent_tile_id : prevTile.parent_tile_id;
+        const newDay = patch.day_index ?? prevTile.day_index;
+        const oldJobId = prevTile.section === "crew" ? jobRefForParent(prevTile.parent_tile_id) : null;
+        const newJobId = newSection === "crew" ? jobRefForParent(newParent) : null;
+        const sameSpot =
+          oldJobId === newJobId && prevTile.day_index === newDay;
+        if (!sameSpot) {
+          if (oldJobId) await syncRemoveAssignment(oldJobId, prevTile.ref_id, prevTile.day_index);
+          if (newJobId) await syncAddAssignment(newJobId, prevTile.ref_id, newDay);
+        }
+      }
+    } finally {
+      pendingMutations.current -= 1;
+      if (pendingMutations.current === 0) setSaving(false);
     }
   };
 
   const optimisticDelete = async (id: string) => {
+    pendingMutations.current += 1;
+    setSaving(true);
     markLocalChange();
-    const prev = tiles;
-    const target = tiles.find((t) => t.id === id);
-    const childCrew = tiles.filter((t) => t.parent_tile_id === id && t.kind === "crew");
-    setTiles((p) => p.filter((t) => t.id !== id && t.parent_tile_id !== id));
-    if (id.startsWith("tmp-")) return;
-    const { error } = await supabase.from("whiteboard_tiles").delete().eq("id", id);
-    if (error) {
-      setTiles(prev);
-      toast({ title: "Remove failed", description: error.message, variant: "destructive" });
-      return;
-    }
-    // Sync schedule_assignments removal
-    if (target?.kind === "crew" && target.ref_id && target.section === "crew") {
-      const jobId = jobRefForParent(target.parent_tile_id);
-      if (jobId) await syncRemoveAssignment(jobId, target.ref_id, target.day_index);
-    }
-    if (target?.kind === "job" && target.ref_id) {
-      // Job tile removed → drop all mirrored assignments for its child crew
-      for (const c of childCrew) {
-        if (c.ref_id) await syncRemoveAssignment(target.ref_id, c.ref_id, c.day_index);
+    try {
+      const prev = tiles;
+      const target = tiles.find((t) => t.id === id);
+      const childCrew = tiles.filter((t) => t.parent_tile_id === id && t.kind === "crew");
+      setTiles((p) => p.filter((t) => t.id !== id && t.parent_tile_id !== id));
+      if (id.startsWith("tmp-")) return;
+      const { error } = await supabase.from("whiteboard_tiles").delete().eq("id", id);
+      if (error) {
+        setTiles(prev);
+        toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+        return;
       }
+      // Sync schedule_assignments removal
+      if (target?.kind === "crew" && target.ref_id && target.section === "crew") {
+        const jobId = jobRefForParent(target.parent_tile_id);
+        if (jobId) await syncRemoveAssignment(jobId, target.ref_id, target.day_index);
+      }
+      if (target?.kind === "job" && target.ref_id) {
+        // Job tile removed → drop all mirrored assignments for its child crew
+        for (const c of childCrew) {
+          if (c.ref_id) await syncRemoveAssignment(target.ref_id, c.ref_id, c.day_index);
+        }
+      }
+    } finally {
+      pendingMutations.current -= 1;
+      if (pendingMutations.current === 0) setSaving(false);
     }
   };
 
   const optimisticAddDispatch = async (dayIdx: number, userId: string, label: string) => {
-    const date = dateAt(weekStart, dayIdx);
-    if (dispatches.some((d) => d.dispatch_date === date && d.driver_user_id === userId)) return;
-    const tempId = `tmp-disp-${++tempCounter.current}`;
-    const optimistic: Dispatch = {
-      id: tempId,
-      dispatch_date: date,
-      driver_user_id: userId,
-      driver_name: label,
-      truck_number: null,
-    };
-    setDispatches((p) => [...p, optimistic]);
-    const { data, error } = await supabase
-      .from("dispatch_orders")
-      .insert({
+    pendingMutations.current += 1;
+    setSaving(true);
+    markLocalChange();
+    try {
+      const date = dateAt(weekStart, dayIdx);
+      if (dispatches.some((d) => d.dispatch_date === date && d.driver_user_id === userId)) return;
+      const tempId = `tmp-disp-${++tempCounter.current}`;
+      const optimistic: Dispatch = {
+        id: tempId,
         dispatch_date: date,
         driver_user_id: userId,
         driver_name: label,
-        status: "scheduled",
-        created_by: user?.id ?? null,
-      })
-      .select("id,dispatch_date,driver_user_id,driver_name,truck_number")
-      .maybeSingle();
-    if (error || !data) {
-      setDispatches((p) => p.filter((d) => d.id !== tempId));
-      toast({ title: "Couldn't add to dispatch", description: error?.message ?? "Unknown", variant: "destructive" });
-      return;
+        truck_number: null,
+      };
+      setDispatches((p) => [...p, optimistic]);
+      const { data, error } = await supabase
+        .from("dispatch_orders")
+        .insert({
+          dispatch_date: date,
+          driver_user_id: userId,
+          driver_name: label,
+          status: "scheduled",
+          created_by: user?.id ?? null,
+        })
+        .select("id,dispatch_date,driver_user_id,driver_name,truck_number")
+        .maybeSingle();
+      if (error || !data) {
+        setDispatches((p) => p.filter((d) => d.id !== tempId));
+        toast({ title: "Couldn't add to dispatch", description: error?.message ?? "Unknown", variant: "destructive" });
+        return;
+      }
+      setDispatches((p) => p.map((d) => (d.id === tempId ? (data as Dispatch) : d)));
+    } finally {
+      pendingMutations.current -= 1;
+      if (pendingMutations.current === 0) setSaving(false);
     }
-    setDispatches((p) => p.map((d) => (d.id === tempId ? (data as Dispatch) : d)));
   };
 
   const optimisticDeleteDispatch = async (id: string) => {
-    const prev = dispatches;
-    setDispatches((p) => p.filter((d) => d.id !== id));
-    if (id.startsWith("tmp-")) return;
-    const { error } = await supabase.from("dispatch_orders").delete().eq("id", id);
-    if (error) {
-      setDispatches(prev);
-      toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+    pendingMutations.current += 1;
+    setSaving(true);
+    markLocalChange();
+    try {
+      const prev = dispatches;
+      setDispatches((p) => p.filter((d) => d.id !== id));
+      if (id.startsWith("tmp-")) return;
+      const { error } = await supabase.from("dispatch_orders").delete().eq("id", id);
+      if (error) {
+        setDispatches(prev);
+        toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+      }
+    } finally {
+      pendingMutations.current -= 1;
+      if (pendingMutations.current === 0) setSaving(false);
     }
   };
 
@@ -588,23 +656,29 @@ const Whiteboard = () => {
             />
             Include office staff
           </label>
-          <Button variant="outline" size="sm" className="h-8 gap-1 px-2 text-xs" onClick={() => setCopyOpen(true)}>
+          <Button variant="outline" size="sm" disabled={refreshing || saving || !!activeId || copyOpen} onClick={() => void refreshBoard()}>
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 gap-1 px-2 text-xs" disabled={saving || !!activeId} onClick={() => setCopyOpen(true)}>
             <Copy className="h-3.5 w-3.5" /> Copy forward
           </Button>
-          <Button size="icon" variant="ghost" onClick={() => setWeekStart(weekStartStr(addDays(parseISO(weekStart), -7)))} aria-label="Previous week">
+          <Button size="icon" variant="ghost" disabled={saving || !!activeId} onClick={() => setWeekStart(weekStartStr(addDays(parseISO(weekStart), -7)))} aria-label="Previous week">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <button
+            disabled={saving || !!activeId}
             onClick={() => setWeekStart(weekStartStr(new Date()))}
             className="rounded-md px-2 py-1 text-xs font-medium hover:bg-muted"
           >
             {format(parseISO(weekStart), "MMM d")} – {format(addDays(parseISO(weekStart), 6), "MMM d")}
           </button>
-          <Button size="icon" variant="ghost" onClick={() => setWeekStart(weekStartStr(addDays(parseISO(weekStart), 7)))} aria-label="Next week">
+          <Button size="icon" variant="ghost" disabled={saving || !!activeId} onClick={() => setWeekStart(weekStartStr(addDays(parseISO(weekStart), 7)))} aria-label="Next week">
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </header>
+
+      {refreshError && <p role="alert" className="px-3 py-2 text-sm text-destructive">Could not refresh the board. Displayed information may be out of date. Try Refresh again.</p>}
 
       <CopyForwardDialog
         open={copyOpen}
@@ -612,12 +686,12 @@ const Whiteboard = () => {
         weekStart={weekStart}
         sourceTiles={tiles}
         fieldEmployees={fieldEmployees}
-        onCopied={load}
+        onCopied={() => void load({ showLoading: false, afterCopy: true })}
       />
 
       <DndContext
         sensors={sensors}
-        onDragStart={(e: DragStartEvent) => setActiveId(e.active.id.toString())}
+        onDragStart={(e: DragStartEvent) => { loadGeneration.current += 1; setRefreshing(false); setActiveId(e.active.id.toString()); }}
         onDragEnd={onDragEnd}
         onDragCancel={() => setActiveId(null)}
       >

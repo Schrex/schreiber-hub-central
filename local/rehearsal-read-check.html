@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Rehearsal read-only acceptance</title>
+<h1>Rehearsal read-only acceptance</h1>
+<p>Uses your existing signed-in session. No business writes, role changes or employee rows are displayed.</p>
+<button id="run">Run read-only checks</button>
+<pre id="results" role="status">Ready.</pre>
+<script type="module">
+const output = document.querySelector("#results");
+const button = document.querySelector("#run");
+button.addEventListener("click", async () => {
+  button.disabled = true;
+  output.textContent = "";
+  const report = text => { output.textContent += text + "\n"; };
+  try {
+    if (location.hostname !== "127.0.0.1" || location.port !== "8083" ||
+        import.meta.env.VITE_REHEARSAL_BACKEND !== "true" ||
+        import.meta.env.VITE_SUPABASE_URL !== "https://acgqjjbrnkmeazswdnzp.supabase.co") {
+      throw new Error("Wrong environment");
+    }
+    const { supabase } = await import("/src/integrations/supabase/client.ts");
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) throw new Error("Sign in first");
+    report("PASS: existing session validated by rehearsal Auth.");
+    const roles = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+    if (roles.error) throw new Error("Role lookup failed");
+    const employeeOnly = roles.data.length === 1 && roles.data[0].role === "employee";
+    if (!employeeOnly) {
+      report("STOP: this check requires an employee-only account; no restricted reads attempted.");
+      return;
+    }
+    report("PASS: database confirms employee-only role.");
+    const privateColumn = await supabase.from("employee_contacts")
+      .select("ssn", { head: true, count: "exact" }).limit(0);
+    report(privateColumn.status === 403
+      ? "PASS: direct sensitive-column HEAD request denied (HTTP 403)."
+      : `FAIL: sensitive-column denial not established (HTTP ${privateColumn.status}).`);
+    const compensation = await supabase.from("employee_compensation_history")
+      .select("id", { head: true, count: "exact" }).neq("user_id", user.id);
+    if (compensation.error?.code === "42501") {
+      report("PASS: cross-user compensation read denied by database (42501).");
+    } else if (!compensation.error && compensation.count === 0) {
+      report("OBSERVED: zero other-user compensation records visible. Requires a known-existing record to prove RLS filtering.");
+    } else {
+      report("FAIL: cross-user compensation denial not established.");
+    }
+    report("Finished. No write or admin/foreman-session test was performed.");
+  } catch {
+    report("STOP: check could not complete. No credentials or response bodies logged.");
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
+</html>

@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useRef, useState } from "react";
 import { FileText, Upload, Trash2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,9 +68,9 @@ export const ContractSection = ({ jobId }: Props) => {
       if (updErr) throw updErr;
       toast.success("Contract uploaded");
       await load();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Contract upload failed", err);
-      toast.error(err?.message ?? "Upload failed");
+      toast.error(errorMessage(err, "Upload failed"));
     } finally {
       setBusy(false);
       setProgress(0);
@@ -121,8 +122,8 @@ export const ContractSection = ({ jobId }: Props) => {
       }).eq("id", jobId);
       toast.success("Contract removed");
       await load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Delete failed");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Delete failed"));
     } finally {
       setBusy(false);
     }

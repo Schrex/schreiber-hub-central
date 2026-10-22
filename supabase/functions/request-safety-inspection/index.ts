@@ -1,3 +1,4 @@
+import { notificationResult } from "../_shared/notification-result.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -26,7 +27,7 @@ Deno.serve(async (req) => {
 
     // Admin only
     const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
-    const isAdmin = (roles ?? []).some((r: any) => r.role === 'admin')
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === 'admin')
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -43,7 +44,7 @@ Deno.serve(async (req) => {
 
     // Resolve recipient email from app_settings, fall back to default
     const { data: setting } = await admin.from('app_settings').select('value').eq('key', 'york_safety_email').maybeSingle()
-    const settingValue = setting?.value as any
+    const settingValue = setting?.value as string | { email?: string } | null
     const recipient =
       (typeof settingValue === 'string' && settingValue) ||
       (settingValue && typeof settingValue === 'object' && settingValue.email) ||
@@ -64,6 +65,8 @@ Deno.serve(async (req) => {
     if (insErr) throw insErr
 
     // Send email via the transactional dispatcher using supabase-js (handles auth headers correctly)
+    let notification: 'queued' | 'failed' = 'failed'
+    try {
     const { data: sendData, error: sendErr } = await admin.functions.invoke('send-transactional-email', {
       body: {
         templateName: 'safety-inspection-request',
@@ -85,15 +88,15 @@ Deno.serve(async (req) => {
       },
     })
 
-    if (sendErr) {
-      console.error('email send failed', sendErr)
-      await admin.from('safety_inspections').update({ status: 'failed' }).eq('id', insp.id)
-      throw new Error('Failed to send email')
+    notification = notificationResult(sendData, sendErr)
+    } catch (error) {
+      console.error('inspection notification enqueue failed', error)
     }
-
-    await admin.from('safety_inspections').update({ status: 'sent' }).eq('id', insp.id)
-
-    return new Response(JSON.stringify({ ok: true, recipient }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    // Queue acceptance must never claim the inspection email was delivered.
+    const { error: statusError } = await admin.from('safety_inspections')
+      .update({ status: notification === 'queued' ? 'queued' : 'failed' }).eq('id', insp.id)
+    if (statusError) console.error('inspection notification status update failed', statusError)
+    return new Response(JSON.stringify({ ok: true, inspectionId: insp.id, recipient, notification, statusRecorded: !statusError }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (e) {
     console.error('request-safety-inspection error', e)
     return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })

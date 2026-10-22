@@ -1,3 +1,5 @@
+import { useResumeRefresh } from "@/hooks/useResumeRefresh";
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Plus, Palmtree, AlertTriangle, Check, X, Calendar as CalendarIcon, Loader2 } from "lucide-react";
@@ -102,6 +104,8 @@ const TimeOffPage = () => {
     setLoading(false);
   };
 
+  useResumeRefresh(load);
+
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
@@ -132,8 +136,8 @@ const TimeOffPage = () => {
       if (error) throw error;
       toast.success("Request submitted");
       resetForm(); setOpen(false); setShortNoticeConfirm(false); load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to submit");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to submit"));
     } finally { setBusy(false); }
   };
 
@@ -205,18 +209,18 @@ const TimeOffPage = () => {
             .is("end_date", null),
         ]);
         const userIds = new Set<string>();
-        (roleRows ?? []).forEach((r: any) => r.user_id && userIds.add(r.user_id));
-        (posRows ?? []).forEach((r: any) => r.user_id && userIds.add(r.user_id));
+        (roleRows ?? []).forEach((r) => r.user_id && userIds.add(r.user_id));
+        (posRows ?? []).forEach((r) => r.user_id && userIds.add(r.user_id));
         if (userIds.size > 0) {
           const { data: profs } = await supabase
             .from("profiles")
             .select("user_id, email, display_name")
             .in("user_id", Array.from(userIds));
-          const recipients = (profs ?? []).filter((p: any) => p.email);
+          const recipients = (profs ?? []).filter((p) => p.email);
           const dateRange = renderRange(req);
           const decidedBy = displayName ?? "Admin";
           await Promise.all(
-            recipients.map((p: any) =>
+            recipients.map((p) =>
               supabase.functions.invoke("send-transactional-email", {
                 body: {
                   templateName: "time-off-approved",
@@ -240,8 +244,8 @@ const TimeOffPage = () => {
       }
 
       load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to approve");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to approve"));
     } finally {
       setActingId(null);
       setConfirmApprove(null);
@@ -261,8 +265,8 @@ const TimeOffPage = () => {
       if (error) throw error;
       toast.success("Denied");
       setDenyTarget(null); setDenyReason(""); load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to deny");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to deny"));
     } finally { setActingId(null); }
   };
 

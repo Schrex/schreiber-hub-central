@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Plus, MapPin, Briefcase } from "lucide-react";
@@ -71,8 +72,8 @@ const Jobs = () => {
       resetForm();
       setOpen(false);
       load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to save");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to save"));
     } finally {
       setBusy(false);
     }

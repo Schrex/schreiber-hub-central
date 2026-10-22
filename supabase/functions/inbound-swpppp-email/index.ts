@@ -1,3 +1,4 @@
+import { errorMessage } from "../_shared/errorMessage.ts";
 // Public webhook to receive forwarded SWPPP emails.
 // Compatible with common inbound email providers (CloudMailin, Postmark, SendGrid Inbound Parse).
 // It tries to extract a job number from the subject line and attaches the first PDF/image attachment.
@@ -33,7 +34,7 @@ function extractJobNumber(subject: string): string | null {
   // Match patterns like "Job 1234", "#1234", "[1234]", "job-1234", "1234-name"
   const patterns = [
     /\bjob[\s#:_-]*([0-9]{2,8})\b/i,
-    /[#\[]\s*([0-9]{2,8})\s*[\]]?/,
+    /[#[]\s*([0-9]{2,8})\s*[\]]?/,
     /\b([0-9]{4,8})\b/,
   ];
   for (const p of patterns) {
@@ -71,13 +72,13 @@ async function parseRequest(req: Request): Promise<Parsed> {
     return { subject, from, text, html, attachments };
   }
   // JSON style: Postmark, custom
-  const body = await req.json().catch(() => ({} as any));
+  const body = await req.json().catch(() => ({}));
   const subject: string = body.Subject || body.subject || body.headers?.Subject || "";
   const from: string = body.From || body.from || body.FromFull?.Email || "";
   const text: string = body.TextBody || body.text || body.plain || "";
   const html: string = body.HtmlBody || body.html || "";
   const rawAtt = body.Attachments || body.attachments || [];
-  const attachments: Attachment[] = (rawAtt as any[]).map((a) => ({
+  const attachments: Attachment[] = (rawAtt as { Name?: string; name?: string; filename?: string; ContentType?: string; contentType?: string; type?: string; Content?: string; content?: string; contentBase64?: string }[]).map((a) => ({
     name: a.Name || a.name || a.filename || "attachment",
     contentType: a.ContentType || a.contentType || a.type,
     contentBase64: a.Content || a.content || a.contentBase64,
@@ -140,7 +141,7 @@ Deno.serve(async (req) => {
       ?? parsed.attachments[0];
     if (att?.contentBase64) {
       const bytes = b64ToBytes(att.contentBase64);
-      const safeName = (att.name || "report.pdf").replace(/[^\w.\-]+/g, "_");
+      const safeName = (att.name || "report.pdf").replace(/[^\w.-]+/g, "_");
       const path = `${job.id}/${weekOf}/${Date.now()}-${safeName}`;
       const { error: upErr } = await supabase.storage.from("swpppp-reports").upload(path, bytes, {
         contentType: att.contentType || "application/octet-stream",
@@ -170,9 +171,9 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true, report_id: report.id, job_id: job.id, job_number: jobNum }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("inbound-swpppp-email error", e);
-    return new Response(JSON.stringify({ error: e?.message ?? "Internal error" }), {
+    return new Response(JSON.stringify({ error: errorMessage(e, "Internal error") }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

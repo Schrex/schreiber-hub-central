@@ -1,3 +1,4 @@
+import { useResumeRefresh } from "@/hooks/useResumeRefresh";
 import { useEffect, useState } from "react";
 import { Bell, Check, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -28,14 +29,16 @@ export const NotificationsBell = () => {
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("notifications")
       .select("id,kind,title,body,link_url,read_at,created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
-    setItems((data as Notification[]) ?? []);
+    if (!error) setItems((data as Notification[]) ?? []);
   };
+
+  useResumeRefresh(load);
 
   useEffect(() => {
     if (!user) return;
@@ -56,7 +59,9 @@ export const NotificationsBell = () => {
 
   const handleClick = async (n: Notification) => {
     if (!n.read_at) {
-      await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", n.id);
+      const { error } = await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", n.id);
+      if (error) toast.error("Couldn’t mark notification as read");
+      else await load();
     }
     setOpen(false);
     if (n.link_url) navigate(n.link_url);
@@ -79,7 +84,7 @@ export const NotificationsBell = () => {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(nextOpen) => { setOpen(nextOpen); if (nextOpen) void load(); }}>
       <PopoverTrigger asChild>
         <button
           aria-label="Notifications"

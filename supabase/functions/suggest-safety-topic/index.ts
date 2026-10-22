@@ -38,8 +38,8 @@ Deno.serve(async (req) => {
       .eq('id', jobId)
       .maybeSingle()
 
-    const roles = Array.from(new Set((assigns ?? []).map((a: any) => (a.role_on_job ?? '').trim()).filter(Boolean)))
-    const taskNotes = (assigns ?? []).map((a: any) => a.notes).filter(Boolean)
+    const roles = Array.from(new Set((assigns ?? []).map((a: { role_on_job: string | null }) => (a.role_on_job ?? '').trim()).filter(Boolean)))
+    const taskNotes = (assigns ?? []).map((a: { notes: string | null }) => a.notes).filter(Boolean)
 
     const lovableKey = Deno.env.get('LOVABLE_API_KEY')
     if (!lovableKey) throw new Error('LOVABLE_API_KEY not set')
@@ -58,7 +58,7 @@ Roles scheduled today: ${roles.join(', ') || '(unspecified)'}
 Crew notes for today: ${taskNotes.join(' | ') || '(none)'}
 
 Existing talks library (id — title — category):
-${(talks ?? []).map((t: any) => `${t.id} — ${t.title} — ${t.category ?? ''}`).join('\n') || '(empty)'}
+${(talks ?? []).map((t: { id: string; title: string; category: string | null }) => `${t.id} — ${t.title} — ${t.category ?? ''}`).join('\n') || '(empty)'}
 
 Return JSON:
 {

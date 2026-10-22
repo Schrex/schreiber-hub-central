@@ -1,3 +1,4 @@
+import { errorMessage } from "../_shared/errorMessage.ts";
 // Extract a foreman-facing briefing from an uploaded job contract using Lovable AI.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -36,7 +37,7 @@ Deno.serve(async (req) => {
 
     const { data: roles } = await admin
       .from("user_roles").select("role").eq("user_id", userData.user.id);
-    const roleSet = new Set((roles ?? []).map((r: any) => r.role));
+    const roleSet = new Set((roles ?? []).map((r: { role: string }) => r.role));
     if (!(roleSet.has("office") || roleSet.has("admin"))) return json(403, { error: "forbidden" });
 
     const { data: job, error: jobErr } = await admin
@@ -103,7 +104,7 @@ Deno.serve(async (req) => {
     }
 
     return json(200, { brief });
-  } catch (err: any) {
-    return json(500, { error: err?.message ?? "unknown error" });
+  } catch (err: unknown) {
+    return json(500, { error: errorMessage(err, "unknown error") });
   }
 });

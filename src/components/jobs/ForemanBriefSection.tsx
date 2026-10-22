@@ -1,3 +1,5 @@
+import { independentLaunch } from "@/lib/launchScope";
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { ClipboardList, Pencil, Save, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,14 +55,15 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
       setBrief(draft);
       setEditing(false);
       toast.success("Foreman briefing saved");
-    } catch (err: any) {
-      toast.error(err?.message ?? "Save failed");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Save failed"));
     } finally {
       setSaving(false);
     }
   };
 
   const generate = async () => {
+    if (independentLaunch) return;
     if (brief && !confirm("Replace the existing briefing with one generated from the contract?")) return;
     setGenerating(true);
     try {
@@ -73,8 +76,8 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
       setDraft(next);
       setEditing(false);
       toast.success("Briefing generated from contract");
-    } catch (err: any) {
-      toast.error(err?.message ?? "Generation failed");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Generation failed"));
     } finally {
       setGenerating(false);
     }
@@ -89,7 +92,7 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
         </h2>
         {canEdit && !editing && (
           <div className="flex items-center gap-1.5">
-            {hasContract && (
+            {hasContract && !independentLaunch && (
               <button
                 type="button"
                 onClick={generate}

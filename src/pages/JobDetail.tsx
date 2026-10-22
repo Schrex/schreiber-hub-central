@@ -1,3 +1,4 @@
+import { JobFilesSection } from "@/components/jobs/JobFilesSection";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, MapPin, Phone, User, Calendar } from "lucide-react";
@@ -122,6 +123,7 @@ const JobDetail = () => {
             </a>
           )}
         </div>
+        <JobFilesSection jobId={job.id} />
         <DriveTimeFromShop lat={lat} lon={lon} />
 
         {/* Per-job weather */}

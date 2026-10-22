@@ -1,3 +1,4 @@
+import { independentLaunch } from "@/lib/launchScope";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, MapPin, Contact, Download, KeyRound } from "lucide-react";
@@ -248,7 +249,7 @@ const EmployeeContacts = () => {
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase.rpc("list_employee_directory");
-    const sorted = (data ?? []).slice().sort((a: any, b: any) =>
+    const sorted = (data ?? []).slice().sort((a, b) =>
       (a?.name ?? "").localeCompare(b?.name ?? "")
     );
     if (error) {
@@ -314,6 +315,7 @@ const EmployeeContacts = () => {
   }, [contacts, search, deptFilter]);
 
   const openAdd = () => {
+    if (independentLaunch) return;
     setWizardOpen(true);
   };
 
@@ -668,7 +670,7 @@ const EmployeeContacts = () => {
   };
 
   const submitConvert = async () => {
-    if (!convertTarget) return;
+    if (independentLaunch || !convertTarget) return;
     if (!convertEmail.trim()) {
       toast({ title: "Email required", description: "Enter the login email for this user.", variant: "destructive" });
       return;
@@ -678,7 +680,7 @@ const EmployeeContacts = () => {
       return;
     }
     setConverting(true);
-    const { data, error } = await supabase.functions.invoke("convert-employee-contact", {
+    const { data, error } = await supabase.functions.invoke<{ error?: string }>("convert-employee-contact", {
       body: {
         contactId: convertTarget.id,
         email: convertEmail.trim(),
@@ -688,10 +690,10 @@ const EmployeeContacts = () => {
       },
     });
     setConverting(false);
-    if (error || (data as any)?.error) {
+    if (error || data?.error) {
       toast({
         title: "Couldn't create login",
-        description: (data as any)?.error ?? error?.message ?? "Unknown error",
+        description: data?.error ?? error?.message ?? "Unknown error",
         variant: "destructive",
       });
       return;
@@ -751,7 +753,7 @@ const EmployeeContacts = () => {
         {canEdit && (
           <>
             <div className="flex gap-2">
-              <Button onClick={openAdd} className="flex-1">
+              <Button disabled={independentLaunch} title={independentLaunch ? "Employee onboarding is paused" : undefined} onClick={openAdd} className="flex-1">
                 <Plus className="mr-1 h-4 w-4" /> Add Employee
               </Button>
               <Button
@@ -914,7 +916,7 @@ const EmployeeContacts = () => {
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     )}
-                    {canConvert && !c.converted_user_id && (
+                    {canConvert && !independentLaunch && !c.converted_user_id && (
                       <Button
                         size="icon"
                         variant="ghost"
@@ -1229,7 +1231,7 @@ const EmployeeContacts = () => {
       <AddEmployeeWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
-        canCreateLogin={canConvert}
+        canCreateLogin={canConvert && !independentLaunch}
         onCreated={load}
       />
 

@@ -9,7 +9,7 @@ import { FileDropZone } from "@/components/ui/FileDropZone";
 import { toast } from "sonner";
 import { Upload as TusUpload } from "tus-js-client/lib.esm/browser/index.js";
 
-const SUPABASE_URL = "https://bitogpfplcquovpdjprk.supabase.co";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const RESUMABLE_THRESHOLD = 6 * 1024 * 1024; // 6MB
 
 const resumableUpload = async (

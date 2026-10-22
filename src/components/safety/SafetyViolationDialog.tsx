@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useMemo, useState } from "react";
 import { ShieldAlert, Loader2, X, Camera, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -188,9 +189,9 @@ export const SafetyViolationDialog = ({ open, onOpenChange, presetJob }: Props) 
       toast.success("Violation notice filed. Office has been notified.");
       reset();
       onOpenChange(false);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      toast.error(e?.message ?? "Failed to file notice");
+      toast.error(errorMessage(e, "Failed to file notice"));
     } finally {
       setSubmitting(false);
     }

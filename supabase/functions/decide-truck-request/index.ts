@@ -1,3 +1,5 @@
+import { notificationResult } from "../_shared/notification-result.ts";
+import type { Database } from "../../../src/integrations/supabase/types.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -22,7 +24,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
-    const userClient = createClient(
+    const userClient = createClient<Database>(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } },
@@ -31,7 +33,7 @@ Deno.serve(async (req) => {
     if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
     const { data: roles } = await userClient.from('user_roles').select('role').eq('user_id', user.id)
-    const allowed = (roles ?? []).some((r: any) => ['office', 'admin'].includes(r.role))
+    const allowed = (roles ?? []).some((r: { role: string }) => ['office', 'admin'].includes(r.role))
     if (!allowed) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -44,7 +46,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'truckNumber is required to approve' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const admin = createClient<Database>(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
     const { data: request, error: reqErr } = await admin
       .from('truck_requests')
@@ -56,7 +58,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: `Already ${request.status}` }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const job = (request as any).jobs
+    const job = request.jobs
     let dispatchOrderId: string | null = null
 
     if (body.decision === 'approved') {
@@ -89,7 +91,7 @@ Deno.serve(async (req) => {
       if (ordErr) throw ordErr
       dispatchOrderId = order.id
 
-      await admin.from('truck_requests').update({
+      const { error: updateError } = await admin.from('truck_requests').update({
         status: 'approved',
         assigned_truck_number: body.truckNumber,
         assigned_driver_user_id: body.driverUserId ?? null,
@@ -99,13 +101,20 @@ Deno.serve(async (req) => {
         decided_at: new Date().toISOString(),
         dispatch_order_id: dispatchOrderId,
       }).eq('id', body.requestId)
+      if (updateError) {
+        // The dispatch insert already committed. Do not report an ordinary retryable failure.
+        return new Response(JSON.stringify({ ok: false, reconciliationRequired: true, dispatchOrderId,
+          error: 'Dispatch order created, but request approval was not saved. Do not retry; ask an administrator to reconcile the dispatch order and request.' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
     } else {
-      await admin.from('truck_requests').update({
+      const { error: updateError } = await admin.from('truck_requests').update({
         status: 'declined',
         decision_notes: body.notes ?? null,
         decided_by: user.id,
         decided_at: new Date().toISOString(),
       }).eq('id', body.requestId)
+      if (updateError) throw updateError
     }
 
     // Email the requester
@@ -118,9 +127,10 @@ Deno.serve(async (req) => {
     const { data: deciderProf } = await admin.from('profiles').select('display_name, email').eq('user_id', user.id).maybeSingle()
     const decidedByName = deciderProf?.display_name || deciderProf?.email || 'Office'
 
+    let notification: 'queued' | 'failed' = 'failed'
     if (recipient) {
       try {
-        await admin.functions.invoke('send-transactional-email', {
+        const { data: emailData, error: emailError } = await admin.functions.invoke('send-transactional-email', {
           body: {
             templateName: 'truck-request-decision',
             recipientEmail: recipient,
@@ -142,12 +152,13 @@ Deno.serve(async (req) => {
             },
           },
         })
+        notification = notificationResult(emailData, emailError)
       } catch (e) {
         console.error('truck-request decision email failed', e)
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, dispatchOrderId }), {
+    return new Response(JSON.stringify({ ok: true, dispatchOrderId, notification }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

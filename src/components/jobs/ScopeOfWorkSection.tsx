@@ -1,3 +1,5 @@
+import { independentLaunch } from "@/lib/launchScope";
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +35,7 @@ export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
       supabase.from("jobs").select("contract_file_path").eq("id", jobId).maybeSingle(),
     ]);
     setItems((scopeRes.data as ScopeItem[]) ?? []);
-    setHasContract(!!(jobRes.data as any)?.contract_file_path);
+    setHasContract(!!jobRes.data?.contract_file_path);
   };
 
   useEffect(() => { load(); }, [jobId]);
@@ -50,8 +52,8 @@ export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
       if (error) throw error;
       setDraft("");
       await load();
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed to add");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to add"));
     } finally {
       setBusy(false);
     }
@@ -64,21 +66,22 @@ export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
   };
 
   const extractFromContract = async () => {
+    if (independentLaunch) return;
     if (!hasContract) { toast.error("Upload a contract first"); return; }
     const replace = items.length > 0
       ? confirm("Replace existing scope items with items extracted from the contract?\n\nClick Cancel to append instead.")
       : false;
     setExtracting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("extract-scope-from-contract", {
+      const { data, error } = await supabase.functions.invoke<{ inserted?: number }>("extract-scope-from-contract", {
         body: { jobId, replace },
       });
       if (error) throw error;
-      const count = (data as any)?.inserted ?? 0;
+      const count = data?.inserted ?? 0;
       toast.success(count ? `Added ${count} scope item${count === 1 ? "" : "s"}` : "No scope items found");
       await load();
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to extract scope");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to extract scope"));
     } finally {
       setExtracting(false);
     }
@@ -90,7 +93,7 @@ export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
         <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
           Scope of work
         </h2>
-        {canEdit && hasContract && (
+        {canEdit && hasContract && !independentLaunch && (
           <Button size="sm" variant="ghost" onClick={extractFromContract} disabled={extracting}>
             <Sparkles className="h-3.5 w-3.5" />
             <span className="ml-1 text-xs">{extracting ? "Extracting…" : "From contract"}</span>

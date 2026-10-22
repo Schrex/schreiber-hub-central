@@ -1,3 +1,4 @@
+import { notificationResult } from "../_shared/notification-result.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -36,7 +37,7 @@ Deno.serve(async (req) => {
 
     // Foreman/office/admin only
     const { data: roles } = await userClient.from('user_roles').select('role').eq('user_id', user.id)
-    const allowed = (roles ?? []).some((r: any) => ['foreman', 'office', 'admin'].includes(r.role))
+    const allowed = (roles ?? []).some((r: { role: string }) => ['foreman', 'office', 'admin'].includes(r.role))
     if (!allowed) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -73,14 +74,15 @@ Deno.serve(async (req) => {
 
     // Notify office
     const { data: setting } = await admin.from('app_settings').select('value').eq('key', 'office_dispatch_email').maybeSingle()
-    const settingValue = setting?.value as any
+    const settingValue = setting?.value as string | { email?: string } | null
     const recipient =
       (typeof settingValue === 'string' && settingValue) ||
       (settingValue && typeof settingValue === 'object' && settingValue.email) ||
       DEFAULT_OFFICE_EMAIL
 
+    let notification: 'queued' | 'failed' = 'failed'
     try {
-      await admin.functions.invoke('send-transactional-email', {
+      const { data: emailData, error: emailError } = await admin.functions.invoke('send-transactional-email', {
         body: {
           templateName: 'truck-request-submitted',
           recipientEmail: recipient,
@@ -100,11 +102,12 @@ Deno.serve(async (req) => {
           },
         },
       })
+      notification = notificationResult(emailData, emailError)
     } catch (e) {
       console.error('truck-request submit email failed', e)
     }
 
-    return new Response(JSON.stringify({ ok: true, requestId: request.id }), {
+    return new Response(JSON.stringify({ ok: true, requestId: request.id, notification }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
