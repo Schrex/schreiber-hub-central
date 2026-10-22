@@ -1,5 +1,44 @@
 # Development progress
 
+## Production workflow integration and credential setup — 2026-10-22
+
+PR #20 merged into develop at cc4c8f7 after its five checks passed. The owner
+explicitly approved PR #21 main integration, a 90-day account-scoped Pages Write
+token, encrypted GitHub secret storage, and a candidate build/plan, excluding a
+live upload. PR #21 passed all five checks and merged into main at
+75fd4cf2b53e48252d5d59f256c0a33c55e16ce6. No application deployment occurred.
+
+Configured CLOUDFLARE_ACCOUNT_ID and PRODUCTION_SUPABASE_ANON_KEY repository
+variables. The public anon configuration was recovered from the currently served
+frontend and checked for destination project, anon role and expiry without logging
+its value. Created schreiber-hub-github-production with Pages Write only for the
+verified account, expiring January 20, 2027, and stored it as the encrypted
+CLOUDFLARE_PAGES_API_TOKEN Actions secret. Its temporary local copy was removed.
+Authenticated provider read confirmed schreiber-hub-preview, production branch
+main, no Git source, both expected domains, no Functions, and canonical deployment
+82bbfce8-7a2f-412f-b3b4-62af659022ef. Public custom-domain build-info still reports
+clean ea0504798c9985ea44ad32d674579b15ae6f0c66 and the fixed destination backend.
+
+Live execution remains disabled. Readiness inspection found Cloudflare Access
+redirects on the immutable pages.dev build-info URL; the controller's current
+unauthenticated immutable checks cannot pass. Access authentication must be added
+without removing that protection before execution/recovery is usable. The recorded
+ea05047 recovery ZIP was not found in dist, temporary files, Downloads, Schrex
+archive/code folders or managed worktrees; no durable recovery copy is certified.
+Repository webhooks are empty; installed-app consumer inspection returned 404 and
+ledger write capability remains unproven. These are readiness gaps, not successful
+production acceptance.
+
+Exact-main Verification 39841634456 passed all five groups. Production candidate
+build 39842209233 succeeded; its downloaded artifact passed all 12 file hashes,
+layout, clean source and destination identity checks. Manifest SHA256:
+32c52b47136f6bff5a945a2d4693e5d03dc4c07c74606b40c566c9735424e303.
+Manual deployment plan 39842415484 succeeded and retained receipt outcome planned,
+candidate artifact ID 12453048215 and the expected current deployment UUID. Plan
+does not contact Cloudflare or write a deployment ledger; this is not live acceptance.
+Candidate retention is 90 days. The owner-approved merge/setup/build/plan is complete;
+live activation and deployment remain outstanding for the readiness gaps above.
+
 ## Manual upload and native recovery implemented, inactive — 2026-10-22
 
 PR #19 passed all five checks and merged into develop (679e4f6), retaining main's

@@ -1,8 +1,12 @@
 # Manual frontend upload and recovery
 
-Implementation is reviewable, not activated. No production credential/configuration
-was added and no upload or rollback was performed to test it. All workflows are
-manual, main-only, and require a separately approved main integration before use.
+The workflows are integrated into main through approved PR #21. The account ID,
+public backend configuration and encrypted Pages deployment token are configured.
+The token expires January 20, 2027. All workflows remain manual and main-only.
+Live execution is not activated: Cloudflare Access currently blocks the controller's
+unauthenticated immutable-URL checks, and the historical recovery archive has not
+been located. Configure authenticated verification and verify recovery evidence
+before enabling execution. No upload or rollback was performed during setup.
 The prior dry-run build remains available and remains non-deployable.
 
 ## Candidate build (no Cloudflare credentials)
