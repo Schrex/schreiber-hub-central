@@ -33,7 +33,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 | `src/components/<feature>/` | Feature components (jobs, schedule, safety, home, dispatch, whiteboard…) |
 | `src/components/ui/` | shadcn primitives |
 | `src/hooks/` | `useAuth` (session + roles), `useResumeRefresh`, `useWeather` |
-| `src/lib/` | helpers: `launchScope`, `talkMedia`, `resumableUpload`, `weather` |
+| `src/lib/` | helpers: `launchScope`, `talkMedia`, `resumableUpload`, `weather`, `jobs` (NY today, job sort/grouping, badge map, search escaping) |
 | `src/integrations/` | Generated Supabase client + `types.ts`, Lovable auth (do not hand-edit) |
 | `src/test/` | Vitest unit tests (some colocated `*.test.tsx` too) |
 | `e2e/` | Playwright specs (6) |

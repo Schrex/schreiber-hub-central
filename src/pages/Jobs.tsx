@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { LocationPicker, type PickedLocation } from "@/components/jobs/LocationPicker";
+import { JobStatusBadge } from "@/components/jobs/JobStatusBadge";
 
 interface Job {
   id: string;
@@ -158,11 +159,7 @@ const Jobs = () => {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     {j.job_number && <span className="text-[10px] font-mono text-muted-foreground">#{j.job_number}</span>}
-                    <span className={`text-[9px] uppercase font-bold tracking-wider rounded px-1.5 py-0.5 ${
-                      j.status === "active" ? "bg-primary/15 text-primary" :
-                      j.status === "on_hold" ? "bg-accent/15 text-accent-foreground" :
-                      "bg-muted text-muted-foreground"
-                    }`}>{j.status.replace("_", " ")}</span>
+                    <JobStatusBadge status={j.status} />
                   </div>
                   <p className="mt-1 font-display text-base uppercase tracking-wide truncate">{j.name}</p>
                   {j.address && (

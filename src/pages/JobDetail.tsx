@@ -1,4 +1,5 @@
 import { JobFilesSection } from "@/components/jobs/JobFilesSection";
+import { JobStatusBadge } from "@/components/jobs/JobStatusBadge";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, MapPin, Phone, User, Calendar } from "lucide-react";
@@ -107,9 +108,7 @@ const JobDetail = () => {
         <div>
           <div className="flex items-center gap-2">
             {job.job_number && <span className="text-xs font-mono text-muted-foreground">#{job.job_number}</span>}
-            <span className="text-[9px] uppercase font-bold tracking-wider rounded px-1.5 py-0.5 bg-primary/15 text-primary">
-              {job.status.replace("_", " ")}
-            </span>
+            <JobStatusBadge status={job.status} />
           </div>
           <h1 className="mt-1 font-display text-2xl uppercase tracking-wide">{job.name}</h1>
           {job.address && (
