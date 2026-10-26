@@ -66,7 +66,7 @@ attachments, or exported Auth credentials for integration smoke tests.
 
 ## Verification performed for this document
 
-Read `AGENTS.md`, current progress, local development guidance and migration audit;
+Read `CLAUDE.md`, current progress, local development guidance and migration audit;
 checked the current feature branch before editing. Rechecked the referenced source
 files for provider imports/endpoints, secret names, Auth wrapper, inbound mandatory
 secret check, configured JWT settings and ordinary external URL call sites.

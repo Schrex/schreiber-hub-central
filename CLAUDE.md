@@ -1,7 +1,12 @@
 # Project guidance
 
+Codebase map (read before exploring; detail files on demand):
+@docs/codebase/README.md
+Update the map in the same change when routes, tables, Edge functions, environments or
+release steps change.
+
 - `main` is production. Do not commit to, merge into, or push to main. Work on
-  `codex/*` feature branches and target `develop` for integration. A future production
+  `feature/*` branches and target `develop` for integration. A future production
   release requires an explicit user instruction; general continuation is not authorization.
 - Before edits, check the current branch. Read docs/production-baseline.md for the
   verified production starting point. Start new feature branches from current origin/develop.
@@ -29,3 +34,32 @@
   parity or a successful release. External integrations and Realtime remain untested.
 - Keep production deployment separate from local changes. Never put service-role
   keys in VITE_ variables. Avoid printing credentials or bringing employee rows into fixtures.
+
+## Fast verification path
+
+Run the narrowest check first, then the group before handing off.
+
+| Change | First check | Before handoff |
+| --- | --- | --- |
+| One unit test / component | `bunx vitest run src/test/<file>` (~1s) | `bun run verify:app` |
+| TypeScript types | `bun run typecheck` | `bun run verify:app` |
+| Lint-sensitive edit | `bunx eslint <file>` | `bun run verify:lint` |
+| Edge function | `bun run typecheck:edge` | `bun run verify:edge` |
+| Migration / RLS / roles | matching `bun run test:local:<area>` (backend running) | `bun run verify:backend` |
+| UI flow | `bunx playwright test e2e/<spec>` (backend running) | `bun run verify:browser` |
+| scripts/migration-* or release-* | `bunx vitest run --config scripts/<migration\|release>-vitest.config.mjs` | `bun run verify:app` |
+
+Unit tests live in `src/test/`; browser specs in `e2e/`; backend checks are `scripts/local-*.mjs`.
+`.claude/settings.json` pre-approves these checks; commits, pushes, merges and `local:reset` still ask.
+
+## Parallel sessions (git worktrees)
+
+- One session per task, each in its own worktree: `scripts/worktree-new.sh <name>` creates
+  `.claude/worktrees/<name>` on `feature/<name>` from origin/develop, installs deps and runs
+  `local:prepare`. Open a session there; never let two sessions edit one checkout.
+- All worktrees share one local backend (fixed ports 55321–55324). Start it once with
+  `bun run local:start`; do not `local:reset` or `local:stop` while another session uses it.
+  The backend runs the migrations of whichever worktree last started or reset it.
+- `dev:local` (8080) and `test:browser` (8082) use strict ports: one worktree at a time.
+- Remove a finished worktree with `git worktree remove .claude/worktrees/<name>` after its
+  branch is pushed or merged.
