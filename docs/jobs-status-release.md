@@ -10,6 +10,13 @@ Target backend is **acgqjjbrnkmeazswdnzp (PRODUCTION)**; never the `supabase/con
 constraints and the `jobs_status_lifecycle` `BEFORE INSERT OR UPDATE` trigger. No backfill, no
 new index, RLS unchanged. Local proof: `bun run test:local:jobs-status`.
 
+## Release order
+
+The Jobs frontend (Active/Archive tabs, status sheet, archive search) selects and writes
+`completed_at`, `completed_by` and `hold_reason`; against a database without them its job
+queries fail. Promote and apply this candidate migration in production, and run the "After
+applying" checks, **before** deploying that frontend. Never deploy the frontend first.
+
 ## Before applying
 
 1. Count existing complete rows; they keep a null `completed_at` ("Date unknown"):

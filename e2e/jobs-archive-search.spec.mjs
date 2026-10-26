@@ -2,7 +2,7 @@
 // Local synthetic data only; the backend is shared, so every check searches for this run's
 // unique prefix (or a run-unique foreman/customer name) and counts only prefixed cards.
 import { randomUUID } from 'node:crypto';
-import { test, expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import { localStatus } from '../scripts/local-backend.mjs';
 
@@ -18,11 +18,11 @@ test('Archive search by name, number, foreman and customer; year filter; paging;
   const foremanName = `Synthetic Foreman ${run}`;
   const foremanEmail = `archive-foreman-${run}@example.test`;
   const customer = `Customer ${run}`;
-  const contexts: BrowserContext[] = [];
-  let foremanId: string | undefined;
-  const checked = <T,>(result: { data: T; error: unknown }): T => { if (result.error) throw result.error; return result.data; };
+  const contexts = [];
+  let foremanId;
+  const checked = result => { if (result.error) throw result.error; return result.data; };
 
-  async function login(b: Browser, email: string, path: string): Promise<Page> {
+  async function login(b, email, path) {
     const context = await b.newContext({ baseURL: 'http://127.0.0.1:8082' });
     contexts.push(context);
     await context.route('**/*', route => ['http://127.0.0.1:8082', 'http://127.0.0.1:55321'].includes(new URL(route.request().url()).origin) ? route.continue() : route.abort());
@@ -35,9 +35,9 @@ test('Archive search by name, number, foreman and customer; year filter; paging;
     await page.goto(path);
     return page;
   }
-  const prefixedCards = (page: Page) => page.getByRole('link').filter({ hasText: prefix });
-  const search = (page: Page) => page.getByRole('searchbox', { name: 'Search archive' });
-  const year = (page: Page) => page.getByLabel('Year');
+  const prefixedCards = (page) => page.getByRole('link').filter({ hasText: prefix });
+  const search = (page) => page.getByRole('searchbox', { name: 'Search archive' });
+  const year = (page) => page.getByLabel('Year');
   const names = { alpha: `${prefix} Alpha Bridge`, unknown: `${prefix} Lost Paperwork`, nye: `${prefix} New Years Eve`, running: `${prefix} Still Running` };
 
   try {

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { JobStatusBadge } from "@/components/jobs/JobStatusBadge";
-import { completedAtForDate, todayInNewYork, type JobStatus } from "@/lib/jobs";
+import { completedAtForDate, isShopJob, todayInNewYork, type JobStatus } from "@/lib/jobs";
 import type { FutureReferenceCounts, JobStatusChange } from "@/lib/jobStatusChange";
 import { cn } from "@/lib/utils";
 
@@ -29,8 +29,10 @@ interface JobStatusSheetProps {
   job: StatusSheetJob;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Future schedule entries for the job; null while counting or when unknown (no cleanup is offered). */
+  /** Future schedule entries for the job; null while counting (Save waits when leaving active) or after a failure. */
   futureRefs?: FutureReferenceCounts | null;
+  /** Counting failed: Save is allowed, but no cleanup is offered. */
+  futureRefsFailed?: boolean;
   /** Persist the change; the sheet stays open (and shows the error toast from the caller) if this throws. */
   onSubmit: (change: JobStatusChange, options: { removeFuture: boolean }) => Promise<void>;
 }
@@ -38,7 +40,7 @@ interface JobStatusSheetProps {
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 /** Bottom sheet that moves a job between Active, On hold and Complete (office/admin). */
-export function JobStatusSheet({ job, open, onOpenChange, futureRefs = null, onSubmit }: JobStatusSheetProps) {
+export function JobStatusSheet({ job, open, onOpenChange, futureRefs = null, futureRefsFailed = false, onSubmit }: JobStatusSheetProps) {
   const idBase = useId();
   const [pick, setPick] = useState<JobStatus>(job.status);
   const [reason, setReason] = useState("");
@@ -56,10 +58,12 @@ export function JobStatusSheet({ job, open, onOpenChange, futureRefs = null, onS
 
   const today = todayInNewYork();
   const dateValid = pick !== "complete" || (/^\d{4}-\d{2}-\d{2}$/.test(date) && date <= today);
-  const canSave = pick !== job.status && dateValid && !busy;
   const leavingActive = job.status === "active" && pick !== "active";
+  // Wait for the counts before saving out of active, or a quick Save would skip the default-on cleanup.
+  const countingRefs = leavingActive && futureRefs === null && !futureRefsFailed;
+  const canSave = pick !== job.status && dateValid && !busy && !countingRefs;
   const offerCleanup = leavingActive && futureRefs !== null && futureRefs.assignments + futureRefs.tiles > 0;
-  const isShop = job.name.trim().toLowerCase() === "shop";
+  const isShop = isShopJob(job.name);
 
   const save = async () => {
     if (!canSave) return;
@@ -142,8 +146,13 @@ export function JobStatusSheet({ job, open, onOpenChange, futureRefs = null, onS
           </div>
         )}
 
-        {leavingActive && futureRefs === null && (
+        {countingRefs && (
           <p className="mt-4 text-xs text-muted-foreground">Checking future schedule entries…</p>
+        )}
+        {leavingActive && futureRefsFailed && (
+          <p className="mt-4 text-xs text-muted-foreground">
+            Couldn't check future schedule entries, so cleanup is unavailable. Remove them from the Schedule and Whiteboard if needed.
+          </p>
         )}
 
         {offerCleanup && futureRefs && (

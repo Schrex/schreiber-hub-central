@@ -1,13 +1,13 @@
 // Active job cards show how many people are scheduled today, in New York time (#34).
 // Local synthetic data only; the backend is shared, so checks are scoped to a per-run name prefix.
 import { randomUUID } from 'node:crypto';
-import { test, expect, type BrowserContext } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import { localStatus } from '../scripts/local-backend.mjs';
 
 const PASSWORD = 'LocalOnly-12345!';
 
-function newYorkDate(instant: Date): string {
+function newYorkDate(instant) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(instant);
 }
 
@@ -17,9 +17,9 @@ test("Active job cards show today's crew", async ({ browser }) => {
   const service = createClient(status.API_URL, status.SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
   const run = randomUUID().slice(0, 8);
   const prefix = `CrewE2E ${run}`;
-  const checked = <T,>(result: { data: T; error: unknown }): T => { if (result.error) throw result.error; return result.data; };
-  const contexts: BrowserContext[] = [];
-  const userIds: string[] = [];
+  const checked = result => { if (result.error) throw result.error; return result.data; };
+  const contexts = [];
+  const userIds = [];
   const ids = { crewed: randomUUID(), solo: randomUUID(), empty: randomUUID(), held: randomUUID() };
   const names = { crewed: `${prefix} Crewed`, solo: `${prefix} Solo`, empty: `${prefix} Empty`, held: `${prefix} Held` };
 
@@ -61,10 +61,10 @@ test("Active job cards show today's crew", async ({ browser }) => {
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
     await expect(page).toHaveURL('http://127.0.0.1:8082/');
 
-    const assignmentRequests: string[] = [];
+    const assignmentRequests = [];
     page.on('request', req => { if (req.url().includes('/rest/v1/schedule_assignments')) assignmentRequests.push(req.url()); });
     await page.goto('/jobs');
-    const card = (name: string) => page.getByRole('link').filter({ hasText: name });
+    const card = (name) => page.getByRole('link').filter({ hasText: name });
     await expect(card(names.crewed)).toContainText('2 people scheduled today');
     await expect(card(names.solo)).toContainText('1 person scheduled today');
     await expect(card(names.empty)).toContainText('No crew scheduled today');

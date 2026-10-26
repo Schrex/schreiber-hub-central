@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { completedAtForDate, countPeopleByJob, formatNewYorkDate, ilikeOrFilter, isDispatchPickable, jobStatusBadge, groupArchiveByYear, sortActiveJobs, todayInNewYork, tileDate, mondayOf, isTileAfter } from "@/lib/jobs";
+import { completedAtForDate, countPeopleByJob, formatNewYorkDate, ilikeOrFilter, isDispatchPickable, jobStatusBadge, groupArchiveByYear, sortActiveJobs, todayInNewYork, tileDate, mondayOf, isTileAfter, isShopJob } from "@/lib/jobs";
 
 describe("todayInNewYork", () => {
   it("is still the previous day in New York just after midnight UTC", () => {
@@ -176,5 +176,14 @@ describe("future whiteboard tiles", () => {
     expect(isTileAfter({ week_start: "2026-10-26", day_index: 2 }, today)).toBe(false);
     expect(isTileAfter({ week_start: "2026-10-26", day_index: 3 }, today)).toBe(true);
     expect(isTileAfter({ week_start: "2026-11-02", day_index: 0 }, today)).toBe(true);
+  });
+});
+
+describe("isShopJob", () => {
+  it("matches the Shop job ignoring case and surrounding spaces", () => {
+    expect(isShopJob("Shop")).toBe(true);
+    expect(isShopJob("  SHOP ")).toBe(true);
+    expect(isShopJob("Shop Road")).toBe(false);
+    expect(isShopJob(null)).toBe(false);
   });
 });

@@ -14,9 +14,22 @@ const job = (over: Partial<StatusSheetJob> = {}): StatusSheetJob => ({
   ...over,
 });
 
-function renderSheet(over: Partial<StatusSheetJob> = {}, futureRefs: FutureReferenceCounts | null = { assignments: 0, tiles: 0 }) {
+function renderSheet(
+  over: Partial<StatusSheetJob> = {},
+  futureRefs: FutureReferenceCounts | null = { assignments: 0, tiles: 0 },
+  futureRefsFailed = false,
+) {
   const onSubmit = vi.fn().mockResolvedValue(undefined);
-  render(<JobStatusSheet job={job(over)} futureRefs={futureRefs} open onOpenChange={() => {}} onSubmit={onSubmit} />);
+  render(
+    <JobStatusSheet
+      job={job(over)}
+      futureRefs={futureRefs}
+      futureRefsFailed={futureRefsFailed}
+      open
+      onOpenChange={() => {}}
+      onSubmit={onSubmit}
+    />,
+  );
   return { onSubmit, save: () => screen.getByRole("button", { name: "Save" }) };
 }
 
@@ -92,5 +105,22 @@ describe("JobStatusSheet", () => {
     renderSheet({ status: "on_hold" }, { assignments: 2, tiles: 2 });
     fireEvent.click(screen.getByRole("radio", { name: /Complete/ }));
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  it("keeps Save disabled while future entries are still being counted, so cleanup can't be skipped", () => {
+    const { save } = renderSheet({}, null);
+    fireEvent.click(screen.getByRole("radio", { name: /Complete/ }));
+    expect(screen.getByText(/Checking future schedule entries/)).toBeInTheDocument();
+    expect(save()).toBeDisabled();
+  });
+
+  it("allows saving without cleanup when counting failed, and says cleanup is unavailable", async () => {
+    const { onSubmit, save } = renderSheet({}, null, true);
+    fireEvent.click(screen.getByRole("radio", { name: /On hold/ }));
+    expect(screen.getByText(/cleanup is unavailable/i)).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(save()).toBeEnabled();
+    fireEvent.click(save());
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ status: "on_hold" }), { removeFuture: false }));
   });
 });

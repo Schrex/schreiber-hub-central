@@ -126,10 +126,8 @@ export function ArchiveJobsList({ canSeeCustomer }: ArchiveJobsListProps) {
         <>
           {groupArchiveByYear(jobs).map((group) => (
             <section key={group.label} aria-label={group.label} className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">{group.label}</h2>
-                <span className="text-[11px] text-muted-foreground">{group.jobs.length}</span>
-              </div>
+              {/* No per-year count: with paging it would only count the loaded rows. */}
+              <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">{group.label}</h2>
               {group.jobs.map((job) => <ArchiveJobCard key={job.id} job={job} canSeeCustomer={canSeeCustomer} />)}
             </section>
           ))}

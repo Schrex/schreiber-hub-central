@@ -18,8 +18,7 @@ function parseJobsView(value: string | null): JobsView {
 }
 
 const Jobs = () => {
-  const { role: realRole, effectiveRole } = useAuth();
-  const role = effectiveRole ?? realRole;
+  const { role } = useAuth();
   const canEdit = role === "office" || role === "admin";
   const canSeeCustomer = canEdit || role === "foreman";
   const [searchParams, setSearchParams] = useSearchParams();

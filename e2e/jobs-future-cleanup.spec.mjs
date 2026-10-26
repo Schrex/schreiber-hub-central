@@ -1,15 +1,15 @@
 // Leaving active status can remove a job's future schedule assignments and whiteboard tiles (#35).
 // Local synthetic data only; the backend is shared, so every row is scoped to a per-run name prefix.
 import { randomUUID } from 'node:crypto';
-import { test, expect, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import { localStatus } from '../scripts/local-backend.mjs';
 import { mondayOf, todayInNewYork } from '../src/lib/jobs';
 
 const PASSWORD = 'LocalOnly-12345!';
 
-const addDays = (date: string, days: number) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
-const dayIndex = (date: string) => (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7;
+const addDays = (date, days) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+const dayIndex = (date) => (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7;
 
 test('Leaving active removes future assignments and tiles only when asked', async ({ browser }) => {
   test.setTimeout(120_000);
@@ -18,9 +18,9 @@ test('Leaving active removes future assignments and tiles only when asked', asyn
   const run = randomUUID().slice(0, 8);
   const prefix = `JobsCleanupE2E ${run}`;
   const officeEmail = `jobs-cleanup-office-${run}@example.test`;
-  const contexts: BrowserContext[] = [];
-  let officeId: string | undefined;
-  const checked = <T,>(result: { data: T; error: unknown }): T => { if (result.error) throw result.error; return result.data; };
+  const contexts = [];
+  let officeId;
+  const checked = result => { if (result.error) throw result.error; return result.data; };
 
   const today = todayInNewYork();
   const yesterday = addDays(today, -1);
@@ -28,11 +28,11 @@ test('Leaving active removes future assignments and tiles only when asked', asyn
   const nextWeek = addDays(today, 7);
   const ids = { cleaned: randomUUID(), kept: randomUUID() };
 
-  async function seedSchedule(jobId: string, userId: string) {
+  async function seedSchedule(jobId, userId) {
     checked(await service.from('schedule_assignments').insert(
       [today, tomorrow, nextWeek].map(date => ({ job_id: jobId, user_id: userId, assignment_date: date, start_time: '07:00' })),
     ));
-    const tile = (date: string) => ({
+    const tile = (date) => ({
       id: randomUUID(), week_start: mondayOf(date), day_index: dayIndex(date), section: 'jobs', kind: 'job', ref_id: jobId, label: `${prefix} tile`,
     });
     const [past, current, soon, later] = [yesterday, today, tomorrow, nextWeek].map(tile);
@@ -42,15 +42,15 @@ test('Leaving active removes future assignments and tiles only when asked', asyn
       week_start: soon.week_start, day_index: soon.day_index, section: 'jobs', kind: 'crew', ref_id: userId, label: `${prefix} crew`, parent_tile_id: soon.id,
     }));
   }
-  const assignmentDates = async (jobId: string) =>
+  const assignmentDates = async (jobId) =>
     checked(await service.from('schedule_assignments').select('assignment_date').eq('job_id', jobId).order('assignment_date'))
       .map(r => r.assignment_date);
-  const tileDays = async (jobId: string) =>
+  const tileDays = async (jobId) =>
     checked(await service.from('whiteboard_tiles').select('week_start, day_index').eq('kind', 'job').eq('ref_id', jobId))
       .map(r => addDays(r.week_start, r.day_index)).sort();
   const crewTiles = async () => checked(await service.from('whiteboard_tiles').select('id').eq('label', `${prefix} crew`)).length;
 
-  async function openSheet(page: Page, jobId: string) {
+  async function openSheet(page, jobId) {
     await page.goto(`/jobs/${jobId}`);
     await page.getByRole('button', { name: 'Change status' }).click();
     return page.getByRole('dialog', { name: 'Change status' });
