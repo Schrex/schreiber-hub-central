@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { isDispatchPickable, type JobStatus } from "@/lib/jobs";
 import { TruckRequestsPanel } from "@/components/dispatch/TruckRequestsPanel";
 
 type DispatchStatus = "scheduled" | "in_progress" | "complete" | "cancelled";
@@ -73,7 +74,7 @@ const INVOICE_VARIANT: Record<InvoiceStatus, "default" | "secondary" | "outline"
 const fmtMoney = (n: number | null | undefined) =>
   n == null ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(n));
 
-interface JobOpt { id: string; name: string; job_number: string | null; gc: string | null; customer: string | null }
+interface JobOpt { id: string; name: string; job_number: string | null; gc: string | null; customer: string | null; status: JobStatus }
 interface DriverOpt { user_id: string; display_name: string | null; email: string | null }
 
 const STATUS_LABEL: Record<DispatchStatus, string> = {
@@ -163,7 +164,7 @@ const Dispatch = () => {
         .order("dispatch_date")
         .order("sort_order")
         .order("start_time", { nullsFirst: false }),
-      supabase.from("jobs").select("id, name, job_number, gc, customer").order("name"),
+      supabase.from("jobs").select("id, name, job_number, gc, customer, status").order("name"),
       supabase
         .from("profiles")
         .select("user_id, display_name, email, is_driver, is_active")
@@ -360,7 +361,7 @@ const Dispatch = () => {
                       <Select value={form.job_id} onValueChange={(v) => setForm({ ...form, job_id: v })}>
                         <SelectTrigger><SelectValue placeholder="Select job" /></SelectTrigger>
                         <SelectContent>
-                          {jobs.map((j) => (
+                          {jobs.filter((j) => isDispatchPickable(j, form.job_id)).map((j) => (
                             <SelectItem key={j.id} value={j.id}>
                               {j.job_number ? `${j.job_number} — ` : ""}{j.name}
                             </SelectItem>

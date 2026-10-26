@@ -83,6 +83,15 @@ read-only recovery preflight passed. No actual rollback was performed.
   2.121.0 + prettier (output shape changed: `ComputedFields`, no `__InternalSupabase`).
 - Not verified: production. Release review steps in `docs/jobs-status-release.md`.
 
+## Jobs pickers follow status rules (#36) — October 26, 2026
+
+- Schedule carry-forward copies only active-job assignments and uses `todayInNewYork()`.
+  Dispatch order picker: active jobs plus an edited order's current job. Accident/violation
+  pickers: active + on hold. `request-truck` returns 409 for non-active jobs; the client
+  toast now shows the server message.
+- Verified locally: `e2e/job-status-pickers.spec.mjs`, verify:app, verify:edge, verify:lint,
+  verify:browser. Not verified: `request-truck` runtime (Edge runtime disabled locally), production.
+
 ## Outstanding operational items
 
 - Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved

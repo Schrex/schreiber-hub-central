@@ -51,6 +51,11 @@ Deno.serve(async (req) => {
 
     const { data: job, error: jobErr } = await admin.from('jobs').select('*').eq('id', body.jobId).maybeSingle()
     if (jobErr || !job) throw new Error('Job not found')
+    // Only active jobs take trucks; a stale page must not dispatch to an on-hold or completed site.
+    if (job.status !== 'active') {
+      const label = job.status === 'on_hold' ? 'on hold' : job.status === 'complete' ? 'complete' : String(job.status)
+      return new Response(JSON.stringify({ error: `Trucks can only be requested for active jobs; this job is ${label}.` }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
 
     const { data: profile } = await admin.from('profiles').select('display_name, email').eq('user_id', user.id).maybeSingle()
     const requesterName = profile?.display_name || profile?.email || 'Schreiber Excavating'

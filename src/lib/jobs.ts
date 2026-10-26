@@ -141,3 +141,11 @@ const nyDisplayFormatter = new Intl.DateTimeFormat("en-US", {
 export function formatNewYorkDate(iso: string): string {
   return nyDisplayFormatter.format(new Date(iso));
 }
+
+/** Accident report and safety violation pickers: incidents at paused sites can still be filed. */
+export const SAFETY_PICKER_STATUSES: JobStatus[] = ["active", "on_hold"];
+
+/** Dispatch job picker: active jobs, plus the job an existing order already points at (so editing keeps it). */
+export function isDispatchPickable(job: { id: string; status: JobStatus }, currentJobId?: string | null): boolean {
+  return job.status === "active" || job.id === currentJobId;
+}

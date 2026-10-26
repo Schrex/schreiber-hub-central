@@ -41,6 +41,7 @@ import { toast } from "@/hooks/use-toast";
 import { WeekGrid } from "@/components/schedule/WeekGrid";
 import { DayBoard, type BoardAssignment, type BoardCrew, type BoardJob } from "@/components/schedule/DayBoard";
 import { fetchCurrentPositions, type CurrentPosition } from "@/lib/currentPositions";
+import { todayInNewYork } from "@/lib/jobs";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
 type Profile = {
@@ -219,10 +220,10 @@ const Schedule = () => {
 
     let a = initialAssignments;
 
-    // Auto carry-forward: if this day has no assignments and is today/future,
-    // copy the most recent prior day's assignments forward (once per session per date).
-    const todayIsoLocal = format(startOfDay(new Date()), "yyyy-MM-dd");
-    const isFutureOrToday = selectedDate >= todayIsoLocal;
+    // Auto carry-forward: if this day has no assignments and is today/future (New York),
+    // copy the most recent prior day's active-job assignments forward (once per session per date).
+    // On-hold and completed jobs are skipped so nobody is re-scheduled or notified for them.
+    const isFutureOrToday = selectedDate >= todayInNewYork();
     if ((a?.length ?? 0) === 0 && isFutureOrToday && !autoFilledRef.current.has(selectedDate) && canEdit) {
       autoFilledRef.current.add(selectedDate);
       // Look back up to 14 days for the most recent date with any assignments.
@@ -230,7 +231,8 @@ const Schedule = () => {
       const beforeIso = format(addDays(parseISO(selectedDate), -1), "yyyy-MM-dd");
       const { data: priorRows } = await supabase
         .from("schedule_assignments")
-        .select("job_id,user_id,start_time,role_on_job,notes,assignment_date")
+        .select("job_id,user_id,start_time,role_on_job,notes,assignment_date,jobs!inner(status)")
+        .eq("jobs.status", "active")
         .gte("assignment_date", sinceIso)
         .lte("assignment_date", beforeIso)
         .order("assignment_date", { ascending: false });
