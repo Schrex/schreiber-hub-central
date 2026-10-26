@@ -9,7 +9,10 @@ import { errorMessage } from "@/lib/errorMessage";
 import { formatNewYorkDate, jobStatusBadge, DATE_UNKNOWN_LABEL } from "@/lib/jobs";
 import {
   applyJobStatusChange,
+  countFutureReferences,
+  removeFutureReferences,
   undoJobStatusChange,
+  type FutureReferenceCounts,
   type JobStatusChange,
   type JobStatusFields,
 } from "@/lib/jobStatusChange";
@@ -29,12 +32,36 @@ interface JobStatusSectionProps {
 export function JobStatusSection({ job, canChangeStatus, onChanged }: JobStatusSectionProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [reopening, setReopening] = useState(false);
+  const [futureRefs, setFutureRefs] = useState<FutureReferenceCounts | null>(null);
 
-  const change = async (next: JobStatusChange) => {
+  // Count future schedule entries only while the sheet is open on an active job (leaving active offers cleanup).
+  useEffect(() => {
+    setFutureRefs(null);
+    if (!sheetOpen || job.status !== "active") return;
+    let cancelled = false;
+    countFutureReferences(job.id)
+      .then((counts) => { if (!cancelled) setFutureRefs(counts); })
+      .catch((err: unknown) => { if (!cancelled) toast.error(errorMessage(err, "Couldn't count future schedule entries")); });
+    return () => { cancelled = true; };
+  }, [sheetOpen, job.id, job.status]);
+
+  const change = async (next: JobStatusChange, removeFuture = false) => {
     const previous: JobStatusChange = { status: job.status, hold_reason: job.hold_reason, completed_at: job.completed_at };
+    // Status first; the cleanup follows in the same save and its failure leaves the status change standing.
     const stored = await applyJobStatusChange(job.id, next);
     onChanged(stored);
+    let removed: FutureReferenceCounts | null = null;
+    if (removeFuture) {
+      try {
+        removed = await removeFutureReferences(job.id);
+      } catch (err: unknown) {
+        toast.error(`Status changed, but future assignments and tiles were not removed: ${errorMessage(err, "unknown error")}`);
+      }
+    }
     toast.success(`Status changed to ${jobStatusBadge(stored.status).label}`, {
+      description: removed
+        ? `Removed ${removed.assignments} future assignment${removed.assignments === 1 ? "" : "s"} and ${removed.tiles} whiteboard tile${removed.tiles === 1 ? "" : "s"}. Undo won't restore them.`
+        : undefined,
       duration: 10_000,
       action: {
         label: "Undo",
@@ -55,9 +82,9 @@ export function JobStatusSection({ job, canChangeStatus, onChanged }: JobStatusS
     });
   };
 
-  const submit = async (next: JobStatusChange) => {
+  const submit = async (next: JobStatusChange, options: { removeFuture: boolean }) => {
     try {
-      await change(next);
+      await change(next, options.removeFuture);
       setSheetOpen(false);
     } catch (err: unknown) {
       toast.error(errorMessage(err, "Couldn't change the status"));
@@ -94,7 +121,7 @@ export function JobStatusSection({ job, canChangeStatus, onChanged }: JobStatusS
             <span className="flex items-center gap-2 text-sm">Status <JobStatusBadge status={job.status} /></span>
             <Button size="sm" variant="secondary" onClick={() => setSheetOpen(true)}>Change status</Button>
           </div>
-          <JobStatusSheet job={job} open={sheetOpen} onOpenChange={setSheetOpen} onSubmit={submit} />
+          <JobStatusSheet job={job} futureRefs={futureRefs} open={sheetOpen} onOpenChange={setSheetOpen} onSubmit={submit} />
         </>
       )}
     </>

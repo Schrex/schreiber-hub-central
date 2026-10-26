@@ -149,3 +149,24 @@ export const SAFETY_PICKER_STATUSES: JobStatus[] = ["active", "on_hold"];
 export function isDispatchPickable(job: { id: string; status: JobStatus }, currentJobId?: string | null): boolean {
   return job.status === "active" || job.id === currentJobId;
 }
+
+const dayMs = 86_400_000;
+const utcDay = (date: string) => Date.parse(`${date}T00:00:00Z`);
+const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+/** Calendar date (YYYY-MM-DD) of a whiteboard tile: its Monday week start plus the day index. */
+export function tileDate(weekStart: string, dayIndex: number): string {
+  return isoDay(utcDay(weekStart) + dayIndex * dayMs);
+}
+
+/** Monday (YYYY-MM-DD) of the week containing a calendar date, as the whiteboard stores `week_start`. */
+export function mondayOf(date: string): string {
+  const ms = utcDay(date);
+  const sinceMonday = (new Date(ms).getUTCDay() + 6) % 7;
+  return isoDay(ms - sinceMonday * dayMs);
+}
+
+/** Whether a whiteboard tile falls on a day after `today` (YYYY-MM-DD, New York). */
+export function isTileAfter(tile: { week_start: string; day_index: number }, today: string): boolean {
+  return tileDate(tile.week_start, tile.day_index) > today;
+}

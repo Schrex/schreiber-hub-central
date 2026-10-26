@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { JobStatusSheet, type StatusSheetJob } from "@/components/jobs/JobStatusSheet";
 import { todayInNewYork } from "@/lib/jobs";
+import type { FutureReferenceCounts } from "@/lib/jobStatusChange";
 
 const job = (over: Partial<StatusSheetJob> = {}): StatusSheetJob => ({
   id: "synthetic-job",
@@ -13,9 +14,9 @@ const job = (over: Partial<StatusSheetJob> = {}): StatusSheetJob => ({
   ...over,
 });
 
-function renderSheet(over: Partial<StatusSheetJob> = {}) {
+function renderSheet(over: Partial<StatusSheetJob> = {}, futureRefs: FutureReferenceCounts | null = { assignments: 0, tiles: 0 }) {
   const onSubmit = vi.fn().mockResolvedValue(undefined);
-  render(<JobStatusSheet job={job(over)} open onOpenChange={() => {}} onSubmit={onSubmit} />);
+  render(<JobStatusSheet job={job(over)} futureRefs={futureRefs} open onOpenChange={() => {}} onSubmit={onSubmit} />);
   return { onSubmit, save: () => screen.getByRole("button", { name: "Save" }) };
 }
 
@@ -39,7 +40,10 @@ describe("JobStatusSheet", () => {
     fireEvent.click(screen.getByRole("radio", { name: /On hold/ }));
     expect(screen.getByLabelText(/Reason/)).toBeInTheDocument();
     fireEvent.click(save());
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ status: "on_hold", hold_reason: null, completed_at: null }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(
+      { status: "on_hold", hold_reason: null, completed_at: null },
+      { removeFuture: false },
+    ));
   });
 
   it("defaults the completion date to today and refuses future dates", () => {
@@ -59,5 +63,34 @@ describe("JobStatusSheet", () => {
     expect(screen.queryByText(/Schedule board/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: /Complete/ }));
     expect(screen.getByText(/leave the Schedule board/)).toBeInTheDocument();
+  });
+
+  it("offers, checked by default, to remove future assignments and tiles when leaving active", async () => {
+    const { onSubmit, save } = renderSheet({}, { assignments: 3, tiles: 1 });
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /Complete/ }));
+    const option = screen.getByRole("checkbox", { name: "Remove 3 future assignments and 1 whiteboard tile" });
+    expect(option).toBeChecked();
+    expect(screen.getByText(/Undo does not restore removed assignments or tiles/)).toBeInTheDocument();
+    fireEvent.click(save());
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ status: "complete" }), { removeFuture: true }));
+  });
+
+  it("keeps future entries when the option is unchecked", async () => {
+    const { onSubmit, save } = renderSheet({}, { assignments: 1, tiles: 2 });
+    fireEvent.click(screen.getByRole("radio", { name: /On hold/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Remove 1 future assignment and 2 whiteboard tiles" }));
+    fireEvent.click(save());
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ status: "on_hold" }), { removeFuture: false }));
+  });
+
+  it("offers no cleanup when nothing is scheduled ahead or the job is not leaving active", () => {
+    renderSheet({}, { assignments: 0, tiles: 0 });
+    fireEvent.click(screen.getByRole("radio", { name: /Complete/ }));
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    cleanup();
+    renderSheet({ status: "on_hold" }, { assignments: 2, tiles: 2 });
+    fireEvent.click(screen.getByRole("radio", { name: /Complete/ }));
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 });

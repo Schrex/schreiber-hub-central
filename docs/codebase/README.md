@@ -36,7 +36,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 | `src/lib/` | helpers: `launchScope`, `talkMedia`, `resumableUpload`, `weather`, `jobs` (NY today, job sort/grouping, badge map, search escaping) |
 | `src/integrations/` | Generated Supabase client + `types.ts`, Lovable auth (do not hand-edit) |
 | `src/test/` | Vitest unit tests (some colocated `*.test.tsx` too) |
-| `e2e/` | Playwright specs (7) |
+| `e2e/` | Playwright specs (8) |
 | `supabase/migrations/` | Applied production migration history (78) — never edit |
 | `supabase/functions/` | 24 Edge functions + `_shared/` (Postmark, email templates) |
 | `local/` | Local backend config, seed, candidate migrations, hr-bootstrap |

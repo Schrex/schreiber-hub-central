@@ -4,9 +4,10 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { JobStatusBadge } from "@/components/jobs/JobStatusBadge";
 import { completedAtForDate, todayInNewYork, type JobStatus } from "@/lib/jobs";
-import type { JobStatusChange } from "@/lib/jobStatusChange";
+import type { FutureReferenceCounts, JobStatusChange } from "@/lib/jobStatusChange";
 import { cn } from "@/lib/utils";
 
 export interface StatusSheetJob {
@@ -28,28 +29,36 @@ interface JobStatusSheetProps {
   job: StatusSheetJob;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Future schedule entries for the job; null while counting or when unknown (no cleanup is offered). */
+  futureRefs?: FutureReferenceCounts | null;
   /** Persist the change; the sheet stays open (and shows the error toast from the caller) if this throws. */
-  onSubmit: (change: JobStatusChange) => Promise<void>;
+  onSubmit: (change: JobStatusChange, options: { removeFuture: boolean }) => Promise<void>;
 }
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 /** Bottom sheet that moves a job between Active, On hold and Complete (office/admin). */
-export function JobStatusSheet({ job, open, onOpenChange, onSubmit }: JobStatusSheetProps) {
+export function JobStatusSheet({ job, open, onOpenChange, futureRefs = null, onSubmit }: JobStatusSheetProps) {
   const idBase = useId();
   const [pick, setPick] = useState<JobStatus>(job.status);
   const [reason, setReason] = useState("");
   const [date, setDate] = useState(todayInNewYork());
   const [busy, setBusy] = useState(false);
+  const [removeFuture, setRemoveFuture] = useState(true);
 
   useEffect(() => {
     if (!open) return;
     setPick(job.status);
     setReason(job.hold_reason ?? "");
     setDate(todayInNewYork());
+    setRemoveFuture(true);
   }, [open, job.status, job.hold_reason]);
 
   const today = todayInNewYork();
   const dateValid = pick !== "complete" || (/^\d{4}-\d{2}-\d{2}$/.test(date) && date <= today);
   const canSave = pick !== job.status && dateValid && !busy;
+  const leavingActive = job.status === "active" && pick !== "active";
+  const offerCleanup = leavingActive && futureRefs !== null && futureRefs.assignments + futureRefs.tiles > 0;
   const isShop = job.name.trim().toLowerCase() === "shop";
 
   const save = async () => {
@@ -60,7 +69,7 @@ export function JobStatusSheet({ job, open, onOpenChange, onSubmit }: JobStatusS
         status: pick,
         hold_reason: pick === "on_hold" ? reason.trim() || null : null,
         completed_at: pick === "complete" ? completedAtForDate(date) : null,
-      });
+      }, { removeFuture: offerCleanup && removeFuture });
     } finally {
       setBusy(false);
     }
@@ -130,6 +139,29 @@ export function JobStatusSheet({ job, open, onOpenChange, onSubmit }: JobStatusS
               onChange={(e) => setDate(e.target.value)}
             />
             {!dateValid && <p className="text-xs text-destructive">Pick today or an earlier date.</p>}
+          </div>
+        )}
+
+        {leavingActive && futureRefs === null && (
+          <p className="mt-4 text-xs text-muted-foreground">Checking future schedule entries…</p>
+        )}
+
+        {offerCleanup && futureRefs && (
+          <div className="mt-4 space-y-1 rounded-xl border border-border bg-surface p-3">
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id={`${idBase}-cleanup`}
+                checked={removeFuture}
+                onCheckedChange={(value) => setRemoveFuture(value === true)}
+                className="mt-0.5"
+              />
+              <Label htmlFor={`${idBase}-cleanup`} className="text-sm leading-snug">
+                Remove {plural(futureRefs.assignments, "future assignment")} and {plural(futureRefs.tiles, "whiteboard tile")}
+              </Label>
+            </div>
+            <p className="pl-6 text-xs text-muted-foreground">
+              Today's assignments are kept. Undo does not restore removed assignments or tiles.
+            </p>
           </div>
         )}
 
