@@ -1,4 +1,4 @@
--- Candidate (unapplied): jobs status lifecycle. Promotion requires release review.
+-- Jobs status lifecycle (#28). Promoted from local/candidate-migrations for release.
 -- Release review must: count existing complete rows (no backfill; they keep a
 -- null completed_at, shown as "Date unknown"), and confirm both
 -- jobs_status_lifecycle and update_jobs_updated_at are enabled in production

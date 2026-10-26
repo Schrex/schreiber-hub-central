@@ -25,7 +25,7 @@ Source of truth: `supabase/migrations/` (78 applied files, mostly Lovable UUID n
 - `jobs` → `job_contacts`, `job_contact_template_slots` (seeded by trigger on insert),
   `job_estimates`, `job_exclusions`, `job_notes`, `job_permits`, `job_photos`, `job_plans`,
   `job_scope_items`, `job_submittals`, `job_unit_pricing`, `dig_tickets`.
-- `jobs` status lifecycle (candidate `20261026010000_jobs_status_lifecycle.sql`, local only):
+- `jobs` status lifecycle (`supabase/migrations/20261026010000_jobs_status_lifecycle.sql`; promoted, production apply pending — see `docs/jobs-status-release.md`):
   columns `completed_at`, `completed_by` (→ auth users, `ON DELETE SET NULL`), `hold_reason`;
   checks `jobs_completion_matches_status`, `jobs_hold_reason_matches_status`; `BEFORE INSERT OR
   UPDATE` trigger `jobs_status_lifecycle` sets `completed_by = auth.uid()` on entering complete
@@ -91,10 +91,11 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 ## Migration workflow
 
 - `supabase/migrations/` = applied production history. Never edit or replay.
-- `local/candidate-migrations/` = 13 unapplied candidates (time-off permissions, attendance RLS
+  Exception: `20261026010000_jobs_status_lifecycle.sql` is promoted but not yet applied in
+  production; apply it per `docs/jobs-status-release.md` before the Jobs frontend ships.
+- `local/candidate-migrations/` = 12 unapplied candidates (time-off permissions, attendance RLS
   fix, safety notification dedup, contact sync, job-contact seed dupes, queue/service grants,
-  accident-photo storage policy, inactive email dispatcher, employee creation, jobs status
-  lifecycle).
+  accident-photo storage policy, inactive email dispatcher, employee creation).
   Promotion needs release review + explicit authorization; applied one file at a time to a
   named project (see `docs/add-employee-release.md`).
 - `local/hr-bootstrap.sql` recreates pay/benefit tables no migration creates — local only.
@@ -105,8 +106,8 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 
 - `scripts/prepare-local.mjs` builds `.local-backend/supabase/`: copies migrations (rejects
   `net.http_`, `cron.schedule`, vault writes), stubs the historical employee-account seed and
-  the Cloud-owned realtime migration, injects hr-bootstrap + an ordering fix, copies 3
-  candidates (time-off permissions, employee creation, jobs status lifecycle), `local/config.toml`, `local/seed.sql`.
+  the Cloud-owned realtime migration, injects hr-bootstrap + an ordering fix, copies 2
+  candidates (time-off permissions, employee creation), `local/config.toml`, `local/seed.sql`.
   No Edge functions.
 - Ports: API 55321, DB 55322 (shadow 55320), Studio 55323, mail capture 55324. Postgres 17.
   Realtime, edge runtime, analytics disabled.

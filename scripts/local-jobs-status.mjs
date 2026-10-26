@@ -1,5 +1,5 @@
-// Local synthetic jobs status lifecycle checks (candidate migration
-// 20261026010000_jobs_status_lifecycle.sql). No hosted URL or real-data inputs.
+// Local synthetic jobs status lifecycle checks (migration
+// supabase/migrations/20261026010000_jobs_status_lifecycle.sql). No hosted URL or real-data inputs.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
