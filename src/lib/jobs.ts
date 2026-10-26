@@ -119,3 +119,11 @@ export function ilikeOrFilter(columns: readonly string[], text: string): string 
   const quoted = `"*${likeLiteral.replace(/[\\"]/g, (c) => `\\${c}`)}*"`;
   return columns.map((column) => `${column}.ilike.${quoted}`).join(",");
 }
+
+/** Accident report and safety violation pickers: incidents at paused sites can still be filed. */
+export const SAFETY_PICKER_STATUSES: JobStatus[] = ["active", "on_hold"];
+
+/** Dispatch job picker: active jobs, plus the job an existing order already points at (so editing keeps it). */
+export function isDispatchPickable(job: { id: string; status: JobStatus }, currentJobId?: string | null): boolean {
+  return job.status === "active" || job.id === currentJobId;
+}

@@ -78,6 +78,20 @@ BottomNav themselves — watch for a double nav.
 | Perks | `Apparel`, `Referrals`, `EquipmentRental`, `ShopBooking` | clothing_*, referrals, equipment_rentals, shop_reservations |
 | Other | `Vendors`, `Handbook`, `TruckingCalculator` (client only), `Unsubscribe` | vendors, handbook_documents |
 
+### Job pickers (status rules, #36)
+
+Status helpers live in `lib/jobs.ts` (`todayInNewYork`, `SAFETY_PICKER_STATUSES`, `isDispatchPickable`).
+
+| Picker | Shows |
+| --- | --- |
+| Schedule board (`Schedule.tsx`) | active |
+| Schedule carry-forward (`Schedule.tsx` `loadAll`) | copies only active-job assignments (`jobs!inner(status)`); "today" = New York |
+| Whiteboard | active |
+| Dispatch order dialog | active, plus the job an edited order already points at; order rows show the stored `job_name` |
+| Accident report / safety violation dialogs | active + on hold (a `presetJob` from the job page bypasses the picker) |
+| Toolbox talk job list (`Safety.tsx`) | today's assignments (no status filter) |
+| Request truck button / `request-truck` Edge function | active only; function returns 409 otherwise |
+
 Spelling: table/bucket `swpppp_*` / `swpppp-reports` has 3 p's; component is `SwpppSection`.
 
 ## Feature flags / env (names only)
@@ -103,5 +117,5 @@ Spelling: table/bucket `swpppp_*` / `swpppp-reports` has 3 p's; component is `Sw
 - Some tests import `supabase/functions/_shared/*` (postmark, profileEmails, notificationResult).
 - Colocated: `components/jobs/jobFiles.test.ts`, `JobFilesSection.test.tsx`, `pages/PasswordRecovery.test.tsx`.
 - Playwright (`playwright.config.mjs`): 127.0.0.1:8082 via `dev:local --browser-test`, 1 worker,
-  TZ America/New_York. Specs: add-employee, job-files, private-files, safety-refresh, time-off,
-  whiteboard-refresh. Needs local backend running.
+  TZ America/New_York. Specs: add-employee, job-files, job-status-pickers, private-files, safety-refresh,
+  time-off, whiteboard-refresh. Needs local backend running.

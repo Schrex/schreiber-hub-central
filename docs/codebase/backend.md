@@ -84,6 +84,8 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 | Email pipeline | send-transactional-email, process-email-queue (Postmark), handle-email-suppression (webhook), handle-email-unsubscribe, preview-transactional-email | Controls: `EMAIL_DELIVERY_ENABLED`, `EMAIL_DELIVERY_MODE`, `EMAIL_ALLOWED_RECIPIENTS` |
 | Scheduled / inbound | daily-celebrations (bearer secret), inbound-swpppp-email (webhook secret) | |
 
+`request-truck` returns 409 for jobs that aren't `active` (static check only; runtime unverified).
+
 `_shared/`: Postmark send + suppression, `profileEmails.ts`, `transactional-email-templates/`.
 
 ## Migration workflow

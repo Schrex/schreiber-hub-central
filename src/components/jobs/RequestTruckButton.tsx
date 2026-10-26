@@ -54,7 +54,14 @@ export const RequestTruckButton = ({ jobId, jobAddress }: Props) => {
           notes: form.notes.trim() || null,
         },
       });
-      if (error) throw error;
+      if (error) {
+        // FunctionsHttpError carries the server's message (e.g. "job is complete") in its context.
+        if ("context" in error && error.context instanceof Response) {
+          const body = await error.context.json().catch(() => null);
+          if (typeof body?.error === "string") throw new Error(body.error);
+        }
+        throw error;
+      }
       if (data?.notification === "queued") toast.success("Truck request saved. Office notification queued.");
       else toast.warning("Truck request saved, but the office notification was not queued. Contact the office; do not submit a duplicate request.");
       setOpen(false);
