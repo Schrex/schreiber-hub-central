@@ -25,8 +25,10 @@ Each release PR must record this contract before owner approval:
 
 ## Implemented build-only foundation
 
-Verification runs on PRs and main/develop pushes, plus manual dispatch. Feature
-pushes alone no longer duplicate PR checks. Documentation-only PRs deliberately
+Verification runs on PRs and main pushes, plus manual dispatch. Feature and develop
+pushes, and the develop→main release PR, do not repeat PR checks; the main push run
+remains the release evidence. CI starts Supabase without studio, postgres-meta, mailpit,
+imgproxy, logflare, vector and supavisor. Documentation-only PRs deliberately
 run all five groups: no path exclusions, skipped-check equivalents or waived lint.
 Install, browser dependency and job timeouts fail closed. Chromium errors identify
 infrastructure failure separately from acceptance failure; retries require diagnosis.

@@ -2,8 +2,10 @@ name: Verification
 
 on:
   pull_request:
+  # PRs into develop already test the merge result, so develop pushes are not
+  # re-verified. Main pushes stay: release-guard.mjs requires a push run per main SHA.
   push:
-    branches: [main, develop]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -16,6 +18,9 @@ concurrency:
 jobs:
   verify:
     name: Verify ${{ matrix.group }}
+    # The develop -> main release PR repeats the checks its PRs into develop ran;
+    # the main push run after merge is the release evidence.
+    if: github.event_name != 'pull_request' || github.head_ref != 'develop' || github.base_ref != 'main'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     strategy:
@@ -44,9 +49,13 @@ jobs:
           echo "::error::Locked dependency installation failed twice; verification did not run."
           exit 1
       - name: Build disposable backend from migrations and synthetic seed
-        id: backend
         if: matrix.group == 'backend' || matrix.group == 'browser'
-        run: bun run local:start
+        # Same as local:start, minus containers no check uses (dashboards, mail capture,
+        # image transforms, logging, pooler). Image pulls dominate this step.
+        run: |
+          bun run local:prepare
+          npx --yes supabase@2.121.0 start --workdir .local-backend \
+            -x studio,postgres-meta,mailpit,imgproxy,logflare,vector,supavisor
       - name: Configure bounded Ubuntu package downloads
         if: matrix.group == 'browser'
         run: |
@@ -54,6 +63,12 @@ jobs:
           # Change only that mirror on this disposable hosted runner.
           sudo find /etc/apt -type f \( -name '*.sources' -o -name '*.list' -o -name 'apt-mirrors.txt' \) -exec sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' {} +
           echo 'Acquire::http::Timeout "30"; Acquire::https::Timeout "30"; Acquire::Retries "1";' | sudo tee /etc/apt/apt.conf.d/80-ci-timeouts
+      - name: Restore Playwright browser cache
+        if: matrix.group == 'browser'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - name: Install Chromium for browser test
         if: matrix.group == 'browser'
         timeout-minutes: 7
@@ -71,7 +86,4 @@ jobs:
           exit "$result"
       - name: Run verification
         run: bun run verify:${{ matrix.group }}
-      - name: Stop disposable backend
-        if: always() && steps.backend.outcome != 'skipped' && (matrix.group == 'backend' || matrix.group == 'browser')
-        timeout-minutes: 3
-        run: bun run local:stop
+      # No backend stop step: the hosted runner and its containers are discarded.

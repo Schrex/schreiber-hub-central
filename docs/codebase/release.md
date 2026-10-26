@@ -44,7 +44,7 @@ file at a time in a transaction against the named project, deploy only the speci
 
 | Workflow | Trigger | Does |
 | --- | --- | --- |
-| `verify.yml` | PRs, push to main/develop, dispatch | 5 matrix jobs: app, backend, lint, edge, browser (starts local Supabase, Chromium) |
+| `verify.yml` | PRs (except develop→main), push to main, dispatch | 5 matrix jobs: app, backend, lint, edge, browser (starts trimmed local Supabase, cached Chromium) |
 | `release-build.yml` | dispatch, main | Non-deployable dry-run artifact |
 | `release-candidate.yml` | dispatch, main | Deployable candidate (no Cloudflare creds) |
 | `release-operation.yml` | dispatch, main | Deploy / recover: plan, preflight, execute |
