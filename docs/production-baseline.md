@@ -10,20 +10,39 @@ imports, change providers, or re-enable integrations.
 | Item | Baseline |
 | --- | --- |
 | Live app | https://app.schreiberexcavating.com |
-| Source | `ac61bb695304d2cb319f5c3605d43f446ed99bca` |
+| Source | `8232a077adfcfb70d9535dae714c5679d4355525` (Jobs Active/Archive, release PR #41) |
 | Cloudflare Pages project | `schreiber-hub-preview` (production branch `main`) |
-| Live deployment | `2c110f18-7411-4f63-9d09-3cc291a54470` |
+| Live deployment | `a4ea3102-ddc7-4084-963f-f1e62474c6df` |
 | Production Supabase project | `acgqjjbrnkmeazswdnzp` |
-| Candidate build | [39846243630](https://github.com/Schrex/schreiber-hub-central/actions/runs/39846243630) |
-| Candidate manifest SHA256 | `b54e868d656e45d8eaeac7d7c80236bf5bf5a8505ae625fec360b15ba4267317` |
-| Verified deployment run | [39846752862](https://github.com/Schrex/schreiber-hub-central/actions/runs/39846752862) |
-| Successful production ledger | `7262555368` |
-| Previous retained deployment | `82bbfce8-7a2f-412f-b3b4-62af659022ef` at `ea0504798c9985ea44ad32d674579b15ae6f0c66` |
-| Recovery preflight | [39847008622](https://github.com/Schrex/schreiber-hub-central/actions/runs/39847008622) — passed, no rollback executed |
+| Exact-main verification | [40378797799](https://github.com/Schrex/schreiber-hub-central/actions/runs/40378797799) |
+| Candidate build | [40381792517](https://github.com/Schrex/schreiber-hub-central/actions/runs/40381792517) (artifact expires 2027-01-24) |
+| Candidate manifest SHA256 | `279858a4acc702ff0169c9c8d6693b751de057808c741b94a45f360bb1790acc` |
+| Verified deployment run | [40382959483](https://github.com/Schrex/schreiber-hub-central/actions/runs/40382959483) |
+| Successful production ledger | `7340917252` |
+| Previous retained deployment | `6a6e77f0-9371-4e44-a028-6c6ae58ae42c` at `abdde98963d91a4f91e17ac8c176347013304df2` (Add Employee) |
+| Recovery evidence for previous | draft release `add-employee-release-abdde98-20261022` (candidate ZIP + checksums) |
+
+Release history (newest first; ledger is authoritative, `gh api repos/Schrex/schreiber-hub-central/deployments`):
+
+| Date | Source | Deployment | Notes |
+| --- | --- | --- | --- |
+| 2026-10-26 | `8232a07` | `a4ea3102-…` | Jobs Active/Archive; DB migration + `request-truck` v12 first |
+| 2026-10-22 | `abdde98` | `6a6e77f0-…` | Add Employee (this table was not updated then) |
+| 2026-10-22 | `ac61bb6` | `2c110f18-…` | First guarded release |
+| earlier | `ea05047` | `82bbfce8-…` | Pre-release baseline |
 
 The live identity is clean, independent mode, and points to the production backend
 above. Homepage and reset-password availability passed. These are deployment
 checks, not certification of all employee features or external integrations.
+
+## Backend state
+
+- Migration `20261026010000_jobs_status_lifecycle.sql` applied 2026-10-26 via the Supabase SQL
+  editor in one transaction. Before: 7 jobs, 0 complete, columns absent, triggers
+  `jobs_seed_contact_slots=O, update_jobs_updated_at=O`. After: columns, both checks and
+  `jobs_status_lifecycle=O` present; counts unchanged.
+- Edge function `request-truck` v11 → v12 (deployed from `8232a07`, `verify_jwt` true). Its
+  non-active rejection has not been exercised in production.
 
 ## Recovery evidence to retain
 

@@ -25,7 +25,7 @@ Source of truth: `supabase/migrations/` (78 applied files, mostly Lovable UUID n
 - `jobs` → `job_contacts`, `job_contact_template_slots` (seeded by trigger on insert),
   `job_estimates`, `job_exclusions`, `job_notes`, `job_permits`, `job_photos`, `job_plans`,
   `job_scope_items`, `job_submittals`, `job_unit_pricing`, `dig_tickets`.
-- `jobs` status lifecycle (`supabase/migrations/20261026010000_jobs_status_lifecycle.sql`; promoted, production apply pending — see `docs/jobs-status-release.md`):
+- `jobs` status lifecycle (`supabase/migrations/20261026010000_jobs_status_lifecycle.sql`; applied in production 2026-10-26):
   columns `completed_at`, `completed_by` (→ auth users, `ON DELETE SET NULL`), `hold_reason`;
   checks `jobs_completion_matches_status`, `jobs_hold_reason_matches_status`; `BEFORE INSERT OR
   UPDATE` trigger `jobs_status_lifecycle` sets `completed_by = auth.uid()` on entering complete
@@ -91,8 +91,6 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 ## Migration workflow
 
 - `supabase/migrations/` = applied production history. Never edit or replay.
-  Exception: `20261026010000_jobs_status_lifecycle.sql` is promoted but not yet applied in
-  production; apply it per `docs/jobs-status-release.md` before the Jobs frontend ships.
 - `local/candidate-migrations/` = 12 unapplied candidates (time-off permissions, attendance RLS
   fix, safety notification dedup, contact sync, job-contact seed dupes, queue/service grants,
   accident-photo storage policy, inactive email dispatcher, employee creation).
