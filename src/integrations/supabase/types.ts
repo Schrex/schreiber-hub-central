@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       accident_reports: {
@@ -40,6 +35,7 @@ export type Database = {
           updated_at: string
           witnesses: string | null
         }
+        ComputedFields: never
         Insert: {
           body_part?: string | null
           contributing_factors?: string | null
@@ -105,19 +101,20 @@ export type Database = {
           key: string
           updated_at: string
           updated_by: string | null
-          value: Json
+          value: NonNullable<Json>
         }
+        ComputedFields: never
         Insert: {
           key: string
           updated_at?: string
           updated_by?: string | null
-          value?: Json
+          value?: NonNullable<Json>
         }
         Update: {
           key?: string
           updated_at?: string
           updated_by?: string | null
-          value?: Json
+          value?: NonNullable<Json>
         }
         Relationships: []
       }
@@ -132,6 +129,7 @@ export type Database = {
           sort_order: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           default_annual_value?: number | null
@@ -173,6 +171,7 @@ export type Database = {
           unit: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           bid_item_id: string
           code?: string
@@ -239,6 +238,7 @@ export type Database = {
           updated_at: string
           vendor: string | null
         }
+        ComputedFields: never
         Insert: {
           bid_item_id: string
           created_at?: string
@@ -288,6 +288,7 @@ export type Database = {
           unit: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           description: string
@@ -344,6 +345,7 @@ export type Database = {
           sort_order: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           code: string
           color?: string
@@ -375,6 +377,7 @@ export type Database = {
           stage: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           event_date: string
@@ -405,6 +408,7 @@ export type Database = {
           sort_order: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           colors?: string[]
           created_at?: string
@@ -443,6 +447,7 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           color: string
           created_at?: string
@@ -489,6 +494,7 @@ export type Database = {
           size: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           code: string
           created_at?: string
@@ -530,6 +536,7 @@ export type Database = {
           updated_at: string
           work_description: string | null
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           created_by?: string | null
@@ -612,11 +619,12 @@ export type Database = {
           truck_number: string | null
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           bill_to?: string | null
           billed_quantity?: number | null
           billing_notes?: string | null
-          billing_total?: number | null
+          billing_total?: never
           created_at?: string
           created_by?: string | null
           customer?: string | null
@@ -647,7 +655,7 @@ export type Database = {
           bill_to?: string | null
           billed_quantity?: number | null
           billing_notes?: string | null
-          billing_total?: number | null
+          billing_total?: never
           created_at?: string
           created_by?: string | null
           customer?: string | null
@@ -695,6 +703,7 @@ export type Database = {
           status: string
           template_name: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           error_message?: string | null
@@ -727,6 +736,7 @@ export type Database = {
           transactional_email_ttl_minutes: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           auth_email_ttl_minutes?: number
           batch_size?: number
@@ -755,6 +765,7 @@ export type Database = {
           token: string
           used_at: string | null
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           email: string
@@ -784,6 +795,7 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           annual_value: number
           benefit_type_id: string
@@ -832,6 +844,7 @@ export type Database = {
           user_id: string
           year: number
         }
+        ComputedFields: never
         Insert: {
           base_salary?: number
           benefits_value?: number
@@ -840,7 +853,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
-          total_compensation?: number | null
+          total_compensation?: never
           updated_at?: string
           user_id: string
           year: number
@@ -853,7 +866,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
-          total_compensation?: number | null
+          total_compensation?: never
           updated_at?: string
           user_id?: string
           year?: number
@@ -901,6 +914,7 @@ export type Database = {
           updated_at: string
           work_email: string | null
         }
+        ComputedFields: never
         Insert: {
           address?: string | null
           bank_account_holder?: string | null
@@ -1005,6 +1019,7 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           created_by?: string | null
@@ -1060,6 +1075,7 @@ export type Database = {
           sort_order: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           daily_rate?: number | null
@@ -1101,6 +1117,7 @@ export type Database = {
           waiver_signature_path: string
           waiver_text: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           end_date: string
@@ -1149,6 +1166,7 @@ export type Database = {
           uploaded_by_name: string | null
           version: string | null
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           description?: string | null
@@ -1189,6 +1207,7 @@ export type Database = {
           sort_order: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           category: string
           created_at?: string
@@ -1236,6 +1255,7 @@ export type Database = {
           updated_at: string
           vendor_id: string | null
         }
+        ComputedFields: never
         Insert: {
           address?: string | null
           category?: string | null
@@ -1304,6 +1324,7 @@ export type Database = {
           uploaded_by: string | null
           uploaded_by_name: string | null
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           file_path: string
@@ -1341,6 +1362,7 @@ export type Database = {
           sort_order: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           body: string
           created_at?: string
@@ -1376,6 +1398,7 @@ export type Database = {
           sort_order: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           body: string
           created_at?: string
@@ -1423,6 +1446,7 @@ export type Database = {
           status: Database["public"]["Enums"]["permit_status"]
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           ai_categorized?: boolean
           created_at?: string
@@ -1487,6 +1511,7 @@ export type Database = {
           uploaded_by: string | null
           uploaded_by_name: string | null
         }
+        ComputedFields: never
         Insert: {
           caption?: string | null
           created_at?: string
@@ -1532,6 +1557,7 @@ export type Database = {
           uploaded_by_name: string | null
           version: string | null
         }
+        ComputedFields: never
         Insert: {
           category: Database["public"]["Enums"]["plan_category"]
           created_at?: string
@@ -1583,6 +1609,7 @@ export type Database = {
           sort_order: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           body: string
           created_at?: string
@@ -1622,6 +1649,7 @@ export type Database = {
           uploaded_by: string | null
           uploaded_by_name: string | null
         }
+        ComputedFields: never
         Insert: {
           ai_categorized?: boolean
           approved_at?: string | null
@@ -1676,6 +1704,7 @@ export type Database = {
           unit: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           code: string
           created_at?: string
@@ -1711,6 +1740,8 @@ export type Database = {
       jobs: {
         Row: {
           address: string | null
+          completed_at: string | null
+          completed_by: string | null
           contract_file_name: string | null
           contract_file_path: string | null
           contract_uploaded_at: string | null
@@ -1722,6 +1753,7 @@ export type Database = {
           foreman_brief: string | null
           foreman_id: string | null
           gc: string | null
+          hold_reason: string | null
           id: string
           job_number: string | null
           latitude: number | null
@@ -1734,8 +1766,11 @@ export type Database = {
           status: Database["public"]["Enums"]["job_status"]
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           address?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
           contract_file_name?: string | null
           contract_file_path?: string | null
           contract_uploaded_at?: string | null
@@ -1747,6 +1782,7 @@ export type Database = {
           foreman_brief?: string | null
           foreman_id?: string | null
           gc?: string | null
+          hold_reason?: string | null
           id?: string
           job_number?: string | null
           latitude?: number | null
@@ -1761,6 +1797,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
           contract_file_name?: string | null
           contract_file_path?: string | null
           contract_uploaded_at?: string | null
@@ -1772,6 +1810,7 @@ export type Database = {
           foreman_brief?: string | null
           foreman_id?: string | null
           gc?: string | null
+          hold_reason?: string | null
           id?: string
           job_number?: string | null
           latitude?: number | null
@@ -1793,18 +1832,19 @@ export type Database = {
           id: string
           kind: string
           link_url: string | null
-          metadata: Json
+          metadata: NonNullable<Json>
           read_at: string | null
           title: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           body?: string | null
           created_at?: string
           id?: string
           kind: string
           link_url?: string | null
-          metadata?: Json
+          metadata?: NonNullable<Json>
           read_at?: string | null
           title: string
           user_id: string
@@ -1815,7 +1855,7 @@ export type Database = {
           id?: string
           kind?: string
           link_url?: string | null
-          metadata?: Json
+          metadata?: NonNullable<Json>
           read_at?: string | null
           title?: string
           user_id?: string
@@ -1838,6 +1878,7 @@ export type Database = {
           title: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           category?: string | null
           created_at?: string
@@ -1888,6 +1929,7 @@ export type Database = {
           user_id: string
           viewed_at: string | null
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           decline_reason?: string | null
@@ -1943,6 +1985,7 @@ export type Database = {
           typed_name: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           document_id: string
           id?: string
@@ -1984,6 +2027,7 @@ export type Database = {
           title: string | null
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           contact_id?: string | null
           created_at?: string
@@ -2027,6 +2071,7 @@ export type Database = {
           record_id: string
           table_name: string
         }
+        ComputedFields: never
         Insert: {
           action: string
           affected_user_id?: string | null
@@ -2080,6 +2125,7 @@ export type Database = {
           teamwork: number | null
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           acknowledged_at?: string | null
           areas_for_improvement?: string | null
@@ -2147,6 +2193,7 @@ export type Database = {
           title: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           description?: string | null
@@ -2185,6 +2232,7 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           contact_id?: string | null
           created_at?: string
@@ -2234,6 +2282,7 @@ export type Database = {
           type: Database["public"]["Enums"]["referral_type"]
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           fee_amount?: number | null
@@ -2279,6 +2328,7 @@ export type Database = {
           requested_by_name: string | null
           status: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -2320,6 +2370,7 @@ export type Database = {
           title: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           body: string
           category?: string | null
@@ -2366,8 +2417,9 @@ export type Database = {
           suspension_to: string | null
           updated_at: string
           violation_date: string
-          violations: Json
+          violations: NonNullable<Json>
         }
+        ComputedFields: never
         Insert: {
           comments?: string | null
           created_at?: string
@@ -2391,7 +2443,7 @@ export type Database = {
           suspension_to?: string | null
           updated_at?: string
           violation_date: string
-          violations?: Json
+          violations?: NonNullable<Json>
         }
         Update: {
           comments?: string | null
@@ -2416,7 +2468,7 @@ export type Database = {
           suspension_to?: string | null
           updated_at?: string
           violation_date?: string
-          violations?: Json
+          violations?: NonNullable<Json>
         }
         Relationships: []
       }
@@ -2433,6 +2485,7 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           assignment_date: string
           created_at?: string
@@ -2478,6 +2531,7 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -2508,6 +2562,7 @@ export type Database = {
           metadata: Json | null
           reason: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           email: string
@@ -2545,6 +2600,7 @@ export type Database = {
           uploaded_by_name: string | null
           week_of: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           email_from?: string | null
@@ -2605,6 +2661,7 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           decided_at?: string | null
@@ -2663,6 +2720,7 @@ export type Database = {
           source: string
           user_id: string | null
         }
+        ComputedFields: never
         Insert: {
           access_token?: string | null
           attendee_name: string
@@ -2734,6 +2792,7 @@ export type Database = {
           transcript: string | null
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           audio_path?: string | null
           completed_at?: string | null
@@ -2797,12 +2856,13 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
-          quiz_questions: Json
+          quiz_questions: NonNullable<Json>
           title: string
           updated_at: string
           video_url: string | null
           voice_script: string | null
         }
+        ComputedFields: never
         Insert: {
           category?: string | null
           content: string
@@ -2812,7 +2872,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
-          quiz_questions?: Json
+          quiz_questions?: NonNullable<Json>
           title: string
           updated_at?: string
           video_url?: string | null
@@ -2827,7 +2887,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
-          quiz_questions?: Json
+          quiz_questions?: NonNullable<Json>
           title?: string
           updated_at?: string
           video_url?: string | null
@@ -2859,6 +2919,7 @@ export type Database = {
           status: Database["public"]["Enums"]["truck_request_status"]
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           assigned_driver_name?: string | null
           assigned_driver_user_id?: string | null
@@ -2929,6 +2990,7 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -2959,6 +3021,7 @@ export type Database = {
           updated_at: string
           website: string | null
         }
+        ComputedFields: never
         Insert: {
           address?: string | null
           category?: string | null
@@ -3007,6 +3070,7 @@ export type Database = {
           updated_at: string
           week_start: string
         }
+        ComputedFields: never
         Insert: {
           color?: string | null
           created_at?: string
@@ -3058,6 +3122,7 @@ export type Database = {
           sort_order: number | null
           title: string | null
         }
+        ComputedFields: never
         Insert: {
           description?: string | null
           id?: string | null
@@ -3078,14 +3143,26 @@ export type Database = {
       }
     }
     Functions: {
+      cancel_employee_creation: {
+        Args: { caller_id: string; contact_id: string }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
-      email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      finish_employee_creation: {
+        Args: {
+          caller_id: string
+          contact_id: string
+          details: Json
+          new_user_id: string
+        }
+        Returns: undefined
       }
       get_attendee_by_token: {
         Args: { _token: string }
@@ -3139,7 +3216,7 @@ export type Database = {
         Returns: boolean
       }
       list_employee_directory: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           address: string
           converted_user_id: string
@@ -3200,6 +3277,10 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      prepare_employee_creation: {
+        Args: { caller_id: string; details: Json }
+        Returns: string
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
@@ -3315,12 +3396,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3344,11 +3425,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3369,11 +3450,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3394,11 +3475,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3411,11 +3492,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
