@@ -36,7 +36,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 | `src/lib/` | helpers: `launchScope`, `talkMedia`, `resumableUpload`, `weather`, `jobs` (NY today, job sort/grouping, badge map, search escaping) |
 | `src/integrations/` | Generated Supabase client + `types.ts`, Lovable auth (do not hand-edit) |
 | `src/test/` | Vitest unit tests (some colocated `*.test.tsx` too) |
-| `e2e/` | Playwright specs (6) |
+| `e2e/` | Playwright specs (7) |
 | `supabase/migrations/` | Applied production migration history (78) — never edit |
 | `supabase/functions/` | 24 Edge functions + `_shared/` (Postmark, email templates) |
 | `local/` | Local backend config, seed, candidate migrations, hr-bootstrap |
@@ -80,6 +80,10 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 - AI (`*.lovable.dev` gateway) and Twilio SMS Edge functions depend on retired Lovable
   services; likely broken in production (unverified). `notify-talk-attendees` hardcodes a
   `lovable.app` URL. `independentLaunch` flag hides most of these features.
+- "Today" is computed inconsistently outside the jobs helpers: `SafetyViolationDialog` uses the
+  UTC date (`toISOString().slice(0,10)`), `Safety.tsx` and the rest of `Schedule.tsx` (week strip,
+  past-day locks, date mins) use the browser's local date, `AccidentReportDialog` uses local time.
+  Only the Schedule carry-forward uses `todayInNewYork()` (`lib/jobs.ts`).
 - Realtime and Edge runtime are disabled locally — subscriptions and functions untested locally.
 - 2 high-severity SheetJS (xlsx) advisories; 30 lint warnings; no proven production backup restore.
 

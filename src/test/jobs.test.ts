@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countPeopleByJob, ilikeOrFilter, jobStatusBadge, groupArchiveByYear, sortActiveJobs, todayInNewYork } from "@/lib/jobs";
+import { countPeopleByJob, ilikeOrFilter, isDispatchPickable, jobStatusBadge, groupArchiveByYear, sortActiveJobs, todayInNewYork } from "@/lib/jobs";
 
 describe("todayInNewYork", () => {
   it("is still the previous day in New York just after midnight UTC", () => {
@@ -121,5 +121,18 @@ describe("ilikeOrFilter", () => {
 
   it("trims surrounding whitespace", () => {
     expect(ilikeOrFilter(["name"], "  pond  ")).toBe('name.ilike."*pond*"');
+  });
+});
+
+describe("isDispatchPickable", () => {
+  it("offers active jobs only for a new order", () => {
+    expect(isDispatchPickable({ id: "a", status: "active" })).toBe(true);
+    expect(isDispatchPickable({ id: "h", status: "on_hold" })).toBe(false);
+    expect(isDispatchPickable({ id: "c", status: "complete" })).toBe(false);
+  });
+
+  it("keeps the job an existing order already points at", () => {
+    expect(isDispatchPickable({ id: "c", status: "complete" }, "c")).toBe(true);
+    expect(isDispatchPickable({ id: "h", status: "on_hold" }, "c")).toBe(false);
   });
 });
