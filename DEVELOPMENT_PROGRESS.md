@@ -74,6 +74,15 @@ read-only recovery preflight passed. No actual rollback was performed.
 - Remaining boot time is ~70s of core image pulls (postgres, auth, rest, storage,
   kong) and ~15s of migrations and seed.
 
+## Jobs status lifecycle candidate (#31) — October 26, 2026
+
+- Candidate migration `20261026010000_jobs_status_lifecycle.sql` (local only, wired into
+  `prepare-local.mjs`); `test:local:jobs-status` added to `verify:backend`.
+- Verified locally after `local:reset`: verify:backend, verify:app, verify:lint pass
+  (lint: 30 existing warnings). Supabase types regenerated from the local backend with CLI
+  2.121.0 + prettier (output shape changed: `ComputedFields`, no `__InternalSupabase`).
+- Not verified: production. Release review steps in `docs/jobs-status-release.md`.
+
 ## Outstanding operational items
 
 - Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved
