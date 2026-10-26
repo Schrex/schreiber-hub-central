@@ -170,3 +170,19 @@ export function mondayOf(date: string): string {
 export function isTileAfter(tile: { week_start: string; day_index: number }, today: string): boolean {
   return tileDate(tile.week_start, tile.day_index) > today;
 }
+
+/**
+ * Half-open `[start, end)` instants of a New York calendar year, for filtering `completed_at`.
+ * Jan 1 is always Eastern Standard Time (UTC-5), so midnight there is 05:00 UTC.
+ */
+export function newYorkYearRange(year: number): { start: string; end: string } {
+  const midnightJan1 = (y: number) => new Date(`${String(y).padStart(4, "0")}-01-01T00:00:00-05:00`).toISOString();
+  return { start: midnightJan1(year), end: midnightJan1(year + 1) };
+}
+
+/** Year filter choices: this New York year back to the oldest completion's year, newest first. */
+export function archiveYearOptions(oldestCompletedAt: string | null, now: Date = new Date()): number[] {
+  const current = newYorkYear(now.toISOString());
+  const oldest = oldestCompletedAt ? Math.min(newYorkYear(oldestCompletedAt), current) : current;
+  return Array.from({ length: current - oldest + 1 }, (_, i) => current - i);
+}

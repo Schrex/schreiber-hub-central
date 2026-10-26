@@ -1,7 +1,7 @@
 // Supabase reads for the Jobs page tabs. Kept apart from the components so the archive
 // query (search, year, paging) and the active cards (people today) can grow independently.
 import { supabase } from "@/integrations/supabase/client";
-import { countPeopleByJob, sortActiveJobs, todayInNewYork, type JobStatus } from "@/lib/jobs";
+import { countPeopleByJob, ilikeOrFilter, newYorkYearRange, sortActiveJobs, todayInNewYork, type JobStatus } from "@/lib/jobs";
 
 export interface JobCardRow {
   id: string;
@@ -69,14 +69,73 @@ export async function fetchPeopleToday(jobIds: readonly string[]): Promise<Map<s
   return countPeopleByJob(data ?? []);
 }
 
-/** Completed jobs, newest completion first; rows with no completion date last. */
-export async function fetchArchivedJobs(): Promise<JobCardRow[]> {
+export const ARCHIVE_PAGE_SIZE = 25;
+
+/** A New York calendar year, "unknown" for jobs with no completion date, or null for all years. */
+export type ArchiveYearFilter = number | "unknown" | null;
+
+export interface ArchiveQuery {
+  search: string;
+  year: ArchiveYearFilter;
+  /** Foreman, office and admin may also match on customer. */
+  canSeeCustomer: boolean;
+  /** Zero-based page of ARCHIVE_PAGE_SIZE rows. */
+  page: number;
+}
+
+export interface ArchivePage {
+  rows: JobCardRow[];
+  /** All matching archived jobs, across pages. */
+  total: number;
+}
+
+/** User ids of profiles whose display name contains `text` (case-insensitive). */
+async function userIdsMatchingName(text: string): Promise<string[]> {
+  const { data, error } = await supabase.from("profiles").select("user_id").or(ilikeOrFilter(["display_name"], text));
+  if (error) throw error;
+  return (data ?? []).map((p) => p.user_id);
+}
+
+/**
+ * One page of completed jobs, newest completion first, undated last.
+ * Search matches name and job number (plus customer when allowed) and foreman name. Foreman takes
+ * two steps because `foreman_id` references auth users, not profiles, so it can't be embedded.
+ */
+export async function fetchArchivedJobsPage({ search, year, canSeeCustomer, page }: ArchiveQuery): Promise<ArchivePage> {
+  let query = supabase.from("jobs").select(CARD_COLUMNS, { count: "exact" }).eq("status", "complete");
+  if (year === "unknown") {
+    query = query.is("completed_at", null);
+  } else if (year !== null) {
+    const { start, end } = newYorkYearRange(year);
+    query = query.gte("completed_at", start).lt("completed_at", end);
+  }
+  const text = search.trim();
+  if (text) {
+    const columns = canSeeCustomer ? ["name", "job_number", "customer"] : ["name", "job_number"];
+    const filters = [ilikeOrFilter(columns, text)];
+    const foremanIds = await userIdsMatchingName(text);
+    if (foremanIds.length) filters.push(`foreman_id.in.(${foremanIds.join(",")})`);
+    query = query.or(filters.join(","));
+  }
+  const from = page * ARCHIVE_PAGE_SIZE;
+  const { data, error, count } = await query
+    .order("completed_at", { ascending: false, nullsFirst: false })
+    .order("name", { ascending: true })
+    .order("id", { ascending: true })
+    .range(from, from + ARCHIVE_PAGE_SIZE - 1);
+  if (error) throw error;
+  return { rows: await withForemanNames((data ?? []) as Omit<JobCardRow, "foreman_name">[]), total: count ?? 0 };
+}
+
+/** Earliest completion date in the archive, for the year filter's range. */
+export async function fetchOldestCompletion(): Promise<string | null> {
   const { data, error } = await supabase
     .from("jobs")
-    .select(CARD_COLUMNS)
+    .select("completed_at")
     .eq("status", "complete")
-    .order("completed_at", { ascending: false, nullsFirst: false })
-    .order("name", { ascending: true });
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: true })
+    .limit(1);
   if (error) throw error;
-  return withForemanNames((data ?? []) as Omit<JobCardRow, "foreman_name">[]);
+  return data?.[0]?.completed_at ?? null;
 }
