@@ -117,5 +117,6 @@ Spelling: table/bucket `swpppp_*` / `swpppp-reports` has 3 p's; component is `Sw
 - Some tests import `supabase/functions/_shared/*` (postmark, profileEmails, notificationResult).
 - Colocated: `components/jobs/jobFiles.test.ts`, `JobFilesSection.test.tsx`, `pages/PasswordRecovery.test.tsx`.
 - Playwright (`playwright.config.mjs`): 127.0.0.1:8082 via `dev:local --browser-test`, 1 worker,
-  TZ America/New_York. Specs: add-employee, job-files, job-status-pickers, private-files, safety-refresh,
+  TZ America/New_York. Specs: add-employee, job-files, job-status-pickers, jobs, jobs-crew-today,
+  jobs-future-cleanup, private-files, safety-refresh,
   time-off, whiteboard-refresh. Needs local backend running.
