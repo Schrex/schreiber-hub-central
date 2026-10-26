@@ -92,7 +92,7 @@ test('Accident and violation pickers include on-hold jobs but not completed ones
   }
 });
 
-test('Schedule carry-forward copies active-job assignments and skips on-hold and completed jobs', async ({ browser }) => {
+test('Schedule carry-forward copies the most recent prior day\'s active-job assignments only', async ({ browser }) => {
   const prefix = `Carry ${randomUUID().slice(0, 8)}`;
   const contexts = [];
   const jobs = await seedJobs(prefix);
@@ -112,6 +112,19 @@ test('Schedule carry-forward copies active-job assignments and skips on-hold and
     const copied = async () => (checked(await service.from('schedule_assignments').select('job_id')
       .eq('assignment_date', target).in('job_id', jobIds))).map(r => r.job_id);
     await expect.poll(copied, { timeout: 15_000 }).toEqual([jobs.active.id]);
+
+    // The most recent prior day is chosen first, then filtered: when that day only has an on-hold
+    // job, nothing is copied, even though an earlier day (target) has an active-job assignment.
+    const target2 = addDays(target, 7);
+    checked(await service.from('schedule_assignments').insert({
+      job_id: jobs.onHold.id, user_id: userId, assignment_date: addDays(target2, -1), start_time: '07:00', notes: prefix,
+    }));
+    const lookback = page.waitForResponse(r => r.url().includes('schedule_assignments') && r.url().includes(`assignment_date=lte.${addDays(target2, -1)}`));
+    await page.getByRole('button', { name: 'Next week' }).click();
+    await lookback;
+    await page.waitForLoadState('networkidle');
+    expect(checked(await service.from('schedule_assignments').select('job_id')
+      .eq('assignment_date', target2).in('job_id', jobIds))).toEqual([]);
   } finally {
     for (const context of contexts) await context.close();
     await cleanupJobs(jobs);

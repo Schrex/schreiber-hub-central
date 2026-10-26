@@ -49,7 +49,8 @@ BottomNav themselves — watch for a double nav.
 
 - Client: `src/integrations/supabase/client.ts` (generated, don't edit); env
   `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`. Auth storage via `previewAuthStorage.ts`.
-- Types: `src/integrations/supabase/types.ts` (generated; lacks candidate-migration RPCs).
+- Types: `src/integrations/supabase/types.ts` (generated from the local backend, so it includes
+  candidate migrations such as the jobs status columns; CLI 2.121.0 + prettier). Production may lag.
 - Pattern: `supabase.from(...)` in `useEffect`/handlers + `useState`; errors via sonner `toast`.
   No caching. `hooks/useResumeRefresh.ts` refetches on focus/online/visibility and is the
   fallback for missed realtime; components guard against stale responses.
@@ -117,6 +118,6 @@ Spelling: table/bucket `swpppp_*` / `swpppp-reports` has 3 p's; component is `Sw
 - Some tests import `supabase/functions/_shared/*` (postmark, profileEmails, notificationResult).
 - Colocated: `components/jobs/jobFiles.test.ts`, `JobFilesSection.test.tsx`, `pages/PasswordRecovery.test.tsx`.
 - Playwright (`playwright.config.mjs`): 127.0.0.1:8082 via `dev:local --browser-test`, 1 worker,
-  TZ America/New_York. Specs: add-employee, job-files, job-status-pickers, jobs, jobs-crew-today,
-  jobs-future-cleanup, private-files, safety-refresh,
+  TZ America/New_York. Specs (`e2e/*.spec.mjs`): add-employee, job-files, job-status-pickers, jobs,
+  jobs-archive-search, jobs-crew-today, jobs-future-cleanup, private-files, safety-refresh,
   time-off, whiteboard-refresh. Needs local backend running.

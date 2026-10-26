@@ -1,5 +1,6 @@
 // Framework-free jobs helpers shared by the Jobs pages and unit tests.
 // Inputs are typed structurally so callers can pass rows before/after new columns land.
+import type { Database } from "@/integrations/supabase/types";
 
 export const NEW_YORK_TZ = "America/New_York";
 
@@ -22,7 +23,7 @@ export function todayInNewYork(now: Date = new Date()): string {
   return newYorkDate(now);
 }
 
-export type JobStatus = "active" | "on_hold" | "complete";
+export type JobStatus = Database["public"]["Enums"]["job_status"];
 
 const STATUS_RANK: Record<JobStatus, number> = { active: 0, on_hold: 1, complete: 2 };
 
@@ -140,6 +141,11 @@ const nyDisplayFormatter = new Intl.DateTimeFormat("en-US", {
 /** Human date ("Jun 15, 2025") of an instant on the New York calendar. */
 export function formatNewYorkDate(iso: string): string {
   return nyDisplayFormatter.format(new Date(iso));
+}
+
+/** The "Shop" job, pinned first on the Schedule board (matched by name, ignoring case and spaces). */
+export function isShopJob(name: string | null | undefined): boolean {
+  return name?.trim().toLowerCase() === "shop";
 }
 
 /** Accident report and safety violation pickers: incidents at paused sites can still be filed. */

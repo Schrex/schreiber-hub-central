@@ -89,9 +89,16 @@ export interface ArchivePage {
   total: number;
 }
 
-/** User ids of profiles whose display name contains `text` (case-insensitive). */
+/** Cap on profile ids from a name search: they go into the jobs request URL, so a short search can't bloat it. */
+const FOREMAN_MATCH_LIMIT = 50;
+
+/** User ids of profiles whose display name contains `text` (case-insensitive), at most FOREMAN_MATCH_LIMIT. */
 async function userIdsMatchingName(text: string): Promise<string[]> {
-  const { data, error } = await supabase.from("profiles").select("user_id").or(ilikeOrFilter(["display_name"], text));
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .or(ilikeOrFilter(["display_name"], text))
+    .limit(FOREMAN_MATCH_LIMIT);
   if (error) throw error;
   return (data ?? []).map((p) => p.user_id);
 }

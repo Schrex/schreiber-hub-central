@@ -16,18 +16,27 @@ interface ActiveJobsListProps {
 export function ActiveJobsList({ canEdit, refreshKey }: ActiveJobsListProps) {
   const [jobs, setJobs] = useState<JobCardRow[]>([]);
   const [peopleToday, setPeopleToday] = useState<Map<string, number> | null>(null);
+  const [crewFailed, setCrewFailed] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    // Drop the previous counts so a refresh never shows stale crew lines.
+    setPeopleToday(null);
+    setCrewFailed(false);
     fetchActiveJobs()
       .then(async (rows) => {
         if (cancelled) return;
         setJobs(rows);
         const running = rows.filter((r) => r.status === "active").map((r) => r.id);
-        const counts = await fetchPeopleToday(running);
-        if (!cancelled) setPeopleToday(counts);
+        // Crew counts are secondary: on failure the jobs still show, without crew lines.
+        try {
+          const counts = await fetchPeopleToday(running);
+          if (!cancelled) setPeopleToday(counts);
+        } catch {
+          if (!cancelled) setCrewFailed(true);
+        }
       })
       .catch((err: unknown) => { if (!cancelled) toast.error(errorMessage(err, "Couldn't load jobs")); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -46,12 +55,13 @@ export function ActiveJobsList({ canEdit, refreshKey }: ActiveJobsListProps) {
   }
   return (
     <div className="space-y-2">
+      {crewFailed && <p role="status" className="text-xs text-muted-foreground">Couldn't load today's crew counts.</p>}
       {jobs.map((job) => <ActiveJobCard key={job.id} job={job} peopleToday={peopleToday?.get(job.id) ?? (peopleToday ? 0 : null)} />)}
     </div>
   );
 }
 
-/** `peopleToday` is null while today's assignments are still loading. */
+/** `peopleToday` is null while today's assignments are loading or couldn't be loaded. */
 function ActiveJobCard({ job, peopleToday }: { job: JobCardRow; peopleToday: number | null }) {
   return (
     <Link

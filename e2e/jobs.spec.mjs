@@ -2,13 +2,13 @@
 // Local synthetic data only; the backend is shared, so checks are scoped to a per-run name
 // prefix and tab counts are checked as changes, not exact numbers.
 import { randomUUID } from 'node:crypto';
-import { test, expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import { localStatus } from '../scripts/local-backend.mjs';
 
 const PASSWORD = 'LocalOnly-12345!';
 
-function newYorkDate(instant: Date): string {
+function newYorkDate(instant) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(instant);
 }
 
@@ -20,11 +20,11 @@ test('Jobs tabs, status changes, Undo and Reopen', async ({ browser }) => {
   const prefix = `JobsE2E ${run}`;
   const officeName = `Synthetic Office ${run}`;
   const officeEmail = `jobs-office-${run}@example.test`;
-  const contexts: BrowserContext[] = [];
-  let officeId: string | undefined;
-  const checked = <T,>(result: { data: T; error: unknown }): T => { if (result.error) throw result.error; return result.data; };
+  const contexts = [];
+  let officeId;
+  const checked = result => { if (result.error) throw result.error; return result.data; };
 
-  async function login(b: Browser, email: string, path: string): Promise<Page> {
+  async function login(b, email, path) {
     const context = await b.newContext({ baseURL: 'http://127.0.0.1:8082' });
     contexts.push(context);
     await context.route('**/*', route => ['http://127.0.0.1:8082', 'http://127.0.0.1:55321'].includes(new URL(route.request().url()).origin) ? route.continue() : route.abort());
@@ -42,12 +42,12 @@ test('Jobs tabs, status changes, Undo and Reopen', async ({ browser }) => {
     running: `${prefix} Running`, older: `${prefix} Older`, held: `${prefix} Paused`, heldBlank: `${prefix} Stalled`,
     done2025: `${prefix} Done 2025`, doneUnknown: `${prefix} Done unknown`,
   };
-  const jobRow = async (id: string) => checked(await service.from('jobs').select('status, hold_reason, completed_at, completed_by').eq('id', id).single());
-  const tabCount = async (page: Page, tab: 'Active' | 'Archive') => {
+  const jobRow = async (id) => checked(await service.from('jobs').select('status, hold_reason, completed_at, completed_by').eq('id', id).single());
+  const tabCount = async (page, tab) => {
     const text = await page.getByRole('tab', { name: new RegExp(`^${tab}`) }).getByTestId('tab-count').textContent();
     return Number(text);
   };
-  const prefixedCards = (page: Page) => page.getByRole('link').filter({ hasText: prefix });
+  const prefixedCards = (page) => page.getByRole('link').filter({ hasText: prefix });
 
   try {
     const created = checked(await service.auth.admin.createUser({ email: officeEmail, password: PASSWORD, email_confirm: true, user_metadata: { display_name: officeName } }));
@@ -118,7 +118,7 @@ test('Jobs tabs, status changes, Undo and Reopen', async ({ browser }) => {
     let row = await jobRow(ids.running);
     expect(row.status).toBe('complete');
     expect(row.completed_by).toBe(officeId);
-    expect(newYorkDate(new Date(row.completed_at!))).toBe(backdated);
+    expect(newYorkDate(new Date(row.completed_at))).toBe(backdated);
     await office.getByRole('button', { name: 'Undo' }).click();
     await expect(office.getByText('Status change undone')).toBeVisible();
     await expect(banner).toHaveCount(0);
@@ -154,10 +154,12 @@ test('Jobs tabs, status changes, Undo and Reopen', async ({ browser }) => {
     await office.getByRole('searchbox', { name: 'Search archive' }).fill(prefix);
     await expect(prefixedCards(office).filter({ hasText: names.running })).toBeVisible();
 
-    // Reopen clears the completion fields.
+    // Reopen clears the completion fields; no Undo (it would re-stamp completed_by/completed_at).
     await prefixedCards(office).filter({ hasText: names.running }).click();
     await office.getByRole('region', { name: 'Archived' }).getByRole('button', { name: 'Reopen' }).click();
     await expect(office.getByRole('region', { name: 'Archived' })).toHaveCount(0);
+    await expect(office.getByText('Status changed to Active')).toBeVisible();
+    await expect(office.getByRole('button', { name: 'Undo' })).toHaveCount(0);
     expect(await jobRow(ids.running)).toMatchObject({ status: 'active', completed_at: null, completed_by: null });
 
     // Employee: archive cards hide the customer; archived job shows the banner but no controls.
