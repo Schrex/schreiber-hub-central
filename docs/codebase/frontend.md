@@ -17,7 +17,7 @@ Behind `<ProtectedRoute>` (session required; also renders `<BottomNav/>`):
 | Path | Page |
 | --- | --- |
 | `/` | Index (home tiles filtered by `effectiveRole`) |
-| `/jobs`, `/jobs/:id` | Jobs, JobDetail |
+| `/jobs` (`?view=active` default, `?view=archive`), `/jobs/:id` | Jobs (Active/Archive tabs), JobDetail |
 | `/schedule`, `/schedule/whiteboard` | Schedule, Whiteboard |
 | `/dispatch` | Dispatch |
 | `/safety`, `/safety/take/:token` | Safety, TakeSafetyTalk |
@@ -68,7 +68,7 @@ BottomNav themselves — watch for a double nav.
 | Feature | Files | Tables |
 | --- | --- | --- |
 | Home | `pages/Index.tsx`, `components/home/*` (weather, celebrations, notifications bell) | notifications |
-| Jobs | `pages/Jobs.tsx`, `pages/JobDetail.tsx`, `components/jobs/*` (JobInfo, Contract, ScopeOfWork, ForemanBrief, JobContacts, Plans, Photos, Permits, Swppp, Submittals, DigTickets, JobFilesSection, JobLookahead, DriveTimeFromShop, RequestTruckButton, SafetyInspectionButton) | jobs + `job_*` children, bid_* |
+| Jobs | `pages/Jobs.tsx` (Active/Archive tabs synced to `view` URL param, count-only head queries; lists in `components/jobs/ActiveJobsList.tsx`, `ArchiveJobsList.tsx`, reads in `jobsQueries.ts`), `pages/JobDetail.tsx` (`JobStatusSection` = archived/on-hold banners + office/admin "Change status" via `JobStatusSheet`, Undo/Reopen in `lib/jobStatusChange.ts`; gated by preview-aware role), `lib/jobs.ts` helpers, `components/jobs/*` (JobInfo, Contract, ScopeOfWork, ForemanBrief, JobContacts, Plans, Photos, Permits, Swppp, Submittals, DigTickets, JobFilesSection, JobLookahead, DriveTimeFromShop, RequestTruckButton, SafetyInspectionButton) | jobs + `job_*` children, bid_* |
 | Schedule | `pages/Schedule.tsx` (~1.4k lines), `components/schedule/DayBoard.tsx`, `WeekGrid.tsx` (dnd-kit) | schedule_assignments, crews |
 | Whiteboard | `pages/Whiteboard.tsx`, `components/whiteboard/*` (foreman+) | whiteboard_tiles, dispatch_orders |
 | Dispatch | `pages/Dispatch.tsx`, `components/dispatch/TruckRequestsPanel.tsx` | dispatch_orders, truck_requests |

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countPeopleByJob, ilikeOrFilter, jobStatusBadge, groupArchiveByYear, sortActiveJobs, todayInNewYork } from "@/lib/jobs";
+import { completedAtForDate, countPeopleByJob, formatNewYorkDate, ilikeOrFilter, jobStatusBadge, groupArchiveByYear, sortActiveJobs, todayInNewYork } from "@/lib/jobs";
 
 describe("todayInNewYork", () => {
   it("is still the previous day in New York just after midnight UTC", () => {
@@ -121,5 +121,25 @@ describe("ilikeOrFilter", () => {
 
   it("trims surrounding whitespace", () => {
     expect(ilikeOrFilter(["name"], "  pond  ")).toBe('name.ilike."*pond*"');
+  });
+});
+
+describe("completedAtForDate", () => {
+  const now = new Date("2026-10-26T14:30:00Z"); // 10:30 EDT
+
+  it("uses the current instant when completing today", () => {
+    expect(completedAtForDate("2026-10-26", now)).toBe("2026-10-26T14:30:00.000Z");
+  });
+
+  it("stores a backdated day at midday so it stays on that New York date", () => {
+    expect(completedAtForDate("2026-07-04", now)).toBe("2026-07-04T17:00:00.000Z");
+    expect(completedAtForDate("2026-01-15", now)).toBe("2026-01-15T17:00:00.000Z");
+  });
+});
+
+describe("formatNewYorkDate", () => {
+  it("formats an instant as its New York calendar date", () => {
+    expect(formatNewYorkDate("2025-06-15T16:00:00Z")).toBe("Jun 15, 2025");
+    expect(formatNewYorkDate("2026-01-01T03:00:00Z")).toBe("Dec 31, 2025");
   });
 });

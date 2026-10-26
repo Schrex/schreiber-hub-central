@@ -119,3 +119,25 @@ export function ilikeOrFilter(columns: readonly string[], text: string): string 
   const quoted = `"*${likeLiteral.replace(/[\\"]/g, (c) => `\\${c}`)}*"`;
   return columns.map((column) => `${column}.ilike.${quoted}`).join(",");
 }
+
+/**
+ * `completed_at` to store for a completion date picked in New York (YYYY-MM-DD).
+ * Today keeps the current instant; an earlier day is stored at midday (12:00 EST / 13:00 EDT),
+ * which stays on that New York date in either offset.
+ */
+export function completedAtForDate(date: string, now: Date = new Date()): string {
+  if (date === todayInNewYork(now)) return now.toISOString();
+  return new Date(`${date}T12:00:00-05:00`).toISOString();
+}
+
+const nyDisplayFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: NEW_YORK_TZ,
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+
+/** Human date ("Jun 15, 2025") of an instant on the New York calendar. */
+export function formatNewYorkDate(iso: string): string {
+  return nyDisplayFormatter.format(new Date(iso));
+}
