@@ -1,7 +1,7 @@
 // Supabase reads for the Jobs page tabs. Kept apart from the components so the archive
 // query (search, year, paging) and the active cards (people today) can grow independently.
 import { supabase } from "@/integrations/supabase/client";
-import { sortActiveJobs, type JobStatus } from "@/lib/jobs";
+import { countPeopleByJob, sortActiveJobs, todayInNewYork, type JobStatus } from "@/lib/jobs";
 
 export interface JobCardRow {
   id: string;
@@ -55,6 +55,18 @@ export async function fetchActiveJobs(): Promise<JobCardRow[]> {
   const { data, error } = await supabase.from("jobs").select(CARD_COLUMNS).in("status", ["active", "on_hold"]);
   if (error) throw error;
   return sortActiveJobs(await withForemanNames((data ?? []) as Omit<JobCardRow, "foreman_name">[]));
+}
+
+/** Distinct people scheduled today (New York) per job, in one query for all given jobs. Jobs with nobody have no entry. */
+export async function fetchPeopleToday(jobIds: readonly string[]): Promise<Map<string, number>> {
+  if (!jobIds.length) return new Map();
+  const { data, error } = await supabase
+    .from("schedule_assignments")
+    .select("job_id, user_id")
+    .eq("assignment_date", todayInNewYork())
+    .in("job_id", [...jobIds]);
+  if (error) throw error;
+  return countPeopleByJob(data ?? []);
 }
 
 /** Completed jobs, newest completion first; rows with no completion date last. */
