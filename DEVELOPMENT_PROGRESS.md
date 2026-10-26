@@ -74,6 +74,34 @@ read-only recovery preflight passed. No actual rollback was performed.
 - Remaining boot time is ~70s of core image pulls (postgres, auth, rest, storage,
   kong) and ~15s of migrations and seed.
 
+## Jobs status lifecycle candidate (#31) — October 26, 2026
+
+- Candidate migration `20261026010000_jobs_status_lifecycle.sql` (local only, wired into
+  `prepare-local.mjs`); `test:local:jobs-status` added to `verify:backend`.
+- Verified locally after `local:reset`: verify:backend, verify:app, verify:lint pass
+  (lint: 30 existing warnings). Supabase types regenerated from the local backend with CLI
+  2.121.0 + prettier (output shape changed: `ComputedFields`, no `__InternalSupabase`).
+- Not verified: production. Release review steps in `docs/jobs-status-release.md`.
+
+## Jobs pickers follow status rules (#36) — October 26, 2026
+
+- Schedule carry-forward copies only active-job assignments and uses `todayInNewYork()`.
+  Dispatch order picker: active jobs plus an edited order's current job. Accident/violation
+  pickers: active + on hold. `request-truck` returns 409 for non-active jobs; the client
+  toast now shows the server message.
+- Verified locally: `e2e/job-status-pickers.spec.mjs`, verify:app, verify:edge, verify:lint,
+  verify:browser. Not verified: `request-truck` runtime (Edge runtime disabled locally), production.
+
+## Jobs Active/Archive review fixes (#28) — October 26, 2026
+
+- No Undo after leaving `complete` (trigger would re-stamp completed_by/completed_at); status
+  sheet Save waits for future-entry counts; crew-count failure no longer hides context; foreman
+  archive search capped at 50 profile ids; no per-year counts; carry-forward picks the latest
+  prior day, then copies its active-job rows; Jobs page back on the real role; `isShopJob`.
+- Jobs e2e specs converted to `.mjs`. Release doc: apply migration before deploying the frontend.
+- Verified locally: verify:app, verify:lint (30 existing warnings), verify:edge, verify:backend,
+  verify:browser (13 tests). Not verified: production.
+
 ## Outstanding operational items
 
 - Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved

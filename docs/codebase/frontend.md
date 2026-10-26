@@ -17,7 +17,7 @@ Behind `<ProtectedRoute>` (session required; also renders `<BottomNav/>`):
 | Path | Page |
 | --- | --- |
 | `/` | Index (home tiles filtered by `effectiveRole`) |
-| `/jobs`, `/jobs/:id` | Jobs, JobDetail |
+| `/jobs` (`?view=active` default, `?view=archive`), `/jobs/:id` | Jobs (Active/Archive tabs), JobDetail |
 | `/schedule`, `/schedule/whiteboard` | Schedule, Whiteboard |
 | `/dispatch` | Dispatch |
 | `/safety`, `/safety/take/:token` | Safety, TakeSafetyTalk |
@@ -49,7 +49,8 @@ BottomNav themselves — watch for a double nav.
 
 - Client: `src/integrations/supabase/client.ts` (generated, don't edit); env
   `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`. Auth storage via `previewAuthStorage.ts`.
-- Types: `src/integrations/supabase/types.ts` (generated; lacks candidate-migration RPCs).
+- Types: `src/integrations/supabase/types.ts` (generated from the local backend, so it includes
+  candidate migrations such as the jobs status columns; CLI 2.121.0 + prettier). Production may lag.
 - Pattern: `supabase.from(...)` in `useEffect`/handlers + `useState`; errors via sonner `toast`.
   No caching. `hooks/useResumeRefresh.ts` refetches on focus/online/visibility and is the
   fallback for missed realtime; components guard against stale responses.
@@ -68,7 +69,7 @@ BottomNav themselves — watch for a double nav.
 | Feature | Files | Tables |
 | --- | --- | --- |
 | Home | `pages/Index.tsx`, `components/home/*` (weather, celebrations, notifications bell) | notifications |
-| Jobs | `pages/Jobs.tsx`, `pages/JobDetail.tsx`, `components/jobs/*` (JobInfo, Contract, ScopeOfWork, ForemanBrief, JobContacts, Plans, Photos, Permits, Swppp, Submittals, DigTickets, JobFilesSection, JobLookahead, DriveTimeFromShop, RequestTruckButton, SafetyInspectionButton) | jobs + `job_*` children, bid_* |
+| Jobs | `pages/Jobs.tsx` (Active/Archive tabs synced to `view` URL param, count-only head queries; lists in `components/jobs/ActiveJobsList.tsx`, `ArchiveJobsList.tsx` (server-side search incl. two-step foreman-name match, NY-year filter, pages of 25), reads in `jobsQueries.ts`), `pages/JobDetail.tsx` (`JobStatusSection` = archived/on-hold banners + office/admin "Change status" via `JobStatusSheet`, Undo/Reopen and leaving-active cleanup of future `schedule_assignments` + job `whiteboard_tiles` (status first, then deletes) in `lib/jobStatusChange.ts`; gated by preview-aware role), `lib/jobs.ts` helpers, `components/jobs/*` (JobInfo, Contract, ScopeOfWork, ForemanBrief, JobContacts, Plans, Photos, Permits, Swppp, Submittals, DigTickets, JobFilesSection, JobLookahead, DriveTimeFromShop, RequestTruckButton, SafetyInspectionButton) | jobs + `job_*` children, bid_* |
 | Schedule | `pages/Schedule.tsx` (~1.4k lines), `components/schedule/DayBoard.tsx`, `WeekGrid.tsx` (dnd-kit) | schedule_assignments, crews |
 | Whiteboard | `pages/Whiteboard.tsx`, `components/whiteboard/*` (foreman+) | whiteboard_tiles, dispatch_orders |
 | Dispatch | `pages/Dispatch.tsx`, `components/dispatch/TruckRequestsPanel.tsx` | dispatch_orders, truck_requests |
@@ -77,6 +78,20 @@ BottomNav themselves — watch for a double nav.
 | People/HR | `pages/EmployeeContacts.tsx` (~1.2k; AddEmployeeWizard, xlsx/vCard), `AdminUsers`, `AdminPositions`, `MyPosition`, `OrgChart`, `PerformanceReviews`, `HR` | employee_contacts, user_roles, positions, … |
 | Perks | `Apparel`, `Referrals`, `EquipmentRental`, `ShopBooking` | clothing_*, referrals, equipment_rentals, shop_reservations |
 | Other | `Vendors`, `Handbook`, `TruckingCalculator` (client only), `Unsubscribe` | vendors, handbook_documents |
+
+### Job pickers (status rules, #36)
+
+Status helpers live in `lib/jobs.ts` (`todayInNewYork`, `SAFETY_PICKER_STATUSES`, `isDispatchPickable`).
+
+| Picker | Shows |
+| --- | --- |
+| Schedule board (`Schedule.tsx`) | active |
+| Schedule carry-forward (`Schedule.tsx` `loadAll`) | copies only active-job assignments (`jobs!inner(status)`); "today" = New York |
+| Whiteboard | active |
+| Dispatch order dialog | active, plus the job an edited order already points at; order rows show the stored `job_name` |
+| Accident report / safety violation dialogs | active + on hold (a `presetJob` from the job page bypasses the picker) |
+| Toolbox talk job list (`Safety.tsx`) | today's assignments (no status filter) |
+| Request truck button / `request-truck` Edge function | active only; function returns 409 otherwise |
 
 Spelling: table/bucket `swpppp_*` / `swpppp-reports` has 3 p's; component is `SwpppSection`.
 
@@ -103,5 +118,6 @@ Spelling: table/bucket `swpppp_*` / `swpppp-reports` has 3 p's; component is `Sw
 - Some tests import `supabase/functions/_shared/*` (postmark, profileEmails, notificationResult).
 - Colocated: `components/jobs/jobFiles.test.ts`, `JobFilesSection.test.tsx`, `pages/PasswordRecovery.test.tsx`.
 - Playwright (`playwright.config.mjs`): 127.0.0.1:8082 via `dev:local --browser-test`, 1 worker,
-  TZ America/New_York. Specs: add-employee, job-files, private-files, safety-refresh, time-off,
-  whiteboard-refresh. Needs local backend running.
+  TZ America/New_York. Specs (`e2e/*.spec.mjs`): add-employee, job-files, job-status-pickers, jobs,
+  jobs-archive-search, jobs-crew-today, jobs-future-cleanup, private-files, safety-refresh,
+  time-off, whiteboard-refresh. Needs local backend running.

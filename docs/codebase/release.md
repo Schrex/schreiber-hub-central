@@ -53,8 +53,8 @@ file at a time in a transaction against the named project, deploy only the speci
 ## Verification
 
 `scripts/verify.mjs` groups: **app** (typecheck, test, build), **backend** (schema audit +
-6 local API suites; Docker + running backend), **lint**, **edge** (Deno check via npx),
-**browser** (Playwright, 6 specs). It forces local `VITE_*` values so builds never embed `.env`.
+7 local API suites; Docker + running backend), **lint**, **edge** (Deno check via npx),
+**browser** (Playwright, 11 specs). It forces local `VITE_*` values so builds never embed `.env`.
 `scripts/migration-*.test.mjs` are not in `bun run test`; run with
 `bunx vitest run --config scripts/migration-vitest.config.mjs`.
 First Playwright run: `bunx --no-install playwright install chromium`.
