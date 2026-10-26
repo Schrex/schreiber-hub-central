@@ -82,6 +82,7 @@ read-only recovery preflight passed. No actual rollback was performed.
   (lint: 30 existing warnings). Supabase types regenerated from the local backend with CLI
   2.121.0 + prettier (output shape changed: `ComputedFields`, no `__InternalSupabase`).
 - Not verified: production. Release review steps in `docs/jobs-status-release.md`.
+- Promoted to `supabase/migrations/` for release (2026-10-26); production apply pending.
 
 ## Jobs pickers follow status rules (#36) — October 26, 2026
 

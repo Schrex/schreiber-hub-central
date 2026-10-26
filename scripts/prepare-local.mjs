@@ -33,8 +33,6 @@ await copyFile(path.join(root, 'local/candidate-migrations/20261016210000_time_o
   path.join(target, 'migrations/20261016210000_time_off_request_permissions.sql'));
 await copyFile(path.join(root, 'local/candidate-migrations/20261022010000_employee_creation.sql'),
   path.join(target, 'migrations/20261022010000_employee_creation.sql'));
-await copyFile(path.join(root, 'local/candidate-migrations/20261026010000_jobs_status_lifecycle.sql'),
-  path.join(target, 'migrations/20261026010000_jobs_status_lifecycle.sql'));
 await copyFile(path.join(root, 'local/config.toml'), path.join(target, 'config.toml'));
 await copyFile(path.join(root, 'local/seed.sql'), path.join(target, 'seed.sql'));
 await copyFile(path.join(root, 'local/hr-bootstrap.sql'),

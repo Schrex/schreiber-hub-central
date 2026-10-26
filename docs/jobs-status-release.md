@@ -1,11 +1,11 @@
 # Jobs status lifecycle release review
 
-Status: candidate only; production execution is not authorized (#31, spec #28).
+Status: promoted to `supabase/migrations/` for release; **not yet applied in production** (#31, spec #28).
 Target backend is **acgqjjbrnkmeazswdnzp (PRODUCTION)**; never the `supabase/config.toml` project.
 
 ## Change
 
-`local/candidate-migrations/20261026010000_jobs_status_lifecycle.sql` adds `jobs.completed_at`,
+`supabase/migrations/20261026010000_jobs_status_lifecycle.sql` adds `jobs.completed_at`,
 `jobs.completed_by` (auth users, `ON DELETE SET NULL`), `jobs.hold_reason`, two check
 constraints and the `jobs_status_lifecycle` `BEFORE INSERT OR UPDATE` trigger. No backfill, no
 new index, RLS unchanged. Local proof: `bun run test:local:jobs-status`.
