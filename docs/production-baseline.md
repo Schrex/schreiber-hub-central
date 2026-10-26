@@ -15,12 +15,13 @@ imports, change providers, or re-enable integrations.
 | Live deployment | `a4ea3102-ddc7-4084-963f-f1e62474c6df` |
 | Production Supabase project | `acgqjjbrnkmeazswdnzp` |
 | Exact-main verification | [40378797799](https://github.com/Schrex/schreiber-hub-central/actions/runs/40378797799) |
-| Candidate build | [40381792517](https://github.com/Schrex/schreiber-hub-central/actions/runs/40381792517) (artifact expires 2027-01-24) |
+| Candidate build | [40381792517](https://github.com/Schrex/schreiber-hub-central/actions/runs/40381792517) (Actions copy expires 2027-01-24; archived below) |
 | Candidate manifest SHA256 | `279858a4acc702ff0169c9c8d6693b751de057808c741b94a45f360bb1790acc` |
 | Verified deployment run | [40382959483](https://github.com/Schrex/schreiber-hub-central/actions/runs/40382959483) |
 | Successful production ledger | `7340917252` |
 | Previous retained deployment | `6a6e77f0-9371-4e44-a028-6c6ae58ae42c` at `abdde98963d91a4f91e17ac8c176347013304df2` (Add Employee) |
 | Recovery evidence for previous | draft release `add-employee-release-abdde98-20261022` (candidate ZIP + checksums) |
+| Archive of this release | draft release `production-candidate-8232a07-20261026`: candidate ZIP (SHA256 `58bf6eeb1d1488b0fb7d1733d4802811bfea2173a3b3fdca341238a29c8c3676`), SHA256SUMS, live receipt. Use as `recovery_reference` for the next release |
 
 Release history (newest first; ledger is authoritative, `gh api repos/Schrex/schreiber-hub-central/deployments`):
 
@@ -46,6 +47,10 @@ checks, not certification of all employee features or external integrations.
 
 ## Recovery evidence to retain
 
+- Private draft release tag `production-candidate-8232a07-20261026` retains the exact
+  `8232a07` candidate ZIP, checksum and live receipt. Archive checks: ZIP digest equals the
+  build's logged upload digest; `release.json` matches the approved digest and all 12 file
+  hashes; archived files match the live site; round-trip download verified.
 - Private draft release tag `production-candidate-ac61bb6-20261022` retains the
   exact candidate ZIP, checksum and live receipt.
 - Private draft release tag `recovery-baseline-ea05047-20261022` retains the rebuilt

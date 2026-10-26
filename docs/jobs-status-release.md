@@ -45,6 +45,7 @@ applying" checks, **before** deploying that frontend. Never deploy the frontend 
 | Frontend | Candidate [40381792517](https://github.com/Schrex/schreiber-hub-central/actions/runs/40381792517), digest `279858a4…0acc`; deploy [40382959483](https://github.com/Schrex/schreiber-hub-central/actions/runs/40382959483) verified; deployment `a4ea3102-ddc7-4084-963f-f1e62474c6df`; live build-info `8232a07` |
 | Smoke test | Throwaway job: Complete → Archive; DB `completed_by` = signed-in owner (trigger); Reopen cleared fields, no Undo; job deleted by SQL (the app has no delete-job UI). Final: 7 jobs, 0 complete |
 | Rollback target | `recover` to `6a6e77f0-9371-4e44-a028-6c6ae58ae42c` (`abdde98`); old frontend works on the new schema |
+| Archive | Draft release `production-candidate-8232a07-20261026` (ZIP, SHA256SUMS, receipt); round-trip verified |
 
 Not verified in production: the `request-truck` rejection of non-active jobs; on-hold and
 archive search with real data. The first preflight failed because docs listed a stale live
