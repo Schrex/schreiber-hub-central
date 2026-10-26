@@ -58,6 +58,51 @@ read-only recovery preflight passed. No actual rollback was performed.
   existing admin-entered initial password flow; no invitation or forced password
   change has been added. Hosted gateway and actual employee acceptance remain open.
 
+## CI Verification speedup — October 26, 2026
+
+- Branch `feature/ci-speedup` (PR #29 into develop). CI starts Supabase without
+  studio, postgres-meta, mailpit, imgproxy, logflare, vector and supavisor; dropped
+  the backend stop step; caches Playwright browsers; no longer verifies develop
+  pushes or the develop→main release PR. Main push runs are unchanged (release guard).
+- Measured run 40334350440 (all five groups passed) against run 40332383998:
+  Supabase boot 107–108s → 83–88s; backend job 159s → 126s; browser job
+  210s → 185s; run wall time 214s → 189s. Earlier runs ranged 3.2–4.9 min.
+- Verification runs per change drop from four to two (feature PR + main push).
+- The Playwright cache was cold on this run (saved afterwards); its ~10s gain is
+  unmeasured. Skips for develop pushes and the develop→main PR are untested until
+  the next release PR.
+- Remaining boot time is ~70s of core image pulls (postgres, auth, rest, storage,
+  kong) and ~15s of migrations and seed.
+
+## Jobs status lifecycle candidate (#31) — October 26, 2026
+
+- Candidate migration `20261026010000_jobs_status_lifecycle.sql` (local only, wired into
+  `prepare-local.mjs`); `test:local:jobs-status` added to `verify:backend`.
+- Verified locally after `local:reset`: verify:backend, verify:app, verify:lint pass
+  (lint: 30 existing warnings). Supabase types regenerated from the local backend with CLI
+  2.121.0 + prettier (output shape changed: `ComputedFields`, no `__InternalSupabase`).
+- Not verified: production. Release review steps in `docs/jobs-status-release.md`.
+- Promoted to `supabase/migrations/` for release (2026-10-26); production apply pending.
+
+## Jobs pickers follow status rules (#36) — October 26, 2026
+
+- Schedule carry-forward copies only active-job assignments and uses `todayInNewYork()`.
+  Dispatch order picker: active jobs plus an edited order's current job. Accident/violation
+  pickers: active + on hold. `request-truck` returns 409 for non-active jobs; the client
+  toast now shows the server message.
+- Verified locally: `e2e/job-status-pickers.spec.mjs`, verify:app, verify:edge, verify:lint,
+  verify:browser. Not verified: `request-truck` runtime (Edge runtime disabled locally), production.
+
+## Jobs Active/Archive review fixes (#28) — October 26, 2026
+
+- No Undo after leaving `complete` (trigger would re-stamp completed_by/completed_at); status
+  sheet Save waits for future-entry counts; crew-count failure no longer hides context; foreman
+  archive search capped at 50 profile ids; no per-year counts; carry-forward picks the latest
+  prior day, then copies its active-job rows; Jobs page back on the real role; `isShopJob`.
+- Jobs e2e specs converted to `.mjs`. Release doc: apply migration before deploying the frontend.
+- Verified locally: verify:app, verify:lint (30 existing warnings), verify:edge, verify:backend,
+  verify:browser (13 tests). Not verified: production.
+
 ## Outstanding operational items
 
 - Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved

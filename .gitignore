@@ -32,3 +32,7 @@ supabase/.temp/
 # Python migration-tool caches
 __pycache__/
 *.py[cod]
+
+# Claude Code parallel-session worktrees
+.claude/worktrees/
+.claude/settings.local.json

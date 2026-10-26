@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SAFETY_PICKER_STATUSES } from "@/lib/jobs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SignaturePad } from "@/components/safety/SignaturePad";
@@ -67,7 +68,7 @@ export const AccidentReportDialog = ({ open, onOpenChange, presetJob }: Props) =
   useEffect(() => {
     if (!open) return;
     if (!presetJob) {
-      supabase.from("jobs").select("id, name, job_number").eq("status", "active").order("name")
+      supabase.from("jobs").select("id, name, job_number").in("status", SAFETY_PICKER_STATUSES).order("name")
         .then(({ data }) => setJobs((data as Job[]) ?? []));
     }
     setJobId(presetJob?.id ?? "");

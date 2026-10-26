@@ -51,10 +51,10 @@ rows may remain. Avoid concurrent runs of backend tests on the same local instan
 
 ## GitHub workflow
 
-`.github/workflows/verify.yml` runs on pull requests, pushes to main/develop/codex branches, and
+`.github/workflows/verify.yml` runs on pull requests (except develop→main), pushes to main, and
 manual dispatch. Independent app/backend/lint/edge/browser matrix jobs report their own results.
 The backend job recreates the disposable schema and synthetic seed on a fresh runner.
-Cleanup runs even if checks fail. Jobs have read-only repository permissions and
+The runner is discarded after each job, so there is no backend stop step. Jobs have read-only repository permissions and
 perform no publishing or remote database operations.
 
 The lint error backlog is resolved on the cleanup branch; 30 warnings remain in

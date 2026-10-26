@@ -13,10 +13,10 @@ The live frontend is hosted on Cloudflare Pages with an independent Supabase
 backend. Lovable hosting and repository sync have been retired. The former
 Lovable URL and editor are no longer the deployment or development workflow.
 
-- Start feature branches named `codex/*` from `develop`; target `develop` in pull requests.
+- Start feature branches named `feature/*` from `develop`; target `develop` in pull requests.
 - `main` is reserved for explicitly authorized production releases. Do not push or merge to it as part of routine development.
 - Production deployment is a separate, explicitly authorized operation; merging a pull request does not establish a release.
-- See [project guidance](AGENTS.md), [development progress](DEVELOPMENT_PROGRESS.md), and [hosting and recovery notes](docs/migration-hosting-recovery.md).
+- See [project guidance](CLAUDE.md), [development progress](DEVELOPMENT_PROGRESS.md), and [hosting and recovery notes](docs/migration-hosting-recovery.md).
 
 Historical migration records and deferred integration code still reference Lovable.
 Those references are retained for recovery and follow-up work; they do not mean

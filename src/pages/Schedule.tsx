@@ -41,6 +41,7 @@ import { toast } from "@/hooks/use-toast";
 import { WeekGrid } from "@/components/schedule/WeekGrid";
 import { DayBoard, type BoardAssignment, type BoardCrew, type BoardJob } from "@/components/schedule/DayBoard";
 import { fetchCurrentPositions, type CurrentPosition } from "@/lib/currentPositions";
+import { isShopJob, todayInNewYork } from "@/lib/jobs";
 
 type Job = { id: string; name: string; address: string | null; job_number: string | null };
 type Profile = {
@@ -219,10 +220,10 @@ const Schedule = () => {
 
     let a = initialAssignments;
 
-    // Auto carry-forward: if this day has no assignments and is today/future,
-    // copy the most recent prior day's assignments forward (once per session per date).
-    const todayIsoLocal = format(startOfDay(new Date()), "yyyy-MM-dd");
-    const isFutureOrToday = selectedDate >= todayIsoLocal;
+    // Auto carry-forward: if this day has no assignments and is today/future (New York),
+    // copy the most recent prior day's active-job assignments forward (once per session per date).
+    // On-hold and completed jobs are skipped so nobody is re-scheduled or notified for them.
+    const isFutureOrToday = selectedDate >= todayInNewYork();
     if ((a?.length ?? 0) === 0 && isFutureOrToday && !autoFilledRef.current.has(selectedDate) && canEdit) {
       autoFilledRef.current.add(selectedDate);
       // Look back up to 14 days for the most recent date with any assignments.
@@ -230,12 +231,15 @@ const Schedule = () => {
       const beforeIso = format(addDays(parseISO(selectedDate), -1), "yyyy-MM-dd");
       const { data: priorRows } = await supabase
         .from("schedule_assignments")
-        .select("job_id,user_id,start_time,role_on_job,notes,assignment_date")
+        .select("job_id,user_id,start_time,role_on_job,notes,assignment_date,jobs(status)")
         .gte("assignment_date", sinceIso)
         .lte("assignment_date", beforeIso)
         .order("assignment_date", { ascending: false });
       const mostRecent = priorRows?.[0]?.assignment_date;
-      const sourceRows = mostRecent ? priorRows!.filter((r) => r.assignment_date === mostRecent) : [];
+      // Pick the day first, then keep its active-job rows: a day of only paused jobs copies nothing.
+      const sourceRows = mostRecent
+        ? priorRows!.filter((r) => r.assignment_date === mostRecent && r.jobs?.status === "active")
+        : [];
       if (sourceRows.length > 0) {
         const newRows = sourceRows.map((r) => ({
           job_id: r.job_id,
@@ -937,7 +941,7 @@ const Schedule = () => {
                 allActiveJobs={jobs as BoardJob[]}
                 jobs={(() => {
                   const base = allByJob.map((g) => g.job).filter(Boolean) as BoardJob[];
-                  const shop = jobs.find((j) => j.name?.toLowerCase() === "shop");
+                  const shop = jobs.find((j) => isShopJob(j.name));
                   if (shop && !base.some((b) => b.id === shop.id)) {
                     return [shop as BoardJob, ...base];
                   }
