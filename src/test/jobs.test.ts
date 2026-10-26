@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { completedAtForDate, countPeopleByJob, formatNewYorkDate, ilikeOrFilter, isDispatchPickable, jobStatusBadge, groupArchiveByYear, sortActiveJobs, todayInNewYork } from "@/lib/jobs";
+import { completedAtForDate, countPeopleByJob, formatNewYorkDate, ilikeOrFilter, isDispatchPickable, jobStatusBadge, groupArchiveByYear, sortActiveJobs, todayInNewYork, tileDate, mondayOf, isTileAfter } from "@/lib/jobs";
 
 describe("todayInNewYork", () => {
   it("is still the previous day in New York just after midnight UTC", () => {
@@ -154,5 +154,27 @@ describe("isDispatchPickable", () => {
   it("keeps the job an existing order already points at", () => {
     expect(isDispatchPickable({ id: "c", status: "complete" }, "c")).toBe(true);
     expect(isDispatchPickable({ id: "h", status: "on_hold" }, "c")).toBe(false);
+  });
+});
+
+describe("future whiteboard tiles", () => {
+  it("dates a tile by its Monday week start plus day index", () => {
+    expect(tileDate("2026-10-26", 0)).toBe("2026-10-26");
+    expect(tileDate("2026-10-26", 6)).toBe("2026-11-01");
+    expect(tileDate("2026-12-28", 5)).toBe("2027-01-02");
+  });
+
+  it("finds the Monday of the week containing a day", () => {
+    expect(mondayOf("2026-10-26")).toBe("2026-10-26");
+    expect(mondayOf("2026-10-28")).toBe("2026-10-26");
+    expect(mondayOf("2026-11-01")).toBe("2026-10-26");
+  });
+
+  it("treats only tiles after today as future", () => {
+    const today = "2026-10-28"; // Wednesday
+    expect(isTileAfter({ week_start: "2026-10-26", day_index: 1 }, today)).toBe(false);
+    expect(isTileAfter({ week_start: "2026-10-26", day_index: 2 }, today)).toBe(false);
+    expect(isTileAfter({ week_start: "2026-10-26", day_index: 3 }, today)).toBe(true);
+    expect(isTileAfter({ week_start: "2026-11-02", day_index: 0 }, today)).toBe(true);
   });
 });
