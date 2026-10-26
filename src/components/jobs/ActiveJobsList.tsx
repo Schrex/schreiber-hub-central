@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Briefcase, HardHat, MapPin, PauseCircle } from "lucide-react";
 import { toast } from "sonner";
 import { JobStatusBadge } from "@/components/jobs/JobStatusBadge";
-import { fetchActiveJobs, type JobCardRow } from "@/components/jobs/jobsQueries";
+import { fetchActiveJobs, fetchPeopleToday, type JobCardRow } from "@/components/jobs/jobsQueries";
 import { errorMessage } from "@/lib/errorMessage";
 
 interface ActiveJobsListProps {
@@ -15,13 +15,20 @@ interface ActiveJobsListProps {
 /** Active tab: running jobs, then on-hold jobs, as rich cards. */
 export function ActiveJobsList({ canEdit, refreshKey }: ActiveJobsListProps) {
   const [jobs, setJobs] = useState<JobCardRow[]>([]);
+  const [peopleToday, setPeopleToday] = useState<Map<string, number> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     fetchActiveJobs()
-      .then((rows) => { if (!cancelled) setJobs(rows); })
+      .then(async (rows) => {
+        if (cancelled) return;
+        setJobs(rows);
+        const running = rows.filter((r) => r.status === "active").map((r) => r.id);
+        const counts = await fetchPeopleToday(running);
+        if (!cancelled) setPeopleToday(counts);
+      })
       .catch((err: unknown) => { if (!cancelled) toast.error(errorMessage(err, "Couldn't load jobs")); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -39,12 +46,13 @@ export function ActiveJobsList({ canEdit, refreshKey }: ActiveJobsListProps) {
   }
   return (
     <div className="space-y-2">
-      {jobs.map((job) => <ActiveJobCard key={job.id} job={job} />)}
+      {jobs.map((job) => <ActiveJobCard key={job.id} job={job} peopleToday={peopleToday?.get(job.id) ?? (peopleToday ? 0 : null)} />)}
     </div>
   );
 }
 
-function ActiveJobCard({ job }: { job: JobCardRow }) {
+/** `peopleToday` is null while today's assignments are still loading. */
+function ActiveJobCard({ job, peopleToday }: { job: JobCardRow; peopleToday: number | null }) {
   return (
     <Link
       to={`/jobs/${job.id}`}
@@ -61,11 +69,22 @@ function ActiveJobCard({ job }: { job: JobCardRow }) {
         )}
         <span className="flex items-center gap-1"><HardHat className="h-3 w-3 shrink-0" /> {job.foreman_name ?? "No foreman"}</span>
       </div>
+      {job.status === "active" && peopleToday !== null && <CrewTodayLine people={peopleToday} />}
       {job.status === "on_hold" && (
         <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-background px-2 py-1.5 text-xs text-amber-800 dark:text-warning">
           <PauseCircle className="h-3.5 w-3.5 shrink-0" /> {job.hold_reason || "No reason given"}
         </p>
       )}
     </Link>
+  );
+}
+
+function CrewTodayLine({ people }: { people: number }) {
+  if (people === 0) return <p className="mt-2 text-xs text-muted-foreground">No crew scheduled today</p>;
+  return (
+    <p className="mt-2 flex items-center gap-1.5 text-xs">
+      <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-success" />
+      {people === 1 ? "1 person" : `${people} people`} scheduled today
+    </p>
   );
 }
