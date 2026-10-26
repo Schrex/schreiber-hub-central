@@ -82,6 +82,8 @@ test('Jobs tabs, status changes, Undo and Reopen', async ({ browser }) => {
     await office.getByRole('tab', { name: /^Archive/ }).click();
     await expect(office).toHaveURL(/[?&]view=archive/);
     await expect(office.getByRole('button', { name: /New/ })).toHaveCount(0);
+    // The Archive is paged and the backend is shared, so narrow it to this run's jobs.
+    await office.getByRole('searchbox', { name: 'Search archive' }).fill(prefix);
     await expect(prefixedCards(office)).toHaveCount(2);
     const archived2025 = prefixedCards(office).filter({ hasText: names.done2025 });
     await expect(archived2025).toContainText(`Customer ${run}`);
@@ -149,6 +151,7 @@ test('Jobs tabs, status changes, Undo and Reopen', async ({ browser }) => {
     expect(await tabCount(office, 'Active')).toBe(active0 - 2);
     expect(await tabCount(office, 'Archive')).toBe(archive0 + 2);
     await office.getByRole('tab', { name: /^Archive/ }).click();
+    await office.getByRole('searchbox', { name: 'Search archive' }).fill(prefix);
     await expect(prefixedCards(office).filter({ hasText: names.running })).toBeVisible();
 
     // Reopen clears the completion fields.
@@ -159,6 +162,7 @@ test('Jobs tabs, status changes, Undo and Reopen', async ({ browser }) => {
 
     // Employee: archive cards hide the customer; archived job shows the banner but no controls.
     const employee = await login(browser, 'employee@example.test', '/jobs?view=archive');
+    await employee.getByRole('searchbox', { name: 'Search archive' }).fill(prefix);
     await expect(prefixedCards(employee).filter({ hasText: names.done2025 })).toBeVisible();
     await expect(prefixedCards(employee).filter({ hasText: names.done2025 })).not.toContainText(`Customer ${run}`);
     await employee.goto(`/jobs/${ids.done2025}`);
