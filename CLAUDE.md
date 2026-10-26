@@ -63,3 +63,17 @@ Unit tests live in `src/test/`; browser specs in `e2e/`; backend checks are `scr
 - `dev:local` (8080) and `test:browser` (8082) use strict ports: one worktree at a time.
 - Remove a finished worktree with `git worktree remove .claude/worktrees/<name>` after its
   branch is pushed or merged.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on Schrex/schreiber-hub-central via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five roles: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` + `docs/adr/` (created lazily), alongside the `docs/codebase/` map. See `docs/agents/domain.md`.
