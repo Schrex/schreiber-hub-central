@@ -109,9 +109,10 @@ Recovery archive: `dist/schreiber-hub-preview-ea05047.zip`, SHA256
 These are retained observations, not fresh live validation or durable remote backup.
 See [hosting recovery](migration-hosting-recovery.md).
 
-Current live frontend is clean ac61bb695304d2cb319f5c3605d43f446ed99bca,
-deployment 2c110f18-7411-4f63-9d09-3cc291a54470, verified by run 39846752862.
-Recovery preflight 39847008622 confirmed the prior deployment is still available.
+Current live frontend: see [production baseline](production-baseline.md), which is the single
+record of the live deployment. Read the current deployment UUID from the GitHub deployments
+ledger before each release; on 2026-10-26 this paragraph and the baseline were stale and the
+deploy preflight correctly rejected the outdated UUID.
 
 The original ZIP was not located. A clean rebuild of ea05047 is retained as a
 clearly labelled replacement in the [private recovery draft release](https://github.com/Schrex/schreiber-hub-central/releases/tag/untagged-0a06433c5cabc53168ac).
