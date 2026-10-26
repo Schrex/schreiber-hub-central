@@ -1,5 +1,6 @@
 import { JobFilesSection } from "@/components/jobs/JobFilesSection";
 import { JobStatusBadge } from "@/components/jobs/JobStatusBadge";
+import { JobStatusSection } from "@/components/jobs/JobStatusSection";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, MapPin, Phone, User, Calendar } from "lucide-react";
@@ -44,6 +45,9 @@ interface Job {
   end_date: string | null;
   notes: string | null;
   foreman_id: string | null;
+  hold_reason: string | null;
+  completed_at: string | null;
+  completed_by: string | null;
 }
 
 const JobDetail = () => {
@@ -52,6 +56,7 @@ const JobDetail = () => {
   const role = effectiveRole ?? realRole;
   const canSeePrivate = role === "foreman" || role === "office" || role === "admin";
   const canSeeJobReport = role === "foreman";
+  const canChangeStatus = role === "office" || role === "admin";
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -122,6 +127,11 @@ const JobDetail = () => {
             </a>
           )}
         </div>
+        <JobStatusSection
+          job={job}
+          canChangeStatus={canChangeStatus}
+          onChanged={(fields) => setJob((j) => (j ? { ...j, ...fields } : j))}
+        />
         <JobFilesSection jobId={job.id} />
         <DriveTimeFromShop lat={lat} lon={lon} />
 
@@ -180,7 +190,7 @@ const JobDetail = () => {
           <JobContactsSection jobId={job.id} jobName={job.name} foremanId={job.foreman_id} />
         )}
 
-        {(role === "office" || role === "admin") && (
+        {canChangeStatus && (
           <ContractSection jobId={job.id} />
         )}
         {canSeePrivate && <ForemanBriefSection jobId={job.id} />}
