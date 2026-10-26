@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jobs: Active &amp; Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens copied from src/index.css (Schreiber design system) */
+:root {
+  --background: 0 0% 100%; --foreground: 0 0% 8%;
+  --surface: 0 0% 97%; --surface-elevated: 0 0% 94%;
+  --card: 0 0% 100%;
+  --primary: 48 100% 50%; --primary-foreground: 0 0% 8%;
+  --secondary: 0 0% 92%; --muted: 0 0% 95%; --muted-foreground: 0 0% 38%;
+  --destructive: 0 75% 50%; --success: 142 55% 38%; --warning: 38 95% 50%;
+  --border: 0 0% 88%; --radius: 0.875rem;
+  --shadow-tile: 0 1px 0 hsl(0 0% 100% / .8) inset, 0 4px 14px -6px hsl(0 0% 0% / .12);
+  --page: 0 0% 96%;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: 0 0% 8%; --foreground: 0 0% 96%; --surface: 0 0% 12%; --surface-elevated: 0 0% 16%;
+    --card: 0 0% 12%; --secondary: 0 0% 18%; --muted: 0 0% 16%; --muted-foreground: 0 0% 65%;
+    --destructive: 0 75% 55%; --border: 0 0% 22%; --page: 0 0% 5%;
+    --shadow-tile: 0 4px 14px -6px hsl(0 0% 0% / .5);
+  }
+}
+:root[data-theme="dark"] {
+  --background: 0 0% 8%; --foreground: 0 0% 96%; --surface: 0 0% 12%; --surface-elevated: 0 0% 16%;
+  --card: 0 0% 12%; --secondary: 0 0% 18%; --muted: 0 0% 16%; --muted-foreground: 0 0% 65%;
+  --destructive: 0 75% 55%; --border: 0 0% 22%; --page: 0 0% 5%;
+  --shadow-tile: 0 4px 14px -6px hsl(0 0% 0% / .5);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: hsl(var(--page)); color: hsl(var(--foreground));
+  font: 14px/1.45 Inter, system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+.display { font-family: Oswald, Inter, sans-serif; text-transform: uppercase; letter-spacing: .02em; }
+.eyebrow { font-family: Oswald, Inter, sans-serif; text-transform: uppercase; letter-spacing: .22em; font-size: 11px; color: hsl(var(--muted-foreground)); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.muted { color: hsl(var(--muted-foreground)); }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; }
+
+/* Page chrome */
+.hivis { height: 8px; background: repeating-linear-gradient(135deg, hsl(var(--primary)) 0 12px, hsl(0 0% 8%) 12px 24px); }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 80px; }
+header.top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+header.top h1 { margin: 0; font-size: 30px; }
+.tldr { margin-top: 16px; border: 1px solid hsl(var(--border)); border-left: 4px solid hsl(var(--primary));
+  background: hsl(var(--card)); border-radius: 10px; padding: 12px 16px; max-width: 760px; }
+.tldr ul { margin: 6px 0 0; padding-left: 18px; }
+.chipbtn { border: 1px solid hsl(var(--border)); background: hsl(var(--card)); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 600; }
+.chipbtn[aria-pressed="true"] { background: hsl(var(--foreground)); color: hsl(var(--background)); border-color: transparent; }
+section.block { margin-top: 44px; }
+section.block > h2 { margin: 0 0 4px; font-size: 20px; }
+section.block > p.lead { margin: 0 0 16px; color: hsl(var(--muted-foreground)); max-width: 760px; }
+
+/* Prototype layout */
+.proto { display: grid; grid-template-columns: 400px 1fr; gap: 28px; align-items: start; }
+@media (max-width: 900px) { .proto { grid-template-columns: 1fr; } }
+.controls { display: grid; gap: 14px; }
+.ctrl-group { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 12px; padding: 12px 14px; }
+.ctrl-group .seg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.note { font-size: 12px; color: hsl(var(--muted-foreground)); margin-top: 8px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; }
+.newdata-swatch { display: inline-block; width: 14px; height: 10px; border: 1.5px dashed hsl(var(--warning)); border-radius: 3px; vertical-align: middle; margin-right: 4px; }
+
+.phone { width: 100%; max-width: 390px; height: 780px; margin: 0 auto; border-radius: 40px; padding: 10px;
+  background: hsl(0 0% 10%); box-shadow: 0 30px 60px -30px hsl(0 0% 0% / .5); }
+.screen { position: relative; height: 100%; border-radius: 31px; overflow: hidden; background: hsl(var(--background)); display: flex; flex-direction: column; }
+.statusbar { height: 34px; flex: none; display: flex; justify-content: space-between; align-items: center; padding: 0 22px; font-size: 12px; font-weight: 600; }
+.scroll { flex: 1; overflow-y: auto; padding: 4px 16px 20px; }
+.bottomnav { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid hsl(var(--border)); padding: 8px 0 14px; font-size: 10px; text-align: center; }
+.bottomnav span.on { color: hsl(var(--foreground)); font-weight: 700; }
+.bottomnav span { color: hsl(var(--muted-foreground)); }
+.bottomnav i { display: block; margin: 0 auto 2px; width: 18px; height: 18px; border-radius: 5px; background: hsl(var(--muted)); }
+.bottomnav span.on i { background: hsl(var(--primary)); }
+
+/* Hub components */
+.back { font-size: 13px; color: hsl(var(--muted-foreground)); background: none; border: 0; padding: 0; }
+.pagehead { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+.pagehead h3 { margin: 0; font-size: 24px; }
+.btn { border: 0; border-radius: 10px; padding: 8px 12px; font-weight: 600; font-size: 13px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.btn.outline { background: hsl(var(--background)); border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); }
+.btn.dark { background: hsl(var(--foreground)); color: hsl(var(--background)); }
+.btn.block { width: 100%; padding: 11px; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; background: hsl(var(--muted)); border-radius: 10px; padding: 3px; margin-top: 14px; }
+.tabs button { border: 0; background: none; border-radius: 8px; padding: 7px; font-size: 13px; font-weight: 600; color: hsl(var(--muted-foreground)); }
+.tabs button.on { background: hsl(var(--background)); color: hsl(var(--foreground)); box-shadow: 0 1px 3px hsl(0 0% 0% / .12); }
+.tabs .count { font-size: 11px; font-weight: 500; margin-left: 4px; opacity: .7; }
+.pulse { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.pulse div { background: hsl(var(--surface)); border: 1px solid hsl(var(--border)); border-radius: 10px; padding: 8px 10px; }
+.pulse b { display: block; font-family: Oswald, Inter, sans-serif; font-size: 20px; line-height: 1.1; }
+.pulse small { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: hsl(var(--muted-foreground)); }
+.search { display: flex; gap: 8px; margin-top: 12px; }
+.search input, .search select, textarea, .field input { flex: 1; min-width: 0; border: 1px solid hsl(var(--border)); background: hsl(var(--background)); color: hsl(var(--foreground));
+  border-radius: 10px; padding: 9px 11px; font: inherit; font-size: 13px; }
+.search select { flex: none; width: 92px; }
+.list { margin-top: 14px; display: grid; gap: 8px; }
+.grouphead { margin-top: 10px; display: flex; justify-content: space-between; align-items: baseline; }
+.card { display: block; width: 100%; text-align: left; border: 1px solid hsl(var(--border)); background: hsl(var(--surface)); border-radius: 12px; padding: 13px 14px; transition: border-color .15s; }
+.card:hover { border-color: hsl(var(--primary) / .6); }
+.card .title { margin-top: 4px; font-family: Oswald, Inter, sans-serif; text-transform: uppercase; letter-spacing: .02em; font-size: 16px; line-height: 1.2; }
+.card .meta { margin-top: 4px; font-size: 12px; color: hsl(var(--muted-foreground)); display: flex; gap: 10px; flex-wrap: wrap; }
+.card.dim { opacity: .8; }
+.row { display: flex; align-items: center; gap: 6px; }
+.badge { font-size: 9px; text-transform: uppercase; font-weight: 700; letter-spacing: .08em; border-radius: 4px; padding: 2px 6px; }
+/* current (as shipped) */
+.b-cur-active { background: hsl(var(--primary) / .15); color: hsl(var(--primary)); }
+.b-cur-hold { background: hsl(var(--primary) / .15); color: hsl(var(--foreground)); }
+.b-cur-complete { background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
+/* proposed */
+.b-active { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.b-hold { background: transparent; color: hsl(var(--warning)); box-shadow: inset 0 0 0 1.5px hsl(var(--warning)); }
+.b-complete { background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: hsl(var(--success)); display: inline-block; }
+.today { margin-top: 8px; font-size: 12px; background: hsl(var(--background)); border-radius: 8px; padding: 6px 8px; display: flex; gap: 6px; align-items: center; }
+.bar { margin-top: 8px; height: 5px; border-radius: 3px; background: hsl(var(--muted)); overflow: hidden; }
+.bar i { display: block; height: 100%; background: hsl(var(--primary)); }
+.nd { outline: 1.5px dashed hsl(var(--warning)); outline-offset: 2px; border-radius: 6px; }
+body.hide-nd .nd { outline: none; }
+.compact { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 2px; border-bottom: 1px solid hsl(var(--border)); width: 100%; background: none; border-left: 0; border-right: 0; border-top: 0; text-align: left; }
+.compact .t { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.empty { border: 1.5px dashed hsl(var(--border)); border-radius: 12px; padding: 26px 14px; text-align: center; color: hsl(var(--muted-foreground)); font-size: 13px; }
+
+/* Detail */
+.archived-banner { margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid hsl(var(--border)); }
+.archived-banner .stripe { height: 6px; background: repeating-linear-gradient(135deg, hsl(var(--muted-foreground)) 0 8px, hsl(var(--muted)) 8px 16px); }
+.archived-banner .body { padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: hsl(var(--surface)); font-size: 12px; }
+.hold-banner { margin-top: 12px; border-radius: 12px; padding: 10px 12px; font-size: 12px; border: 1.5px solid hsl(var(--warning)); background: hsl(var(--warning) / .08); }
+.sec { margin-top: 10px; border: 1px solid hsl(var(--border)); border-radius: 12px; padding: 11px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: hsl(var(--card)); }
+.sec .lock { font-size: 11px; color: hsl(var(--muted-foreground)); }
+.statusrow { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 12px; background: hsl(var(--surface)); border: 1px solid hsl(var(--border)); }
+.closeout { margin-top: 10px; border: 1px solid hsl(var(--border)); border-radius: 12px; padding: 12px; background: hsl(var(--card)); font-size: 12px; display: grid; gap: 6px; }
+.closeout div { display: flex; justify-content: space-between; gap: 8px; }
+
+/* Sheet */
+.scrim { position: absolute; inset: 0; background: hsl(0 0% 0% / .45); display: none; align-items: flex-end; z-index: 5; }
+.scrim.open { display: flex; }
+.sheet { width: 100%; background: hsl(var(--background)); border-radius: 22px 22px 0 0; padding: 10px 16px 22px; }
+.grab { width: 40px; height: 4px; border-radius: 2px; background: hsl(var(--border)); margin: 0 auto 12px; }
+.opt { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; border: 1.5px solid hsl(var(--border)); background: hsl(var(--card)); border-radius: 12px; padding: 10px 12px; margin-top: 8px; }
+.opt.on { border-color: hsl(var(--primary)); background: hsl(var(--primary) / .08); }
+.opt small { display: block; color: hsl(var(--muted-foreground)); font-size: 11px; }
+.field { margin-top: 10px; display: grid; gap: 4px; font-size: 12px; }
+textarea { width: 100%; resize: vertical; }
+.toast { position: absolute; left: 50%; bottom: 76px; transform: translateX(-50%); background: hsl(var(--foreground)); color: hsl(var(--background)); padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; display: none; z-index: 6; white-space: nowrap; }
+.toast.show { display: block; }
+.toast button { background: none; border: 0; color: hsl(var(--primary)); font-weight: 700; margin-left: 10px; }
+
+/* Comparison + contact sheet */
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.panel { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 14px; padding: 14px; }
+.panel h4 { margin: 0 0 4px; font-size: 15px; }
+.panel .pro, .panel .con { font-size: 12px; margin: 6px 0 0; padding-left: 16px; }
+.panel .pro li::marker { content: "+  "; color: hsl(var(--success)); font-weight: 700; }
+.panel .con li::marker { content: "–  "; color: hsl(var(--destructive)); font-weight: 700; }
+.rec { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-radius: 4px; padding: 2px 6px; margin-left: 6px; vertical-align: middle; }
+.mini { margin-top: 10px; background: hsl(var(--background)); border: 1px solid hsl(var(--border)); border-radius: 10px; padding: 10px; font-size: 12px; }
+.sheetgrid { display: grid; grid-template-columns: 140px 1fr 1fr; gap: 10px 16px; align-items: center; font-size: 13px; }
+.sheetgrid .h { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: hsl(var(--muted-foreground)); }
+@media (max-width: 600px) { .sheetgrid { grid-template-columns: 1fr 1fr; } .sheetgrid .lbl { grid-column: 1 / -1; font-weight: 600; margin-top: 6px; } .sheetgrid .h:first-child { display: none; } }
+
+/* Idea bank */
+.ideas { display: grid; gap: 10px; }
+.idea { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 12px; padding: 12px 14px; }
+.idea h5 { margin: 0; font-size: 14px; }
+.idea p { margin: 2px 0 0; font-size: 12px; color: hsl(var(--muted-foreground)); }
+.idea .tags { font-size: 10px; margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { border: 1px solid hsl(var(--border)); border-radius: 4px; padding: 1px 6px; color: hsl(var(--muted-foreground)); }
+.verdict { display: flex; gap: 4px; align-self: start; }
+.verdict button { border: 1px solid hsl(var(--border)); background: hsl(var(--background)); border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 600; }
+.verdict button.on[data-v="v1"] { background: hsl(var(--primary)); border-color: transparent; color: hsl(var(--primary-foreground)); }
+.verdict button.on[data-v="later"] { background: hsl(var(--foreground)); border-color: transparent; color: hsl(var(--background)); }
+.verdict button.on[data-v="drop"] { background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); text-decoration: line-through; }
+.idea textarea { grid-column: 1 / -1; min-height: 34px; font-size: 12px; }
+.export { margin-top: 16px; display: grid; gap: 8px; }
+.export textarea { min-height: 220px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.qs { display: grid; gap: 10px; }
+.q { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 12px; padding: 12px 14px; }
+.q .seg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="hivis"></div>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Schreiber Hub · Design canvas · Jobs</div>
+      <h1 class="display">Active jobs &amp; Archive</h1>
+    </div>
+    <div class="row" style="gap:8px">
+      <button class="chipbtn" id="themeBtn" aria-pressed="false">Dark mode</button>
+      <button class="chipbtn" id="ndBtn" aria-pressed="true">Show new-data markers</button>
+    </div>
+  </header>
+  <div class="tldr">
+    <strong>TL;DR.</strong> Keep one <span class="mono">jobs</span> table; <span class="mono">status</span> decides where a job shows up. <span class="mono">/jobs</span> gets two tabs: <b>Active</b> (active + on hold) and <b>Archive</b> (complete). Office and admin change status from the job page; archived jobs become read-only.
+    <ul>
+      <li><b>Prototype:</b> try it below. Switch role and card style; mark a job complete and watch it move to Archive.</li>
+      <li><b>Comparisons:</b> navigation pattern, card density, status badges.</li>
+      <li><b>Idea bank:</b> mark each idea <i>v1 / later / drop</i>, add notes, then <b>Copy as markdown</b> and paste it back to Claude.</li>
+    </ul>
+  </div>
+
+  <!-- ============ PROTOTYPE ============ -->
+  <section class="block">
+    <h2 class="display">1 · Clickable prototype</h2>
+    <p class="lead">Mobile first, like the Hub (<span class="mono">max-w-2xl</span>, bottom nav). Colors, fonts and radii come from <span class="mono">src/index.css</span>. The jobs are made-up sample data.</p>
+    <div class="proto">
+      <div class="phone"><div class="screen" id="screen">
+        <div class="statusbar"><span>7:42</span><span>●●● ▮</span></div>
+        <div class="scroll" id="scroll"></div>
+        <div class="bottomnav"><span><i></i>Home</span><span class="on"><i></i>Jobs</span><span><i></i>Schedule</span><span><i></i>Safety</span></div>
+        <div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
+        <div class="toast" id="toast"></div>
+      </div></div>
+
+      <div class="controls">
+        <div class="ctrl-group">
+          <div class="eyebrow">View as</div>
+          <div class="seg" data-ctrl="role">
+            <button class="chipbtn" data-val="office" aria-pressed="true">Office / admin</button>
+            <button class="chipbtn" data-val="foreman" aria-pressed="false">Foreman</button>
+            <button class="chipbtn" data-val="employee" aria-pressed="false">Employee</button>
+          </div>
+          <div class="note">The database rules already allow only office and admin to change jobs. Employees and foremen see no status controls and no "New" button.</div>
+        </div>
+        <div class="ctrl-group">
+          <div class="eyebrow">Active card style</div>
+          <div class="seg" data-ctrl="variant">
+            <button class="chipbtn" data-val="rich" aria-pressed="true">A · Rich card</button>
+            <button class="chipbtn" data-val="compact" aria-pressed="false">B · Compact rows</button>
+            <button class="chipbtn" data-val="foreman" aria-pressed="false">C · By foreman</button>
+          </div>
+          <div class="note" id="variantNote"></div>
+        </div>
+        <div class="ctrl-group">
+          <div class="eyebrow">Top of list</div>
+          <div class="seg" data-ctrl="pulse">
+            <button class="chipbtn" data-val="on" aria-pressed="true">Pulse strip on</button>
+            <button class="chipbtn" data-val="off" aria-pressed="false">Off</button>
+          </div>
+          <div class="note">The pulse strip is a one-glance summary for the whole company: jobs running, crews out today, and finished this year.</div>
+        </div>
+        <div class="ctrl-group">
+          <div class="eyebrow">Legend</div>
+          <div class="legend" style="margin-top:8px">
+            <span><span class="newdata-swatch"></span>Needs a new field or a join that's not built yet</span>
+            <span><span class="badge b-active">Active</span> proposed badge</span>
+            <span><span class="badge b-hold">On hold</span></span>
+            <span><span class="badge b-complete">Complete</span></span>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <div class="eyebrow">Things to try</div>
+          <ol style="margin:6px 0 0; padding-left:18px; font-size:13px">
+            <li>Open a job, tap <b>Change status</b>, pick <b>Complete</b>. It moves to Archive with an Undo toast.</li>
+            <li>In Archive, search "pond" or filter by year.</li>
+            <li>Open an archived job: there's a banner, a closeout summary, read-only sections and a <b>Reopen</b> button.</li>
+            <li>Switch to Employee: the status controls disappear.</li>
+          </ol>
+          <button class="btn outline" id="resetBtn" style="margin-top:10px">Reset sample data</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARISONS ============ -->
+  <section class="block">
+    <h2 class="display">2 · Where does Archive live?</h2>
+    <p class="lead">Three navigation patterns. They all use the same database query; only the URL and screen layout differ.</p>
+    <div class="grid3">
+      <div class="panel">
+        <h4>Tabs on /jobs <span class="rec">Recommended</span></h4>
+        <div class="mini"><div class="tabs" style="margin:0"><button class="on">Active <span class="count">5</span></button><button>Archive <span class="count">6</span></button></div></div>
+        <ul class="pro"><li>One place to look; the counts show the archive exists</li><li>A <span class="mono">?view=archive</span> link can be shared</li><li>Matches shadcn <span class="mono">Tabs</span>, which is already in the UI kit</li></ul>
+        <ul class="con"><li>Search and filters only appear on one tab, so the tab content varies</li></ul>
+      </div>
+      <div class="panel">
+        <h4>Separate /jobs/archive route</h4>
+        <div class="mini">Jobs list … <u>View archive (6) →</u> at the bottom</div>
+        <ul class="pro"><li>Keeps the Active screen simple</li><li>Archive can grow its own layout, e.g. a table on desktop</li></ul>
+        <ul class="con"><li>Easy to miss on mobile</li><li>Adds a route, which means updating the codebase map</li></ul>
+      </div>
+      <div class="panel">
+        <h4>Status filter chips</h4>
+        <div class="mini"><span class="chipbtn" style="background:hsl(var(--foreground));color:hsl(var(--background))">Active</span> <span class="chipbtn">On hold</span> <span class="chipbtn">Complete</span> <span class="chipbtn">All</span></div>
+        <ul class="pro"><li>Flexible; office staff can view "All"</li></ul>
+        <ul class="con"><li>"Archive" isn't named as a place, so it's a weaker mental model for field crews</li><li>Mixing statuses makes the list noisy</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2 class="display">3 · Status badges: current vs proposed</h2>
+    <p class="lead">Problem in the current code: <span class="mono">active</span> uses <span class="mono">text-primary</span>, which is yellow text on a white card and hard to read. <span class="mono">on_hold</span> uses <span class="mono">accent</span>, which is the same yellow, so the two statuses look nearly identical. Toggle dark mode at the top to compare both themes.</p>
+    <div class="panel">
+      <div class="sheetgrid">
+        <div class="h">State</div><div class="h">Current</div><div class="h">Proposed</div>
+        <div class="lbl">Active</div><div><span class="badge b-cur-active">active</span></div><div><span class="badge b-active">Active</span> <span class="muted" style="font-size:12px">solid hi-vis yellow, black text</span></div>
+        <div class="lbl">On hold</div><div><span class="badge b-cur-hold">on hold</span></div><div><span class="badge b-hold">On hold</span> <span class="muted" style="font-size:12px">orange outline, uses the warning token</span></div>
+        <div class="lbl">Complete</div><div><span class="badge b-cur-complete">complete</span></div><div><span class="badge b-complete">Complete</span> <span class="muted" style="font-size:12px">muted; the card is also dimmed in Archive</span></div>
+        <div class="lbl">Crew on site today</div><div class="muted">—</div><div><span class="dot"></span> <span style="font-size:12px">green dot from today's schedule assignments</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ IDEA BANK ============ -->
+  <section class="block">
+    <h2 class="display">4 · Idea bank: mark v1 / later / drop</h2>
+    <p class="lead">Each idea lists the data it needs. Your choices and notes go into the markdown export at the bottom; the button saves nothing to a server.</p>
+    <div class="ideas" id="ideas"></div>
+    <h2 class="display" style="margin-top:32px;font-size:18px">Open decisions</h2>
+    <div class="qs" id="qs"></div>
+    <div class="export">
+      <div class="row" style="justify-content:space-between">
+        <div class="eyebrow">Export: paste back to Claude</div>
+        <button class="btn" id="copyBtn">Copy as markdown</button>
+      </div>
+      <textarea id="out" readonly></textarea>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = (d) => d ? new Date(d + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+
+const SEED = [
+  { id: 1, num: "2611", name: "Maple Ridge Subdivision Ph 2", addr: "Maple Ridge Rd, Tipp City", status: "active", foreman: "R. Alvarez", start: "2026-08-04", progress: .62, today: "Storm line, lots 14–18", crew: 6, customer: "Ridgeline Homes" },
+  { id: 2, num: "2614", name: "County Rd 25A Culvert Replacement", addr: "CR 25A at Mile 8", status: "active", foreman: "J. Kim", start: "2026-09-21", progress: .3, today: "Cofferdam + dewatering", crew: 4, customer: "Miami County" },
+  { id: 3, num: "2620", name: "Westside Water Main Ext.", addr: "W. Main St, Troy", status: "active", foreman: "T. Nguyen", start: "2026-06-02", progress: .85, today: "Pressure test, Sta 12+00", crew: 5, customer: "City of Troy" },
+  { id: 4, num: "2622", name: "Elm St Demo & Grade", addr: "418 Elm St, Piqua", status: "active", foreman: "R. Alvarez", start: "2026-10-12", progress: .1, today: null, crew: 0, customer: "Private" },
+  { id: 5, num: "2617", name: "Northgate Retail Pad", addr: "Northgate Blvd", status: "on_hold", foreman: "D. Patel", start: "2026-07-15", progress: .4, today: null, crew: 0, customer: "Northgate LLC", hold: "Waiting on EPA permit revision" },
+  { id: 6, num: "2598", name: "Riverbend Park Trail", addr: "Riverbend Park", status: "complete", foreman: "J. Kim", start: "2026-04-01", completed: "2026-09-18", by: "K. Office", customer: "Parks District" },
+  { id: 7, num: "2590", name: "Hillcrest School Lot Expansion", addr: "Hillcrest Elementary", status: "complete", foreman: "T. Nguyen", start: "2026-05-11", completed: "2026-07-30", by: "K. Office", customer: "Hillcrest Schools" },
+  { id: 8, num: "2581", name: "Oak Grove Detention Pond", addr: "Oak Grove Rd", status: "complete", foreman: "R. Alvarez", start: "2026-02-20", completed: "2026-05-12", by: "M. Admin", customer: "Oak Grove HOA" },
+  { id: 9, num: "2544", name: "Route 40 Utility Relocation", addr: "US-40 east of Vandalia", status: "complete", foreman: "D. Patel", start: "2025-06-09", completed: "2025-11-20", by: "K. Office", customer: "ODOT D7" },
+  { id: 10, num: "2530", name: "Fairview Church Parking", addr: "Fairview Church", status: "complete", foreman: "J. Kim", start: "2025-05-02", completed: "2025-08-14", by: "K. Office", customer: "Fairview Church" },
+  { id: 11, num: "2502", name: "Cedar Lane Sanitary Sewer", addr: "Cedar Ln", status: "complete", foreman: "T. Nguyen", start: "2024-06-10", completed: "2024-10-02", by: "M. Admin", customer: "City of Piqua" },
+];
+const TODAY = "2026-10-26";
+let jobs = structuredClone(SEED);
+const st = { view: "list", tab: "active", role: "office", variant: "rich", pulse: "on", q: "", year: "all", sel: null, sheet: null, pick: null, undo: null };
+const canEdit = () => st.role === "office";
+const VARIANT_NOTES = {
+  rich: "A: every card answers \"what's happening there today?\" It needs a join to today's schedule assignments (the dashed parts). Best for company-wide awareness.",
+  compact: "B: one line per job, so 10+ jobs fit without scrolling. Uses only data that exists today. Best for office staff scanning numbers.",
+  foreman: "C: grouped by foreman (uses jobs.foreman_id, which already exists). Answers \"who runs what\" and shows overloaded foremen.",
+};
+
+const badge = (s) => s === "active" ? `<span class="badge b-active">Active</span>` : s === "on_hold" ? `<span class="badge b-hold">On hold</span>` : `<span class="badge b-complete">Complete</span>`;
+const activeJobs = () => jobs.filter((j) => j.status !== "complete").sort((a, b) => (a.status === "on_hold") - (b.status === "on_hold") || b.start.localeCompare(a.start));
+const archived = () => jobs.filter((j) => j.status === "complete").sort((a, b) => b.completed.localeCompare(a.completed));
+
+function richCard(j) {
+  return `<button class="card" data-open="${j.id}">
+    <div class="row"><span class="mono muted" style="font-size:10px">#${esc(j.num)}</span>${badge(j.status)}
+      ${j.crew ? `<span class="row nd" style="margin-left:auto;font-size:11px"><span class="dot"></span>${j.crew} on site</span>` : ""}</div>
+    <div class="title">${esc(j.name)}</div>
+    <div class="meta"><span>📍 ${esc(j.addr)}</span><span>👷 ${esc(j.foreman)}</span></div>
+    ${j.status === "on_hold" ? `<div class="today" style="color:hsl(var(--warning))">⏸ ${esc(j.hold)}</div>` :
+      j.today ? `<div class="today nd"><b style="font-size:11px">TODAY</b> ${esc(j.today)}</div>` : `<div class="today muted">No crew scheduled today</div>`}
+    <div class="bar nd"><i style="width:${Math.round((j.progress || 0) * 100)}%"></i></div>
+  </button>`;
+}
+function compactRow(j) {
+  return `<button class="compact" data-open="${j.id}">
+    <span class="mono muted" style="font-size:11px">#${esc(j.num)}</span>
+    <span style="min-width:0"><div class="t">${esc(j.name)}</div><div class="muted" style="font-size:11px">${esc(j.foreman)} · since ${fmt(j.start)}</div></span>
+    ${j.status === "on_hold" ? badge(j.status) : j.crew ? `<span class="row" style="font-size:11px"><span class="dot"></span>${j.crew}</span>` : `<span class="muted" style="font-size:11px">—</span>`}
+  </button>`;
+}
+function archiveCard(j) {
+  return `<button class="card dim" data-open="${j.id}">
+    <div class="row"><span class="mono muted" style="font-size:10px">#${esc(j.num)}</span>${badge(j.status)}<span class="muted" style="margin-left:auto;font-size:11px">Done ${fmt(j.completed)}</span></div>
+    <div class="title">${esc(j.name)}</div>
+    <div class="meta"><span>🏢 ${esc(j.customer)}</span><span>👷 ${esc(j.foreman)}</span></div>
+  </button>`;
+}
+
+function renderList() {
+  const act = activeJobs(), arc = archived();
+  let h = `<button class="back">← Home</button>
+    <div class="pagehead"><div><h3 class="display">Jobs</h3><div class="muted" style="font-size:12px">${st.tab === "active" ? "What's running right now" : "Finished projects"}</div></div>
+    ${canEdit() && st.tab === "active" ? `<button class="btn">+ New</button>` : ""}</div>
+    <div class="tabs"><button data-tab="active" class="${st.tab === "active" ? "on" : ""}">Active<span class="count">${act.length}</span></button>
+      <button data-tab="archive" class="${st.tab === "archive" ? "on" : ""}">Archive<span class="count">${arc.length}</span></button></div>`;
+
+  if (st.tab === "active") {
+    if (st.pulse === "on") {
+      const crews = act.filter((j) => j.crew).length, people = act.reduce((s, j) => s + (j.crew || 0), 0);
+      const doneYr = arc.filter((j) => j.completed.startsWith(TODAY.slice(0, 4))).length;
+      h += `<div class="pulse"><div><b>${act.filter((j) => j.status === "active").length}</b><small>Running</small></div>
+        <div class="nd"><b>${crews}<span style="font-size:12px;font-family:Inter"> / ${people}</span></b><small>Crews / people out</small></div>
+        <div><b>${doneYr}</b><small>Done in ${TODAY.slice(0, 4)}</small></div></div>`;
+    }
+    h += `<div class="list">`;
+    if (!act.length) h += `<div class="empty">No active jobs.${canEdit() ? "<br>Tap \"New\" to add one." : ""}</div>`;
+    else if (st.variant === "rich") h += act.map(richCard).join("");
+    else if (st.variant === "compact") h += `<div>${act.map(compactRow).join("")}</div>`;
+    else {
+      const by = {};
+      act.forEach((j) => (by[j.foreman] ||= []).push(j));
+      h += Object.entries(by).map(([f, js]) => `<div class="grouphead"><span class="eyebrow">👷 ${esc(f)}</span><span class="muted" style="font-size:11px">${js.length} job${js.length > 1 ? "s" : ""}</span></div>${js.map(compactRow).join("")}`).join("");
+    }
+    h += `</div>`;
+  } else {
+    const years = [...new Set(arc.map((j) => j.completed.slice(0, 4)))];
+    const q = st.q.trim().toLowerCase();
+    const rows = arc.filter((j) => (st.year === "all" || j.completed.startsWith(st.year)) &&
+      (!q || [j.name, j.num, j.customer, j.foreman].join(" ").toLowerCase().includes(q)));
+    h += `<div class="search"><input id="q" placeholder="Search name, #, customer, foreman" value="${esc(st.q)}">
+      <select id="yr"><option value="all">All yrs</option>${years.map((y) => `<option ${st.year === y ? "selected" : ""}>${y}</option>`).join("")}</select></div><div class="list">`;
+    if (!rows.length) h += `<div class="empty">No archived jobs match “${esc(st.q)}”.</div>`;
+    let last = null;
+    rows.forEach((j) => {
+      const y = j.completed.slice(0, 4);
+      if (y !== last) { h += `<div class="grouphead"><span class="eyebrow">${y}</span><span class="muted" style="font-size:11px">${rows.filter((r) => r.completed.startsWith(y)).length}</span></div>`; last = y; }
+      h += archiveCard(j);
+    });
+    h += `</div><div class="muted" style="font-size:11px;text-align:center;margin-top:12px">Loads 25 at a time with <span class="mono">.range()</span></div>`;
+  }
+  return h;
+}
+
+function renderDetail() {
+  const j = jobs.find((x) => x.id === st.sel);
+  const arch = j.status === "complete";
+  const secs = ["Files & plans", "Photos", "Permits", "Dig tickets", "SWPPP", "Lookahead"];
+  let h = `<button class="back" data-back>← ${arch ? "Archive" : "All jobs"}</button>
+    <div style="margin-top:12px" class="row"><span class="mono muted" style="font-size:12px">#${esc(j.num)}</span>${badge(j.status)}</div>
+    <h3 class="display" style="margin:4px 0 0;font-size:22px;line-height:1.15">${esc(j.name)}</h3>
+    <div style="font-size:13px;margin-top:4px;color:hsl(var(--foreground))">📍 <u>${esc(j.addr)}</u></div>`;
+  if (arch) h += `<div class="archived-banner"><div class="stripe"></div><div class="body"><span><b>Archived</b> · completed ${fmt(j.completed)} by ${esc(j.by)}</span>
+      ${canEdit() ? `<button class="btn outline" data-reopen style="padding:5px 10px">Reopen</button>` : ""}</div></div>
+    <div class="closeout nd"><div class="eyebrow" style="font-size:10px">Closeout summary</div>
+      <div><span class="muted">Ran</span><span>${fmt(j.start)} → ${fmt(j.completed)}</span></div>
+      <div><span class="muted">Customer</span><span>${esc(j.customer)}</span></div>
+      <div><span class="muted">Foreman</span><span>${esc(j.foreman)}</span></div>
+      <div><span class="muted">Photos / permits / reports</span><span>48 / 3 / 0 incidents</span></div>
+      <div><span class="muted">Lessons learned</span><span style="text-align:right">“Dewatering took 2× est.”</span></div></div>`;
+  if (j.status === "on_hold") h += `<div class="hold-banner"><b style="color:hsl(var(--warning))">On hold</b> · ${esc(j.hold || "No reason given")}</div>`;
+  if (canEdit()) h += `<div class="statusrow"><span style="font-size:13px">Status ${badge(j.status)}</span><button class="btn dark" data-status style="padding:6px 10px">Change status</button></div>`;
+  if (!arch && j.today) h += `<div class="today nd" style="margin-top:12px"><span class="dot"></span><b style="font-size:11px">TODAY</b> ${esc(j.today)} · ${j.crew} people</div>`;
+  h += secs.map((s) => `<div class="sec"><span>${s}</span>${arch ? `<span class="lock">🔒 read-only</span>` : `<span class="muted">›</span>`}</div>`).join("");
+  if (!arch) h += `<button class="btn block" style="margin-top:12px">Request truck</button>`;
+  return h;
+}
+
+function renderSheet() {
+  const j = jobs.find((x) => x.id === st.sel);
+  const opts = [["active", "Active", "Shows in Schedule, Whiteboard and safety pickers"], ["on_hold", "On hold", "Stays in the Active tab with a badge; leaves the pickers"], ["complete", "Complete → Archive", "Moves to Archive; the job becomes read-only"]];
+  return `<div class="grab"></div><div class="display" style="font-size:17px">Change status</div>
+    <div class="muted" style="font-size:12px">#${esc(j.num)} · ${esc(j.name)}</div>
+    ${opts.map(([v, l, d]) => `<button class="opt ${st.pick === v ? "on" : ""}" data-pick="${v}"><span>${badge(v)}</span><span><b style="font-size:13px">${l}</b><small>${d}</small></span></button>`).join("")}
+    ${st.pick === "on_hold" ? `<label class="field">Reason (shown on the card)<input id="holdReason" placeholder="e.g. Waiting on permit"></label>` : ""}
+    ${st.pick === "complete" ? `<label class="field">Completed on<input id="doneDate" type="date" value="${TODAY}"></label><label class="field">Closeout note (optional)<textarea placeholder="Lessons learned, final punch items…"></textarea></label>` : ""}
+    <div class="row" style="margin-top:14px;gap:8px"><button class="btn outline" style="flex:1" data-cancel>Cancel</button>
+      <button class="btn" data-confirm ${!st.pick || st.pick === j.status ? "disabled style='flex:2;opacity:.4'" : "style='flex:2'"}>Save</button></div>`;
+}
+
+let toastTimer;
+function toast(msg, undo) {
+  const t = $("#toast");
+  t.innerHTML = esc(msg) + (undo ? `<button data-undo>Undo</button>` : "");
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 5000);
+}
+
+function render() {
+  const sc = $("#scroll");
+  sc.innerHTML = st.view === "list" ? renderList() : renderDetail();
+  $("#scrim").classList.toggle("open", !!st.sheet);
+  if (st.sheet) $("#sheet").innerHTML = renderSheet();
+  $("#variantNote").textContent = VARIANT_NOTES[st.variant];
+}
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button, .scrim");
+  if (!t) return;
+  if (t.id === "scrim" && e.target === t) { st.sheet = null; return render(); }
+  const d = t.dataset;
+  if (d.tab) { st.tab = d.tab; render(); $("#scroll").scrollTop = 0; }
+  else if (d.open) { st.sel = +d.open; st.view = "detail"; render(); $("#scroll").scrollTop = 0; }
+  else if ("back" in d) { st.view = "list"; render(); }
+  else if ("status" in d) { st.sheet = true; st.pick = jobs.find((x) => x.id === st.sel).status; render(); }
+  else if (d.pick) { st.pick = d.pick; render(); }
+  else if ("cancel" in d) { st.sheet = null; render(); }
+  else if ("confirm" in d) {
+    const j = jobs.find((x) => x.id === st.sel);
+    st.undo = structuredClone(j);
+    if (st.pick === "on_hold") j.hold = $("#holdReason")?.value || "No reason given";
+    if (st.pick === "complete") { j.completed = $("#doneDate")?.value || TODAY; j.by = "You"; j.crew = 0; j.today = null; }
+    if (st.pick !== "complete") delete j.completed;
+    j.status = st.pick; st.sheet = null;
+    if (j.status === "complete") { st.view = "list"; st.tab = "archive"; }
+    render();
+    toast(j.status === "complete" ? `#${j.num} moved to Archive` : `Status set to ${j.status.replace("_", " ")}`, true);
+  }
+  else if ("reopen" in d) {
+    const j = jobs.find((x) => x.id === st.sel);
+    st.undo = structuredClone(j);
+    j.status = "active"; delete j.completed; st.view = "list"; st.tab = "active"; render();
+    toast(`#${j.num} reopened`, true);
+  }
+  else if ("undo" in d && st.undo) {
+    const i = jobs.findIndex((x) => x.id === st.undo.id);
+    jobs[i] = st.undo; st.undo = null; $("#toast").classList.remove("show"); render();
+  }
+  else if (t.closest("[data-ctrl]")) {
+    const g = t.closest("[data-ctrl]");
+    st[g.dataset.ctrl] = t.dataset.val;
+    g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b === t));
+    if (g.dataset.ctrl === "variant" || g.dataset.ctrl === "pulse") { st.view = "list"; st.tab = "active"; }
+    render();
+  }
+  else if (t.id === "resetBtn") { jobs = structuredClone(SEED); Object.assign(st, { view: "list", tab: "active", q: "", year: "all", sheet: null }); render(); }
+});
+document.addEventListener("input", (e) => {
+  if (e.target.id === "q") { st.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $("#q"); q.focus(); q.setSelectionRange(pos, pos); }
+});
+document.addEventListener("change", (e) => { if (e.target.id === "yr") { st.year = e.target.value; render(); } });
+
+// Theme + new-data markers
+$("#themeBtn").onclick = (e) => {
+  const dark = document.documentElement.dataset.theme !== "dark";
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  e.target.setAttribute("aria-pressed", dark);
+};
+if (matchMedia("(prefers-color-scheme: dark)").matches) { document.documentElement.dataset.theme = "dark"; $("#themeBtn").setAttribute("aria-pressed", "true"); }
+$("#ndBtn").onclick = (e) => { const on = document.body.classList.toggle("hide-nd"); e.target.setAttribute("aria-pressed", !on); };
+
+// Idea bank
+const IDEAS = [
+  { t: "Active / Archive tabs on /jobs", d: "Two tabs with counts; ?view=archive in the URL.", data: "existing status", def: "v1" },
+  { t: "Status control on the job page (office/admin)", d: "Bottom sheet: Active / On hold / Complete, with a confirm step and an Undo toast.", data: "existing status", def: "v1" },
+  { t: "completed_at + completed_by, set by a trigger", d: "Sorts the archive and fills the year filter. The trigger sets it when status becomes complete and clears it on reopen.", data: "candidate migration", def: "v1" },
+  { t: "Archive search + year filter + paging", d: "Search name, job #, customer, foreman. Group by year. Load 25 at a time with .range().", data: "completed_at", def: "v1" },
+  { t: "Archived job read-only (UI) + Reopen", d: "Hide the edit and upload buttons and Request truck. A striped banner shows who closed it and when.", data: "completed_at/by", def: "v1" },
+  { t: "Fix status badge contrast", d: "Solid yellow for Active, orange outline for On hold, muted for Complete.", data: "none", def: "v1" },
+  { t: "Hold reason", d: "A short text field shown on the card and the job page when a job is on hold.", data: "new column hold_reason", def: "later" },
+  { t: "'Today' line + crew-on-site dot", d: "Join today's schedule assignments so each card shows who's there and what they're doing.", data: "join schedule_assignments", def: "later" },
+  { t: "Company pulse strip", d: "Jobs running, crews and people out today, jobs done this year.", data: "counts + schedule join", def: "later" },
+  { t: "Group by foreman view", d: "An alternative Active layout grouped by foreman; shows who has too many jobs.", data: "existing foreman_id", def: "later" },
+  { t: "Progress bar", d: "Percent complete per job. It would need a manual field or data from HCSS cost codes.", data: "new field or HCSS", def: "drop" },
+  { t: "Closeout summary on archived jobs", d: "Dates, customer, foreman, counts of photos, permits and incidents, plus a lessons-learned note.", data: "counts + closeout_note", def: "later" },
+  { t: "Map view of active jobs", d: "Pins from the latitude/longitude columns that already exist. Tap a pin to open the job.", data: "existing lat/lon", def: "later" },
+  { t: "Home tile: 'X jobs running'", d: "A summary on the Index page that links to /jobs.", data: "count", def: "later" },
+  { t: "Server-side read-only enforcement", d: "RLS on job_* child tables blocks writes when the parent job is complete.", data: "RLS migration", def: "later" },
+];
+const QS = [
+  { q: "Where do on-hold jobs live?", o: ["Active tab, with a badge", "Archive tab", "A third 'On hold' tab"] },
+  { q: "Who can see the Archive?", o: ["Everyone", "Foreman and above", "Office/admin only"] },
+  { q: "Source of truth for jobs?", o: ["Manual in the Hub", "Synced from HCSS", "Hybrid: HCSS creates, the Hub closes"] },
+  { q: "Default Active card style?", o: ["A · Rich", "B · Compact", "C · By foreman", "Rich on mobile, compact on desktop"] },
+];
+const ideaState = IDEAS.map((i) => ({ v: i.def, note: "" }));
+const qState = QS.map(() => ({ a: null }));
+
+function renderIdeas() {
+  $("#ideas").innerHTML = IDEAS.map((i, k) => `<div class="idea">
+    <div><h5>${esc(i.t)}</h5><p>${esc(i.d)}</p><div class="tags"><span class="tag">data: ${esc(i.data)}</span></div></div>
+    <div class="verdict" data-idea="${k}">${["v1", "later", "drop"].map((v) => `<button data-v="${v}" class="${ideaState[k].v === v ? "on" : ""}">${v}</button>`).join("")}</div>
+    <textarea data-note="${k}" placeholder="Notes / tweaks…">${esc(ideaState[k].note)}</textarea></div>`).join("");
+  $("#qs").innerHTML = QS.map((q, k) => `<div class="q"><b style="font-size:13px">${esc(q.q)}</b><div class="seg" data-q="${k}">
+    ${q.o.map((o) => `<button class="chipbtn" aria-pressed="${qState[k].a === o}">${esc(o)}</button>`).join("")}</div></div>`).join("");
+  exportMd();
+}
+function exportMd() {
+  const groups = { v1: [], later: [], drop: [] };
+  IDEAS.forEach((i, k) => groups[ideaState[k].v].push(`- ${i.t}${ideaState[k].note ? ` — ${ideaState[k].note}` : ""}`));
+  const card = document.querySelector('[data-ctrl="variant"] [aria-pressed="true"]').textContent;
+  $("#out").value = `# Jobs Active/Archive: review\n\n## v1\n${groups.v1.join("\n") || "- (none)"}\n\n## Later\n${groups.later.join("\n") || "- (none)"}\n\n## Dropped\n${groups.drop.join("\n") || "- (none)"}\n\n## Decisions\n${QS.map((q, k) => `- ${q.q} **${qState[k].a ?? "undecided"}**`).join("\n")}\n- Card style last viewed in prototype: ${card}\n`;
+}
+$("#ideas").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-v]"); if (!b) return;
+  ideaState[+b.parentElement.dataset.idea].v = b.dataset.v; renderIdeas();
+});
+$("#ideas").addEventListener("input", (e) => { if (e.target.dataset.note) { ideaState[+e.target.dataset.note].note = e.target.value; exportMd(); } });
+$("#qs").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  qState[+b.parentElement.dataset.q].a = b.textContent; renderIdeas();
+});
+document.querySelector('[data-ctrl="variant"]').addEventListener("click", () => setTimeout(exportMd));
+$("#copyBtn").onclick = async () => {
+  try { await navigator.clipboard.writeText($("#out").value); $("#copyBtn").textContent = "Copied ✓"; }
+  catch { $("#out").select(); document.execCommand("copy"); $("#copyBtn").textContent = "Copied ✓"; }
+  setTimeout(() => ($("#copyBtn").textContent = "Copy as markdown"), 1500);
+};
+
+render();
+renderIdeas();
+</script>
+</body>
+</html>
