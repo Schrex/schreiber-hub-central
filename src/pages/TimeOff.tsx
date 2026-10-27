@@ -7,6 +7,7 @@ import { format, parseISO, eachDayOfInterval } from "date-fns";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,7 +71,9 @@ const datesOverlap = (aStart: string, aEnd: string, bStart: string, bEnd: string
 
 const TimeOffPage = () => {
   const { user, role, displayName } = useAuth();
-  const isAdmin = role === "admin";
+  const { can } = useAccess();
+  const isAdmin = can("timeOff.approve");
+  // Notice period is a business rule on the requester's primary role, not an access check.
   const isForeman = role === "foreman";
   const requiredNoticeDays = isForeman ? 28 : 14;
   const [items, setItems] = useState<TimeOff[]>([]);
