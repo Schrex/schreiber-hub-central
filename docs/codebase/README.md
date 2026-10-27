@@ -1,6 +1,7 @@
 # Codebase map — overview
 
-Last checked against `develop` @ `f026a29` (2026-10-25). Update this map when routes, tables,
+Last checked against `develop` @ `f026a29` (2026-10-25); auth/roles against
+`feature/access-policy` @ `8fa0fcc` (2026-10-27). Update this map when routes, tables,
 Edge functions, environments or release steps change. Detail files are read on demand:
 
 - [frontend.md](frontend.md) — routes, auth/roles, data access, features → files, UI, tests
@@ -73,15 +74,20 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 
 ## Known issues (not yet fixed)
 
-- Pages not yet on the access module (`lib/access.ts`) mix real vs preview role inconsistently;
-  employee-contact edit is still foreman|admin in the UI while RLS allows office|admin.
+- Fixed (#43, `feature/access-policy`): UI gating goes through `lib/access.ts` (`can`/`useAccess`).
+  `ProtectedRoute` honours preview (admin previewing hides `/hr`, `/admin/*`); `useAuth` stays
+  loading until roles load, so direct admin-route opens no longer bounce home; any role held
+  counts (like `has_role()`); employee-contact edit is office|admin like RLS. Guarded by
+  `src/test/noInlineRoleChecks.test.ts`; RLS parity by `test:local:access`.
 - AI (`*.lovable.dev` gateway) and Twilio SMS Edge functions depend on retired Lovable
   services; likely broken in production (unverified). `notify-talk-attendees` hardcodes a
   `lovable.app` URL. `independentLaunch` flag hides most of these features.
 - "Today" is computed inconsistently outside the jobs helpers: `SafetyViolationDialog` uses the
   UTC date (`toISOString().slice(0,10)`), `Safety.tsx` and the rest of `Schedule.tsx` (week strip,
   past-day locks, date mins) use the browser's local date, `AccidentReportDialog` uses local time.
-  Only the Schedule carry-forward uses `todayInNewYork()` (`lib/jobs.ts`).
+  Only the Schedule carry-forward and `useAuth` position lookup use `todayInNewYork()` (`lib/jobs.ts`);
+  `lib/currentPositions.ts` (and MyPosition, AdminPositions, Dispatch, several job sections) still
+  use the UTC date, so evenings in New York can read tomorrow's positions/dates.
 - Realtime and Edge runtime are disabled locally — subscriptions and functions untested locally.
 - 2 high-severity SheetJS (xlsx) advisories; 30 lint warnings; no proven production backup restore.
 
@@ -90,7 +96,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 | Task | Start at |
 | --- | --- |
 | Add/change a page or route | `src/App.tsx`, [frontend.md](frontend.md#routes) |
-| Role/permission behaviour | `src/hooks/useAuth.tsx`, RLS in [backend.md](backend.md#authorization) |
+| Role/permission behaviour | `src/lib/accessRules.ts` + `src/lib/access.ts`, [frontend.md](frontend.md#auth-and-roles), RLS in [backend.md](backend.md#authorization) |
 | New table / RLS / RPC | [backend.md](backend.md#migration-workflow) — write a candidate migration |
 | Edge function | `supabase/functions/<name>/`, [backend.md](backend.md#edge-functions) |
 | File uploads / buckets | [backend.md](backend.md#storage), `src/lib/resumableUpload.ts` |

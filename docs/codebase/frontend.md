@@ -49,14 +49,24 @@ BottomNav themselves — watch for a double nav.
   checks the effective role set (preview role while an admin previews, else every role held,
   any-match like `has_role()`); only `preview.switch` uses real roles. Unknown actions and a
   missing job for `orJobForeman` rules fail at compile time. Matrix test `src/test/access.test.ts`.
-- Callers so far: `ProtectedRoute requireAction` (waits for `ready`, then redirects) and the
-  Index role switcher (`preview.switch`). Other pages still use inline checks
-  (`role === "office" || role === "admin"`, `visibleFileSources()` in `components/jobs/jobFiles.ts`);
-  some use `effectiveRole ?? role` (JobDetail, Whiteboard, Schedule, EmployeeContacts), others real
-  `role`. They migrate to `can()` in later #43 tickets.
+- All UI gating goes through `can()` / `useAccess()` (#44–#51): `ProtectedRoute requireAction`
+  (`admin.open` for `/hr`, `/admin/*`; waits for `ready`, then redirects), Index tiles and role
+  switcher, job screens/files, schedule, whiteboard, contacts and the remaining pages.
+  New gating = add or reuse an action in `accessRules.ts` (+ row in `access.test.ts`), never an
+  inline role comparison.
+- Guard: `src/test/noInlineRoleChecks.test.ts` fails on `role === "<role>"`-style comparisons,
+  `roles.includes("<role>")` and `switch (role)` outside `lib/access*` and `hooks/useAuth.tsx`
+  (preview internals). Exceptions go in its `ALLOWLIST` (file + exact line + reason; stale
+  entries fail); currently empty. Classifying *other* users' roles (Whiteboard/Schedule office
+  filter over `rolesByUser`, `AdminUsers` rank) is not gating and is not matched.
+- `useAuth` fields after the migration: `roles`, `previewRole`, `rolesLoaded`, `user` feed
+  `useAccess`; `effectiveRole` is UI display only (Index header badge, `RoleSwitcher` value);
+  `role` (real primary) only for the TimeOff notice period (`NOTICE_POLICY`, foreman 28 days,
+  others 14 — business rule, ignores preview); `loading` for session waits (Auth, TakeSafetyTalk).
+- RLS parity: `bun run test:local:access` (in `verify:backend`, needs the local backend) checks
+  every table-linked rule against RLS; see [backend.md](backend.md#backend-tests-bun-run-verifybackend).
 - Login (`pages/Auth.tsx`): email/password via Supabase; Google via
   `integrations/lovable` (disabled locally and under `independentLaunch`).
-- Known issues: pages outside the access module mix real vs preview role (see overview).
 
 ## Data access
 

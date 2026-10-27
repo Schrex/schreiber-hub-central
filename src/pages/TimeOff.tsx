@@ -6,7 +6,7 @@ import { ArrowLeft, Plus, Palmtree, AlertTriangle, Check, X, Calendar as Calenda
 import { format, parseISO, eachDayOfInterval } from "date-fns";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type Role } from "@/hooks/useAuth";
 import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,13 +69,22 @@ const formSchema = z.object({
 const datesOverlap = (aStart: string, aEnd: string, bStart: string, bEnd: string) =>
   aStart <= bEnd && bStart <= aEnd;
 
+const EMPLOYEE_NOTICE = { days: 14, text: "Employees are expected to give at least 2 weeks' notice" };
+
+/** Notice period by the requester's primary (real) role. A business rule, not an access check. */
+const NOTICE_POLICY: Record<Role, { days: number; text: string }> = {
+  employee: EMPLOYEE_NOTICE,
+  foreman: { days: 28, text: "Foremen are expected to give at least 4 weeks' notice" },
+  office: EMPLOYEE_NOTICE,
+  admin: EMPLOYEE_NOTICE,
+};
+
 const TimeOffPage = () => {
   const { user, role, displayName } = useAuth();
   const { can } = useAccess();
   const isAdmin = can("timeOff.approve");
-  // Notice period is a business rule on the requester's primary role, not an access check.
-  const isForeman = role === "foreman";
-  const requiredNoticeDays = isForeman ? 28 : 14;
+  const notice = NOTICE_POLICY[role ?? "employee"];
+  const requiredNoticeDays = notice.days;
   const [items, setItems] = useState<TimeOff[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -540,7 +549,7 @@ const TimeOffPage = () => {
               <AlertTriangle className="h-5 w-5 text-amber-500" /> Short notice
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {isForeman ? "Foremen are expected to give at least 4 weeks' notice" : "Employees are expected to give at least 2 weeks' notice"} for vacation and personal days.
+              {notice.text} for vacation and personal days.
               {startDate && ` This request starts in ${noticeDaysFromNow(startDate)} day${noticeDaysFromNow(startDate) === 1 ? "" : "s"}.`} You can submit it anyway, but approval is not guaranteed.
             </AlertDialogDescription>
           </AlertDialogHeader>

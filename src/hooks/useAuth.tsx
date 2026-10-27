@@ -8,13 +8,18 @@ export type Role = "employee" | "foreman" | "office" | "admin";
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
-  /** Highest role held (primary). */
+  /**
+   * Highest role held (primary). Not for access checks: use `useAccess().can()`.
+   * Only business rules about the user themself read it (TimeOff notice period).
+   */
   role: Role | null;
-  /** Every role held, highest first. Empty until `rolesLoaded`. */
+  /** Every role held, highest first. Empty until `rolesLoaded`. Read by `useAccess`. */
   roles: Role[];
   /** True once the session is known and, if signed in, its roles have loaded. */
   rolesLoaded: boolean;
+  /** Preview role for an admin, else `role`. UI display only (header badge, role switcher). */
   effectiveRole: Role | null;
+  /** An admin's "preview as" role. Read by `useAccess`; set via `setPreviewRole`. */
   previewRole: Role | null;
   setPreviewRole: (r: Role | null) => void;
   displayName: string | null;
