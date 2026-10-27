@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { FileText, Plus, Trash2, Download, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,10 +58,10 @@ const STATUS_CLASS: Record<Status, string> = {
 };
 
 export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
-  const { user, role, effectiveRole } = useAuth();
-  const r = effectiveRole ?? role;
-  const canView = r === "foreman" || r === "office" || r === "admin";
-  const canEdit = r === "office" || r === "admin";
+  const { user } = useAuth();
+  const { can } = useAccess();
+  const canView = can("job.submittals.view");
+  const canEdit = can("job.submittals.edit");
 
   const [items, setItems] = useState<Submittal[]>([]);
   const [open, setOpen] = useState(false);

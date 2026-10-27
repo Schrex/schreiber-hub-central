@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Phone, Mail, MapPin, Plus, Pencil, Trash2, Download, Building2, ContactRound, ChevronDown, ChevronRight, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,9 +82,9 @@ const downloadVCard = (vcard: string, filename: string) => {
 const isFilled = (c: JobContact) => !!(c.name?.trim() || c.phone || c.email || c.company || c.address);
 
 export const JobContactsSection = ({ jobId, jobName, foremanId }: Props) => {
-  const { user, role: realRole, effectiveRole } = useAuth();
-  const role = effectiveRole ?? realRole;
-  const canEdit = role === "office" || role === "admin" || (role === "foreman" && user?.id === foremanId);
+  const { user } = useAuth();
+  const { can } = useAccess();
+  const canEdit = can("job.contacts.edit", { foremanId });
 
   const [contacts, setContacts] = useState<JobContact[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);

@@ -3,7 +3,7 @@ import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -16,9 +16,8 @@ interface ScopeItem {
 }
 
 export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
-  const { role, effectiveRole } = useAuth();
-  const r = effectiveRole ?? role;
-  const canEdit = r === "office" || r === "admin";
+  const { can } = useAccess();
+  const canEdit = can("job.scope.edit");
   const [items, setItems] = useState<ScopeItem[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);

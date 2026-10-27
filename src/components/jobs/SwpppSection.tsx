@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Cloud, Plus, Trash2, Download, Mail, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,9 +35,9 @@ const isoMonday = (d = new Date()) => {
 };
 
 export const SwpppSection = ({ jobId, jobNumber }: { jobId: string; jobNumber: string | null }) => {
-  const { role, effectiveRole, user } = useAuth();
-  const r = effectiveRole ?? role;
-  const canEdit = r === "office" || r === "admin";
+  const { user } = useAuth();
+  const { can } = useAccess();
+  const canEdit = can("job.swppp.edit");
 
   const [items, setItems] = useState<Report[]>([]);
   const [open, setOpen] = useState(false);

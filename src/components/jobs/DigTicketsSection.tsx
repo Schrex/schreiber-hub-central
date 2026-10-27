@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Plus, ExternalLink, Shovel, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,9 +55,9 @@ interface Props {
 }
 
 export const DigTicketsSection = ({ jobId }: Props) => {
-  const { role: realRole, effectiveRole, user } = useAuth();
-  const role = effectiveRole ?? realRole;
-  const canEdit = role === "office" || role === "admin";
+  const { user } = useAuth();
+  const { can } = useAccess();
+  const canEdit = can("job.digTickets.edit");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
