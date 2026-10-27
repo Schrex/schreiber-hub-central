@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { ACCESS_RULES, type AccessAction, type AccessRole, type Rule } from "@/lib/accessRules";
+import { decide } from "@/lib/accessDecision";
 
 export { ACCESS_RULES, type AccessAction, type AccessRole, type Rule };
 
@@ -28,24 +29,11 @@ export type AccessResource<A extends AccessAction> = RuleOf<A> extends { orJobFo
 /** Actions that need no resource (usable by the route guard). */
 export type PlainAccessAction = { [A in AccessAction]: AccessResource<A> extends [] ? A : never }[AccessAction];
 
-/** Roles a check runs against: the preview role while an admin previews, else every real role. */
-function effectiveRoles(viewer: Viewer, rule: Rule): readonly AccessRole[] {
-  if (rule.basis === "real") return viewer.roles;
-  if (viewer.previewRole && viewer.roles.includes("admin")) return [viewer.previewRole];
-  return viewer.roles;
-}
-
 /** True when the viewer may perform `action`. Deny by default: not ready, no session or no roles is false. */
 export function can<A extends AccessAction>(viewer: Viewer, action: A, ...resource: AccessResource<A>): boolean {
-  if (!viewer.ready || !viewer.userId || viewer.roles.length === 0) return false;
+  if (!viewer.ready) return false;
   const rule: Rule | undefined = ACCESS_RULES[action];
-  if (!rule) return false;
-  const roles = effectiveRoles(viewer, rule);
-  if (roles.some((r) => rule.roles.includes(r))) return true;
-  if (!rule.orJobForeman) return false;
-  // Today's UI: the job foreman exception applies to someone acting as a foreman.
-  const job = (resource as [JobFacts?])[0];
-  return roles.includes("foreman") && !!job?.foremanId && job.foremanId === viewer.userId;
+  return decide(rule, viewer, (resource as [JobFacts?])[0]);
 }
 
 /** Access checks for the signed-in user. Callers that redirect must wait for `ready`. */

@@ -6,11 +6,6 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-/** Whether the UI rule lets this actor through (explicit role set, any role held, or assigned foreman). */
-export function uiAllows(rule, actor) {
-  return rule.roles.some(role => actor.roles.includes(role)) || (rule.orJobForeman === true && actor.assignedForeman);
-}
-
 /** Compare UI and RLS for one rule check. probes: [{ actor, ui, rls }]. */
 export function judge(rule, probes) {
   const exceeds = probes.filter(p => p.ui && !p.rls).map(p => p.actor);
@@ -28,6 +23,7 @@ const NOTIFY_KEYS = ['order_id', 'rental_id', 'violation_id', 'assignment_id', '
 
 async function main() {
   const { ACCESS_RULES } = await import('../src/lib/accessRules.ts');
+  const { decide } = await import('../src/lib/accessDecision.ts'); // the UI's own decision
   const { createClient } = await import('@supabase/supabase-js');
   const { localStatus } = await import('./local-backend.mjs');
   const status = localStatus(); // Fixed loopback only; never env/hosted keys.
@@ -144,7 +140,7 @@ async function main() {
         for (const actor of actors) {
           const key = `${table}.${cmd}.${actor.name}`;
           if (!cache.has(key)) cache.set(key, await probe(actor, table, cmd));
-          probes.push({ actor: actor.name, ui: uiAllows(rule, actor), rls: cache.get(key) });
+          probes.push({ actor: actor.name, ui: decide(rule, { userId: actor.id, roles: actor.roles, previewRole: null }, { foremanId: assignedId }), rls: cache.get(key) });
         }
         const result = judge(rule, probes);
         const allowed = pick => probes.filter(p => p[pick]).map(p => p.actor).join(',') || '-';

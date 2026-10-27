@@ -6,7 +6,8 @@ import { ArrowLeft, Plus, Palmtree, AlertTriangle, Check, X, Calendar as Calenda
 import { format, parseISO, eachDayOfInterval } from "date-fns";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth, type Role } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
+import { noticeFor } from "@/lib/timeOffNotice";
 import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,21 +70,11 @@ const formSchema = z.object({
 const datesOverlap = (aStart: string, aEnd: string, bStart: string, bEnd: string) =>
   aStart <= bEnd && bStart <= aEnd;
 
-const EMPLOYEE_NOTICE = { days: 14, text: "Employees are expected to give at least 2 weeks' notice" };
-
-/** Notice period by the requester's primary (real) role. A business rule, not an access check. */
-const NOTICE_POLICY: Record<Role, { days: number; text: string }> = {
-  employee: EMPLOYEE_NOTICE,
-  foreman: { days: 28, text: "Foremen are expected to give at least 4 weeks' notice" },
-  office: EMPLOYEE_NOTICE,
-  admin: EMPLOYEE_NOTICE,
-};
-
 const TimeOffPage = () => {
-  const { user, role, displayName } = useAuth();
+  const { user, effectiveRole, displayName } = useAuth();
   const { can } = useAccess();
   const isAdmin = can("timeOff.approve");
-  const notice = NOTICE_POLICY[role ?? "employee"];
+  const notice = noticeFor(effectiveRole);
   const requiredNoticeDays = notice.days;
   const [items, setItems] = useState<TimeOff[]>([]);
   const [loading, setLoading] = useState(true);

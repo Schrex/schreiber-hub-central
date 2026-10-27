@@ -36,7 +36,9 @@ BottomNav themselves — watch for a double nav.
 - `src/hooks/useAuth.tsx` → `AuthProvider` / `useAuth()`: `session`, `user`, `role`, `roles`,
   `rolesLoaded`, `effectiveRole`, `previewRole`, `setPreviewRole`, `displayName`, `positionTitle`,
   `loading`, `signOut`. `loading` = `!rolesLoaded`: stays true until the session is known and its
-  roles have loaded (a failed load ends ready with no roles).
+  `user_roles` query settles; `displayName`/`positionTitle` fill in afterwards and do not gate
+  readiness. A failed roles query (thrown or returned `error`) ends ready with no roles (deny by
+  default) and is retried on the next auth event or app resume (focus/online/visibility).
 - `loadProfile` reads `user_roles` (`roles` = all held, highest first; `role` = primary, highest of
   admin > office > foreman > employee), `profiles.display_name`, `employee_positions` →
   `positions_public(title)` current as of `todayInNewYork()`.
@@ -44,7 +46,9 @@ BottomNav themselves — watch for a double nav.
 - Access module (UI gating only; RLS stays the authority): rule data in `lib/accessRules.ts`
   (`ACCESS_RULES`, no imports so `scripts/*.mjs` can load it; each rule = explicit `roles`,
   optional `orJobForeman`, `basis: "real"`, `rls` table/cmd list or `"ui-only"`, `narrower`
-  reason), logic in `lib/access.ts`: pure `can(viewer, action, ...job)` and
+  reason), pure decision in `lib/accessDecision.ts` (`decide`, `previewedRoles`; type-only
+  imports, shared with `scripts/local-access-policy.mjs` and `useAuth` `effectiveRole`),
+  hook/types in `lib/access.ts`: `can(viewer, action, ...job)` and
   `useAccess()` → `{ ready, can }`. Deny by default (not ready / no session / no roles);
   checks the effective role set (preview role while an admin previews, else every role held,
   any-match like `has_role()`); only `preview.switch` uses real roles. Unknown actions and a
@@ -60,9 +64,10 @@ BottomNav themselves — watch for a double nav.
   entries fail); currently empty. Classifying *other* users' roles (Whiteboard/Schedule office
   filter over `rolesByUser`, `AdminUsers` rank) is not gating and is not matched.
 - `useAuth` fields after the migration: `roles`, `previewRole`, `rolesLoaded`, `user` feed
-  `useAccess`; `effectiveRole` is UI display only (Index header badge, `RoleSwitcher` value);
-  `role` (real primary) only for the TimeOff notice period (`NOTICE_POLICY`, foreman 28 days,
-  others 14 — business rule, ignores preview); `loading` for session waits (Auth, TakeSafetyTalk).
+  `useAccess`; `effectiveRole` (from `previewedRoles`) is for display and the TimeOff notice
+  period (`lib/timeOffNotice.ts` `noticeFor`, foreman 28 days, others 14 — business rule, honours
+  preview like the rest of the page), plus Index header badge and `RoleSwitcher` value; `role`
+  (real primary) gates `setPreviewRole`; `loading` for session waits (Auth, TakeSafetyTalk).
 - RLS parity: `bun run test:local:access` (in `verify:backend`, needs the local backend) checks
   every table-linked rule against RLS; see [backend.md](backend.md#backend-tests-bun-run-verifybackend).
 - Login (`pages/Auth.tsx`): email/password via Supabase; Google via

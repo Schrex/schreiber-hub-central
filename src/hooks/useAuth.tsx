@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { todayInNewYork } from "@/lib/jobs";
+import { previewedRoles } from "@/lib/accessDecision";
+import { useResumeRefresh } from "@/hooks/useResumeRefresh";
 
 export type Role = "employee" | "foreman" | "office" | "admin";
 
@@ -47,6 +49,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [rolesLoaded, setRolesLoaded] = useState(false);
   const profileUserId = useRef<string | null>(null);
+  /** Signed-in user whose roles load failed; a resume retries it. */
+  const retryUserId = useRef<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [positionTitle, setPositionTitle] = useState<string | null>(null);
   const [previewRole, setPreviewRoleState] = useState<Role | null>(() => {
@@ -62,6 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(s?.user ?? null);
       if (!s?.user) {
         profileUserId.current = null;
+        retryUserId.current = null;
         setRoles([]);
         setRolesLoaded(true);
         setDisplayName(null);
@@ -98,32 +103,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loadProfile = async (userId: string) => {
     const today = todayInNewYork();
+    const current = () => profileUserId.current === userId; // ignore results after the user changed
+    const rolesQuery = supabase.from("user_roles").select("role").eq("user_id", userId);
+    const profileQuery = supabase.from("profiles").select("display_name").eq("user_id", userId).maybeSingle();
+    const positionsQuery = supabase
+      .from("employee_positions")
+      .select("position:positions_public(title), effective_date, end_date")
+      .eq("user_id", userId)
+      .lte("effective_date", today)
+      .order("effective_date", { ascending: false })
+      .limit(5);
+    // Start every query now (builders run when awaited); a failed detail load is display only.
+    const details = Promise.all([profileQuery, positionsQuery]).catch(() => null);
+
+    // Roles gate access, so they settle readiness on their own; profile and position fill in later.
     try {
-      const [{ data: roleRows }, { data: profile }, { data: pos }] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", userId),
-        supabase.from("profiles").select("display_name").eq("user_id", userId).maybeSingle(),
-        supabase
-          .from("employee_positions")
-          .select("position:positions_public(title), effective_date, end_date")
-          .eq("user_id", userId)
-          .lte("effective_date", today)
-          .order("effective_date", { ascending: false })
-          .limit(5),
-      ]);
-      // Ignore a load that finished after the user changed
-      if (profileUserId.current !== userId) return;
+      const { data: roleRows, error } = await rolesQuery;
+      if (error) throw error;
+      if (!current()) return;
+      retryUserId.current = null;
       setRoles(sortRoles((roleRows ?? []).map((r) => r.role as Role)));
-      setDisplayName(profile?.display_name ?? null);
-      const current = (pos ?? []).find((p: { end_date: string | null }) => !p.end_date || p.end_date >= today);
-      const title = (current?.position as { title?: string } | null)?.title ?? null;
-      setPositionTitle(title);
     } catch {
-      // Deny by default: a failed load leaves no roles
-      if (profileUserId.current === userId) setRoles([]);
-    } finally {
-      if (profileUserId.current === userId) setRolesLoaded(true);
+      if (!current()) return;
+      // Deny by default, and let the next auth event or resume load again
+      setRoles([]);
+      profileUserId.current = null;
+      retryUserId.current = userId;
     }
+    setRolesLoaded(true);
+
+    const loaded = await details;
+    if (!loaded || (!current() && retryUserId.current !== userId)) return;
+    const [{ data: profile }, { data: pos }] = loaded;
+    setDisplayName(profile?.display_name ?? null);
+    const now = (pos ?? []).find((p: { end_date: string | null }) => !p.end_date || p.end_date >= today);
+    setPositionTitle((now?.position as { title?: string } | null)?.title ?? null);
   };
+
+  // Retry a failed roles load when the app is resumed or comes back online.
+  useResumeRefresh(() => {
+    const userId = retryUserId.current;
+    if (!userId || profileUserId.current !== null) return;
+    profileUserId.current = userId;
+    return loadProfile(userId);
+  });
 
   const setPreviewRole = (r: Role | null) => {
     // Only admins can preview as another role
@@ -137,8 +160,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const role: Role | null = roles[0] ?? null;
   const loading = !rolesLoaded;
 
-  // effectiveRole respects an admin's preview selection; non-admins always see their real role.
-  const effectiveRole: Role | null = role === "admin" && previewRole ? previewRole : role;
+  // Same preview resolution as access checks; non-admins always see their real role.
+  const effectiveRole: Role | null = previewedRoles(roles, previewRole)[0] ?? null;
 
   const signOut = async () => {
     await supabase.auth.signOut();

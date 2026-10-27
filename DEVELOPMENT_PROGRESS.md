@@ -121,8 +121,12 @@ read-only recovery preflight passed. No actual rollback was performed.
 - Verified locally (`bun run verify`, all PASS): typecheck, test (34 files / 443 tests), build,
   local:audit-schema, all `test:local*` incl. access, lint (30 existing warnings, 0 errors),
   typecheck:edge, test:browser (13 Playwright specs).
+- Review fixes (`feature/access-review-fixes`): roles query errors deny and retry on the next
+  auth event / resume; readiness no longer waits for profile/position; one pure decision
+  (`lib/accessDecision.ts`) shared by `can()`, the RLS probe and `effectiveRole`; TimeOff notice
+  uses the preview (effective) role, unit-tested (`timeOffNotice.test.tsx`, `useAuthReady`).
 - Not verified: production (untouched, nothing released), Realtime, storage-bucket parity for
-  the access rules, the TimeOff notice copy in a dedicated unit test. Remaining UTC "today" uses
+  the access rules. Remaining UTC "today" uses
   (`lib/currentPositions.ts`, MyPosition, AdminPositions, Dispatch, job sections) are unchanged.
 
 ## Outstanding operational items

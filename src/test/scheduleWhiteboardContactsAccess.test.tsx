@@ -70,12 +70,7 @@ describe('Whiteboard access', () => {
     page(<Whiteboard />);
     await waitFor(() => expect(screen.queryByText(DENIED) === null).toBe(allowed));
   });
-
-  it('does not show the denial before roles load', () => {
-    as(['foreman'], null, false);
-    page(<Whiteboard />);
-    expect(screen.queryByText(DENIED)).toBeNull();
-  });
+  // Before roles load, ProtectedRoute renders nothing (ProtectedRouteReady.test.tsx).
 });
 
 describe('Schedule access', () => {
