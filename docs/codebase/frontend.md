@@ -25,7 +25,7 @@ Behind `<ProtectedRoute>` (session required; also renders `<BottomNav/>`):
 | `/tools`, `/tools/trucking`, `/tools/performance-reviews`, `/tools/handbook` | Tools, TruckingCalculator, PerformanceReviews, Handbook |
 | `/apparel`, `/referrals`, `/equipment-rental`, `/shop-booking`, `/perks` | Perks pages |
 | `/employee-contacts`, `/vendors`, `/org-chart`, `/my-position` | Directories / people |
-| `/hr`, `/admin/users`, `/admin/positions` | **`requireRole="admin"`** |
+| `/hr`, `/admin/users`, `/admin/positions` | **`requireAction="admin.open"`** (hidden while previewing) |
 
 Navigation hubs: `Index.tsx` (`TILES`, includes external HCSS/Clearstory/Divvy links),
 `Perks.tsx`, `Tools.tsx`, `HR.tsx`, `components/BottomNav.tsx`. Some pages also render
@@ -41,12 +41,22 @@ BottomNav themselves — watch for a double nav.
   admin > office > foreman > employee), `profiles.display_name`, `employee_positions` →
   `positions_public(title)` current as of `todayInNewYork()`.
 - Admin preview-as-role: `components/home/RoleSwitcher.tsx`, sessionStorage `previewRole`.
-- Role checks are inline per page (`role === "office" || role === "admin"`); only shared helper
-  is `visibleFileSources()` in `components/jobs/jobFiles.ts`. Some pages use
-  `effectiveRole ?? role` (JobDetail, Whiteboard, Schedule, EmployeeContacts), others real `role`.
+- Access module (UI gating only; RLS stays the authority): rule data in `lib/accessRules.ts`
+  (`ACCESS_RULES`, no imports so `scripts/*.mjs` can load it; each rule = explicit `roles`,
+  optional `orJobForeman`, `basis: "real"`, `rls` table/cmd list or `"ui-only"`, `narrower`
+  reason), logic in `lib/access.ts`: pure `can(viewer, action, ...job)` and
+  `useAccess()` → `{ ready, can }`. Deny by default (not ready / no session / no roles);
+  checks the effective role set (preview role while an admin previews, else every role held,
+  any-match like `has_role()`); only `preview.switch` uses real roles. Unknown actions and a
+  missing job for `orJobForeman` rules fail at compile time. Matrix test `src/test/access.test.ts`.
+- Callers so far: `ProtectedRoute requireAction` (waits for `ready`, then redirects) and the
+  Index role switcher (`preview.switch`). Other pages still use inline checks
+  (`role === "office" || role === "admin"`, `visibleFileSources()` in `components/jobs/jobFiles.ts`);
+  some use `effectiveRole ?? role` (JobDetail, Whiteboard, Schedule, EmployeeContacts), others real
+  `role`. They migrate to `can()` in later #43 tickets.
 - Login (`pages/Auth.tsx`): email/password via Supabase; Google via
   `integrations/lovable` (disabled locally and under `independentLaunch`).
-- Known issues: route guard uses real role (see overview).
+- Known issues: pages outside the access module mix real vs preview role (see overview).
 
 ## Data access
 
