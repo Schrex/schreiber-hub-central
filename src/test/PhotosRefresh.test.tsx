@@ -6,7 +6,7 @@ vi.mock('@/integrations/supabase/client', () => ({ supabase: {
   from: () => ({ select: () => ({ eq: () => ({ order: () => ({ order: query }) }) }) }),
   storage: { from: () => ({ createSignedUrls: sign }) },
 } }));
-vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ role: 'employee', displayName: 'Synthetic Employee' }) }));
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: { id: 'synthetic-user' }, roles: ['employee'], previewRole: null, rolesLoaded: true, role: 'employee', displayName: 'Synthetic Employee' }) }));
 const row = (name: string) => ({ id: name, job_id: 'synthetic', caption: name, file_path: `${name}.png`, taken_on: '2026-10-21', created_at: '2026-10-21T00:00:00Z' });
 const reply = (name: string) => ({ data: [row(name)], error: null });
 afterEach(() => { cleanup(); query.mockReset(); sign.mockReset(); vi.restoreAllMocks(); });

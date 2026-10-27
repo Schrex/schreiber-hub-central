@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, Upload, Trash2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -20,9 +21,9 @@ interface ContractMeta {
 }
 
 export const ContractSection = ({ jobId }: Props) => {
-  const { user, role, effectiveRole } = useAuth();
-  const r = effectiveRole ?? role;
-  const canEdit = r === "office" || r === "admin";
+  const { user } = useAuth();
+  const { can } = useAccess();
+  const canEdit = can("job.contract.edit");
   const [meta, setMeta] = useState<ContractMeta | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);

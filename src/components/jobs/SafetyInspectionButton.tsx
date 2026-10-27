@@ -6,16 +6,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 
 export const SafetyInspectionButton = ({ jobId }: { jobId: string }) => {
-  const { role: realRole, effectiveRole } = useAuth();
-  const role = effectiveRole ?? realRole;
+  const { can } = useAccess();
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (role !== "office") return null;
+  if (!can("job.inspection.request")) return null;
 
   const submit = async () => {
     setBusy(true);

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Plus, FileCheck, Trash2, Paperclip, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,9 +90,9 @@ interface Props {
 }
 
 export const PermitsSection = ({ jobId }: Props) => {
-  const { role: realRole, effectiveRole, user } = useAuth();
-  const role = effectiveRole ?? realRole;
-  const canEdit = role === "office" || role === "admin";
+  const { user } = useAuth();
+  const { can } = useAccess();
+  const canEdit = can("job.permits.edit");
   const [permits, setPermits] = useState<Permit[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(true);
