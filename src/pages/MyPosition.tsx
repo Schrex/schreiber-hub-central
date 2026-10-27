@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Briefcase, DollarSign, TrendingUp, Lock, Sparkles, CalendarClock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -41,8 +42,9 @@ const fmtDate = (d: string) =>
 
 const MyPosition = () => {
   const navigate = useNavigate();
-  const { user, role } = useAuth();
-  const isAdmin = role === "admin";
+  const { user } = useAuth();
+  const { can } = useAccess();
+  const isAdmin = can("positions.pay.view");
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [promotions, setPromotions] = useState<PromotionTarget[]>([]);

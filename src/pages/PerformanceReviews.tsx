@@ -24,6 +24,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -96,9 +97,10 @@ const statusBadge = (s: Status) => {
 
 const PerformanceReviews = () => {
   const navigate = useNavigate();
-  const { user, role } = useAuth();
+  const { user } = useAuth();
+  const { can } = useAccess();
   const { toast } = useToast();
-  const canManage = role === "office" || role === "admin";
+  const canManage = can("reviews.manage");
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);

@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShieldAlert, BookOpen, Mic, Plus, Sparkles, Settings as SettingsIcon, Play, Square, Users, CheckCircle2, Volume2, Pause } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,10 +28,11 @@ interface SessionRow { id: string; talk_id: string; foreman_id: string; foreman_
 interface Attendee { id: string; session_id: string; user_id: string | null; attendee_name: string; signature_data: string | null; signed_at: string | null; quiz_score: number | null; quiz_total: number | null; quiz_completed_at: string | null; }
 
 const Safety = () => {
-  const { role, user, displayName } = useAuth();
-  const isAdmin = role === "admin";
+  const { user, displayName } = useAuth();
+  const { can } = useAccess();
+  const isAdmin = can("safety.manage");
   // Only foremen lead toolbox talks. Admins can also access for oversight.
-  const isForeman = role === "foreman" || isAdmin;
+  const isForeman = can("safety.sessions.run");
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,7 +48,7 @@ const Safety = () => {
 
         <div className="mt-4 space-y-2">
           <AccidentReportButton />
-          {(role === "foreman" || role === "office" || isAdmin) && <SafetyViolationButton />}
+          {can("safety.violation.report") && <SafetyViolationButton />}
         </div>
 
         <Tabs defaultValue="rules" className="mt-5">

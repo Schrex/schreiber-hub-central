@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActiveJobsList } from "@/components/jobs/ActiveJobsList";
 import { ArchiveJobsList } from "@/components/jobs/ArchiveJobsList";
@@ -18,9 +18,9 @@ function parseJobsView(value: string | null): JobsView {
 }
 
 const Jobs = () => {
-  const { role } = useAuth();
-  const canEdit = role === "office" || role === "admin";
-  const canSeeCustomer = canEdit || role === "foreman";
+  const { can } = useAccess();
+  const canEdit = can("jobs.edit");
+  const canSeeCustomer = can("jobs.private.view");
   const [searchParams, setSearchParams] = useSearchParams();
   const view = parseJobsView(searchParams.get("view"));
   const [counts, setCounts] = useState<JobTabCounts | null>(null);

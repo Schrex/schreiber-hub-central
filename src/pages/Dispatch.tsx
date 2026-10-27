@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Plus, Truck, Calendar, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -114,8 +114,8 @@ const endOfMonthGrid = (d: Date) => endOfWeek(endOfMonth(d));
 type ViewMode = "day" | "week" | "month";
 
 const Dispatch = () => {
-  const { role } = useAuth();
-  const canEdit = role === "office" || role === "admin";
+  const { can } = useAccess();
+  const canEdit = can("dispatch.edit");
   const [view, setView] = useState<ViewMode>("day");
   const [date, setDate] = useState<string>(todayStr());
   const [orders, setOrders] = useState<DispatchOrder[]>([]);
