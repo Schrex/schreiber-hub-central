@@ -32,6 +32,7 @@ const EXPECTED: Record<string, string> = {
   'job.digTickets.edit': 'OA',
   'job.permits.edit': 'OA',
   'job.plans.edit': 'OA',
+  'job.files.view': 'EFOA',
   'job.photos.edit': 'FOA',
   'job.submittals.view': 'FOA',
   'job.submittals.edit': 'OA',

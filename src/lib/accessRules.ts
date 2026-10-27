@@ -64,6 +64,8 @@ export const ACCESS_RULES = {
     rls: writes("job_plans"),
     narrower: "Plans stay office/admin in the UI; RLS (table and job-plans bucket) also allows foreman.",
   },
+  /** Plans, photos, permits and SWPPP in the job file list: any signed-in role. */
+  "job.files.view": { roles: ["employee", ...FIELD], rls: "ui-only" },
   "job.photos.edit": { roles: FIELD, rls: writes("job_photos") },
   "job.submittals.view": { roles: FIELD, rls: "ui-only" },
   "job.submittals.edit": { roles: OFFICE, rls: writes("job_submittals") },
