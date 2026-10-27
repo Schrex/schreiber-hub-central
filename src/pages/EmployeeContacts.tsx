@@ -7,6 +7,7 @@ import * as XLSX from "xlsx";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -213,12 +214,12 @@ const EmployeeContacts = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const focusId = searchParams.get("focus");
-  const { role: realRole, effectiveRole, user } = useAuth();
-  const role = effectiveRole ?? realRole;
+  const { user } = useAuth();
+  const { can } = useAccess();
   // Mirrors employee_contacts RLS: insert/update/delete are office|admin. UI gating only.
-  const canEdit = role === "office" || role === "admin";
-  const canDelete = role === "office" || role === "admin";
-  const canConvert = role === "admin";
+  const canEdit = can("employeeContacts.edit");
+  const canDelete = canEdit;
+  const canConvert = can("employeeContacts.convert");
 
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
   const [positions, setPositions] = useState<Map<string, CurrentPosition>>(new Map());
