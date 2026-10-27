@@ -28,6 +28,7 @@ import { AppTile } from "@/components/home/AppTile";
 import { RoleSwitcher } from "@/components/home/RoleSwitcher";
 import { CelebrationsBanner } from "@/components/home/CelebrationsBanner";
 import { useAuth, type Role } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 
 type Tile = {
@@ -61,7 +62,8 @@ const TILES: Tile[] = [
 ];
 
 const Index = () => {
-  const { role, effectiveRole: ctxRole, setPreviewRole, displayName, positionTitle, signOut } = useAuth();
+  const { effectiveRole: ctxRole, setPreviewRole, displayName, positionTitle, signOut } = useAuth();
+  const access = useAccess();
   const navigate = useNavigate();
   const effectiveRole: Role = ctxRole ?? "employee";
   const visible = TILES.filter((t) => t.roles.includes(effectiveRole));
@@ -98,7 +100,7 @@ const Index = () => {
         <WeatherStrip />
         {!independentLaunch && <CelebrationsBanner />}
 
-        {role === "admin" && (
+        {access.can("preview.switch") && (
           <RoleSwitcher value={effectiveRole} onChange={setPreviewRole} />
         )}
 
