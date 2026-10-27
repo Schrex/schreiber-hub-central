@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Trash2, X, Plus, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -215,8 +216,9 @@ interface PhotosSectionProps {
 }
 
 export const PhotosSection = ({ jobId, jobLabel, address }: PhotosSectionProps) => {
-  const { role, displayName } = useAuth();
-  const canManage = role === "foreman" || role === "office" || role === "admin";
+  const { displayName } = useAuth();
+  const { can } = useAccess();
+  const canManage = can("job.photos.edit");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);

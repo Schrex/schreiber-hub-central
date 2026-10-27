@@ -4,6 +4,7 @@ import { FileUp, FileText, Trash2, Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FileDropZone } from "@/components/ui/FileDropZone";
+import { useAccess } from "@/lib/access";
 
 interface Estimate {
   id: string;
@@ -27,7 +28,8 @@ export const EstimateUploads = ({ jobId }: { jobId: string }) => {
   const [items, setItems] = useState<Estimate[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [canEdit, setCanEdit] = useState(false);
+  const { can } = useAccess();
+  const canEdit = can("job.estimates.edit");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
@@ -40,14 +42,6 @@ export const EstimateUploads = ({ jobId }: { jobId: string }) => {
 
   useEffect(() => {
     load();
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: roles } = await supabase.from("user_roles")
-        .select("role").eq("user_id", user.id);
-      const r = (roles ?? []).map((x) => x.role);
-      setCanEdit(r.includes("admin") || r.includes("office"));
-    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 

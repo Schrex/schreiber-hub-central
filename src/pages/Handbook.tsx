@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -41,9 +42,10 @@ const formatSize = (bytes: number | null) => {
 
 const Handbook = () => {
   const navigate = useNavigate();
-  const { user, role, displayName } = useAuth();
+  const { user, displayName } = useAuth();
+  const { can } = useAccess();
   const { toast } = useToast();
-  const canManage = role === "office" || role === "admin";
+  const canManage = can("handbook.manage");
 
   const [docs, setDocs] = useState<HandbookDoc[]>([]);
   const [loading, setLoading] = useState(true);

@@ -3,8 +3,15 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { JobFilesSection } from './JobFilesSection';
 const mocks = vi.hoisted(() => ({ load: vi.fn(), url: vi.fn(), role: 'admin' }));
-vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ role: 'admin', effectiveRole: mocks.role }) }));
-vi.mock('./jobFiles', () => ({ loadJobFiles: mocks.load, jobFileUrl: mocks.url }));
+// A real admin; `mocks.role` other than admin is the preview role.
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({
+  user: { id: 'synthetic-user' }, roles: ['admin'], rolesLoaded: true,
+  previewRole: mocks.role === 'admin' ? null : mocks.role,
+}) }));
+vi.mock('./jobFiles', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./jobFiles')>()), loadJobFiles: mocks.load, jobFileUrl: mocks.url,
+}));
+vi.mock('@/integrations/supabase/client', () => ({ supabase: {} }));
 const file = { id: 'Contract:1', source: 'Contract', bucket: 'job-contracts', path: 'private.pdf', name: 'Private contract.pdf' };
 beforeEach(() => { vi.clearAllMocks(); mocks.role = 'admin'; });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });

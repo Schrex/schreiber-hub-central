@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, MapPin, Phone, User, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { useWeather } from "@/hooks/useWeather";
 import { WeatherCard } from "@/components/weather/WeatherCard";
 import { geocodeAddress } from "@/lib/weather";
@@ -52,11 +52,11 @@ interface Job {
 
 const JobDetail = () => {
   const { id } = useParams();
-  const { role: realRole, effectiveRole } = useAuth();
-  const role = effectiveRole ?? realRole;
-  const canSeePrivate = role === "foreman" || role === "office" || role === "admin";
-  const canSeeJobReport = role === "foreman";
-  const canChangeStatus = role === "office" || role === "admin";
+  const { can } = useAccess();
+  const canSeePrivate = can("jobs.private.view");
+  const canSeeJobReport = can("jobs.report.view");
+  const canChangeStatus = can("jobs.edit");
+  const canSeeContract = can("job.contract.view");
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -190,7 +190,7 @@ const JobDetail = () => {
           <JobContactsSection jobId={job.id} jobName={job.name} foremanId={job.foreman_id} />
         )}
 
-        {canChangeStatus && (
+        {canSeeContract && (
           <ContractSection jobId={job.id} />
         )}
         {canSeePrivate && <ForemanBriefSection jobId={job.id} />}

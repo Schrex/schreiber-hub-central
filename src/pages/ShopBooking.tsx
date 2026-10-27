@@ -4,6 +4,7 @@ import { ArrowLeft, Cog, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,8 +41,9 @@ const schema = z.object({
 
 const ShopBooking = () => {
   const navigate = useNavigate();
-  const { user, role, displayName } = useAuth();
-  const isOffice = role === "office" || role === "admin";
+  const { user, displayName } = useAuth();
+  const { can } = useAccess();
+  const isOffice = can("shopBooking.manage");
 
   const [mine, setMine] = useState<Reservation[]>([]);
   const [all, setAll] = useState<(Reservation & { display_name?: string | null; email?: string | null })[]>([]);

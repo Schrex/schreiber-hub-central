@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Role } from '@/hooks/useAuth';
+import type { AccessAction } from '@/lib/access';
 
 export type FileSource = 'Plans' | 'Photos' | 'Permits' | 'SWPPP' | 'Submittals' | 'Contract';
 export interface JobFile {
@@ -14,11 +14,14 @@ export const fileBuckets: Record<FileSource, string> = {
   Plans: 'job-plans', Photos: 'job-photos', Permits: 'permits',
   SWPPP: 'swpppp-reports', Submittals: 'job-submittals', Contract: 'job-contracts',
 };
-export function visibleFileSources(role: Role | null): FileSource[] {
-  if (!role) return [];
+/** Actions that decide which file sources a viewer sees. */
+export type FileAccessAction = Extract<AccessAction, 'job.files.view' | 'job.submittals.view' | 'job.contract.view'>;
+/** Pass `useAccess().can` (or `can` bound to a Viewer in tests). */
+export function visibleFileSources(can: (action: FileAccessAction) => boolean): FileSource[] {
+  if (!can('job.files.view')) return [];
   const sources: FileSource[] = ['Plans', 'Photos', 'Permits', 'SWPPP'];
-  if (role !== 'employee') sources.push('Submittals');
-  if (role === 'office' || role === 'admin') sources.push('Contract');
+  if (can('job.submittals.view')) sources.push('Submittals');
+  if (can('job.contract.view')) sources.push('Contract');
   return sources;
 }
 export function fileEntry(source: FileSource, id: string, path: string | null, name?: string | null, detail?: string): JobFile[] {
@@ -62,8 +65,7 @@ async function loadSource(source: FileSource, jobId: string): Promise<JobFile[]>
     }
   }
 }
-export async function loadJobFiles(jobId: string, role: Role | null) {
-  const sources = visibleFileSources(role);
+export async function loadJobFiles(jobId: string, sources: readonly FileSource[]) {
   const results = await Promise.allSettled(sources.map(source => loadSource(source, jobId)));
   const files: JobFile[] = [];
   const failed: FileSource[] = [];

@@ -1,6 +1,7 @@
 # Codebase map — overview
 
-Last checked against `develop` @ `f026a29` (2026-10-25). Update this map when routes, tables,
+Last checked against `develop` @ `f026a29` (2026-10-25); auth/roles against
+`feature/access-policy` @ `8fa0fcc` (2026-10-27). Update this map when routes, tables,
 Edge functions, environments or release steps change. Detail files are read on demand:
 
 - [frontend.md](frontend.md) — routes, auth/roles, data access, features → files, UI, tests
@@ -33,7 +34,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 | `src/components/<feature>/` | Feature components (jobs, schedule, safety, home, dispatch, whiteboard…) |
 | `src/components/ui/` | shadcn primitives |
 | `src/hooks/` | `useAuth` (session + roles), `useResumeRefresh`, `useWeather` |
-| `src/lib/` | helpers: `launchScope`, `talkMedia`, `resumableUpload`, `weather`, `jobs` (NY today, job sort/grouping, badge map, search escaping) |
+| `src/lib/` | helpers: `launchScope`, `talkMedia`, `resumableUpload`, `weather`, `affectedRows` (0-row write = permission error), `access` + `accessRules` (UI role gating: `can`/`useAccess`, rule table), `jobs` (NY today, job sort/grouping, badge map, search escaping) |
 | `src/integrations/` | Generated Supabase client + `types.ts`, Lovable auth (do not hand-edit) |
 | `src/test/` | Vitest unit tests (some colocated `*.test.tsx` too) |
 | `e2e/` | Playwright specs (11, `.mjs`) |
@@ -73,17 +74,20 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 
 ## Known issues (not yet fixed)
 
-- `ProtectedRoute` checks the real `role`, not `effectiveRole`: an admin previewing as employee
-  can still open `/hr`, `/admin/*`. Pages mix real vs preview role inconsistently.
-- `useAuth` sets `loading=false` before `loadProfile` finishes; `requireRole` routes can
-  redirect to `/` on first load while `role` is still null.
+- Fixed (#43, `feature/access-policy`): UI gating goes through `lib/access.ts` (`can`/`useAccess`).
+  `ProtectedRoute` honours preview (admin previewing hides `/hr`, `/admin/*`); `useAuth` stays
+  loading until roles load, so direct admin-route opens no longer bounce home; any role held
+  counts (like `has_role()`); employee-contact edit is office|admin like RLS. Guarded by
+  `src/test/noInlineRoleChecks.test.ts`; RLS parity by `test:local:access`.
 - AI (`*.lovable.dev` gateway) and Twilio SMS Edge functions depend on retired Lovable
   services; likely broken in production (unverified). `notify-talk-attendees` hardcodes a
   `lovable.app` URL. `independentLaunch` flag hides most of these features.
 - "Today" is computed inconsistently outside the jobs helpers: `SafetyViolationDialog` uses the
   UTC date (`toISOString().slice(0,10)`), `Safety.tsx` and the rest of `Schedule.tsx` (week strip,
   past-day locks, date mins) use the browser's local date, `AccidentReportDialog` uses local time.
-  Only the Schedule carry-forward uses `todayInNewYork()` (`lib/jobs.ts`).
+  Only the Schedule carry-forward and `useAuth` position lookup use `todayInNewYork()` (`lib/jobs.ts`);
+  `lib/currentPositions.ts` (and MyPosition, AdminPositions, Dispatch, several job sections) still
+  use the UTC date, so evenings in New York can read tomorrow's positions/dates.
 - Realtime and Edge runtime are disabled locally — subscriptions and functions untested locally.
 - 2 high-severity SheetJS (xlsx) advisories; 30 lint warnings; no proven production backup restore.
 
@@ -92,7 +96,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 | Task | Start at |
 | --- | --- |
 | Add/change a page or route | `src/App.tsx`, [frontend.md](frontend.md#routes) |
-| Role/permission behaviour | `src/hooks/useAuth.tsx`, RLS in [backend.md](backend.md#authorization) |
+| Role/permission behaviour | `src/lib/accessRules.ts` + `src/lib/access.ts`, [frontend.md](frontend.md#auth-and-roles), RLS in [backend.md](backend.md#authorization) |
 | New table / RLS / RPC | [backend.md](backend.md#migration-workflow) — write a candidate migration |
 | Edge function | `supabase/functions/<name>/`, [backend.md](backend.md#edge-functions) |
 | File uploads / buckets | [backend.md](backend.md#storage), `src/lib/resumableUpload.ts` |

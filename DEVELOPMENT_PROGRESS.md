@@ -104,6 +104,31 @@ read-only recovery preflight passed. No actual rollback was performed.
 - Verified locally: verify:app, verify:lint (30 existing warnings), verify:edge, verify:backend,
   verify:browser (13 tests). Not verified: production.
 
+## Access-policy module for UI role gating (#43, #44–#53) — October 27, 2026
+
+- Branch `feature/access-policy`. All UI role gating goes through `src/lib/access.ts`
+  (`can`/`useAccess`) over rule data in `src/lib/accessRules.ts`. Preview is honoured everywhere
+  (admin previewing hides `/hr`, `/admin/*`; role switcher stays usable); any role held counts,
+  like `has_role()`; `useAuth` stays loading until roles load (no bounce home on direct admin
+  route opens); employee-contact edit/delete now office|admin, matching RLS.
+- Contract (#52): guard `src/test/noInlineRoleChecks.test.ts` fails on inline role-literal
+  comparisons outside `lib/access*` / `hooks/useAuth.tsx` (allowlist empty). TimeOff notice
+  period moved to a `NOTICE_POLICY` lookup (same behaviour: real primary role, foreman 28 days).
+  No `effectiveRole ?? role` fallbacks remain; `effectiveRole` is display-only (Index).
+- RLS parity (#53): `test:local:access` in `verify:backend` — 81 rule checks across 390 probes,
+  UI never exceeds RLS; wider RLS only where a rule records `narrower` (dig tickets, permits,
+  plans, dispatch, schedule). Tables only; storage buckets not probed.
+- Verified locally (`bun run verify`, all PASS): typecheck, test (34 files / 443 tests), build,
+  local:audit-schema, all `test:local*` incl. access, lint (30 existing warnings, 0 errors),
+  typecheck:edge, test:browser (13 Playwright specs).
+- Review fixes (`feature/access-review-fixes`): roles query errors deny and retry on the next
+  auth event / resume; readiness no longer waits for profile/position; one pure decision
+  (`lib/accessDecision.ts`) shared by `can()`, the RLS probe and `effectiveRole`; TimeOff notice
+  uses the preview (effective) role, unit-tested (`timeOffNotice.test.tsx`, `useAuthReady`).
+- Not verified: production (untouched, nothing released), Realtime, storage-bucket parity for
+  the access rules. Remaining UTC "today" uses
+  (`lib/currentPositions.ts`, MyPosition, AdminPositions, Dispatch, job sections) are unchanged.
+
 ## Outstanding operational items
 
 - Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved

@@ -25,7 +25,7 @@ Behind `<ProtectedRoute>` (session required; also renders `<BottomNav/>`):
 | `/tools`, `/tools/trucking`, `/tools/performance-reviews`, `/tools/handbook` | Tools, TruckingCalculator, PerformanceReviews, Handbook |
 | `/apparel`, `/referrals`, `/equipment-rental`, `/shop-booking`, `/perks` | Perks pages |
 | `/employee-contacts`, `/vendors`, `/org-chart`, `/my-position` | Directories / people |
-| `/hr`, `/admin/users`, `/admin/positions` | **`requireRole="admin"`** |
+| `/hr`, `/admin/users`, `/admin/positions` | **`requireAction="admin.open"`** (hidden while previewing) |
 
 Navigation hubs: `Index.tsx` (`TILES`, includes external HCSS/Clearstory/Divvy links),
 `Perks.tsx`, `Tools.tsx`, `HR.tsx`, `components/BottomNav.tsx`. Some pages also render
@@ -33,17 +33,45 @@ BottomNav themselves — watch for a double nav.
 
 ## Auth and roles
 
-- `src/hooks/useAuth.tsx` → `AuthProvider` / `useAuth()`: `session`, `user`, `role`,
-  `effectiveRole`, `previewRole`, `setPreviewRole`, `displayName`, `positionTitle`, `loading`, `signOut`.
-- `loadProfile` reads `user_roles` (primary = highest of admin > office > foreman > employee),
-  `profiles.display_name`, `employee_positions` → `positions_public(title)`.
+- `src/hooks/useAuth.tsx` → `AuthProvider` / `useAuth()`: `session`, `user`, `role`, `roles`,
+  `rolesLoaded`, `effectiveRole`, `previewRole`, `setPreviewRole`, `displayName`, `positionTitle`,
+  `loading`, `signOut`. `loading` = `!rolesLoaded`: stays true until the session is known and its
+  `user_roles` query settles; `displayName`/`positionTitle` fill in afterwards and do not gate
+  readiness. A failed roles query (thrown or returned `error`) ends ready with no roles (deny by
+  default) and is retried on the next auth event or app resume (focus/online/visibility).
+- `loadProfile` reads `user_roles` (`roles` = all held, highest first; `role` = primary, highest of
+  admin > office > foreman > employee), `profiles.display_name`, `employee_positions` →
+  `positions_public(title)` current as of `todayInNewYork()`.
 - Admin preview-as-role: `components/home/RoleSwitcher.tsx`, sessionStorage `previewRole`.
-- Role checks are inline per page (`role === "office" || role === "admin"`); only shared helper
-  is `visibleFileSources()` in `components/jobs/jobFiles.ts`. Some pages use
-  `effectiveRole ?? role` (JobDetail, Whiteboard, Schedule, EmployeeContacts), others real `role`.
+- Access module (UI gating only; RLS stays the authority): rule data in `lib/accessRules.ts`
+  (`ACCESS_RULES`, no imports so `scripts/*.mjs` can load it; each rule = explicit `roles`,
+  optional `orJobForeman`, `basis: "real"`, `rls` table/cmd list or `"ui-only"`, `narrower`
+  reason), pure decision in `lib/accessDecision.ts` (`decide`, `previewedRoles`; type-only
+  imports, shared with `scripts/local-access-policy.mjs` and `useAuth` `effectiveRole`),
+  hook/types in `lib/access.ts`: `can(viewer, action, ...job)` and
+  `useAccess()` → `{ ready, can }`. Deny by default (not ready / no session / no roles);
+  checks the effective role set (preview role while an admin previews, else every role held,
+  any-match like `has_role()`); only `preview.switch` uses real roles. Unknown actions and a
+  missing job for `orJobForeman` rules fail at compile time. Matrix test `src/test/access.test.ts`.
+- All UI gating goes through `can()` / `useAccess()` (#44–#51): `ProtectedRoute requireAction`
+  (`admin.open` for `/hr`, `/admin/*`; waits for `ready`, then redirects), Index tiles and role
+  switcher, job screens/files, schedule, whiteboard, contacts and the remaining pages.
+  New gating = add or reuse an action in `accessRules.ts` (+ row in `access.test.ts`), never an
+  inline role comparison.
+- Guard: `src/test/noInlineRoleChecks.test.ts` fails on `role === "<role>"`-style comparisons,
+  `roles.includes("<role>")` and `switch (role)` outside `lib/access*` and `hooks/useAuth.tsx`
+  (preview internals). Exceptions go in its `ALLOWLIST` (file + exact line + reason; stale
+  entries fail); currently empty. Classifying *other* users' roles (Whiteboard/Schedule office
+  filter over `rolesByUser`, `AdminUsers` rank) is not gating and is not matched.
+- `useAuth` fields after the migration: `roles`, `previewRole`, `rolesLoaded`, `user` feed
+  `useAccess`; `effectiveRole` (from `previewedRoles`) is for display and the TimeOff notice
+  period (`lib/timeOffNotice.ts` `noticeFor`, foreman 28 days, others 14 — business rule, honours
+  preview like the rest of the page), plus Index header badge and `RoleSwitcher` value; `role`
+  (real primary) gates `setPreviewRole`; `loading` for session waits (Auth, TakeSafetyTalk).
+- RLS parity: `bun run test:local:access` (in `verify:backend`, needs the local backend) checks
+  every table-linked rule against RLS; see [backend.md](backend.md#backend-tests-bun-run-verifybackend).
 - Login (`pages/Auth.tsx`): email/password via Supabase; Google via
   `integrations/lovable` (disabled locally and under `independentLaunch`).
-- Known issues: route guard uses real role; `loading` clears before profile loads (see overview).
 
 ## Data access
 

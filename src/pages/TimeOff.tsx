@@ -7,6 +7,8 @@ import { format, parseISO, eachDayOfInterval } from "date-fns";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { noticeFor } from "@/lib/timeOffNotice";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,10 +71,11 @@ const datesOverlap = (aStart: string, aEnd: string, bStart: string, bEnd: string
   aStart <= bEnd && bStart <= aEnd;
 
 const TimeOffPage = () => {
-  const { user, role, displayName } = useAuth();
-  const isAdmin = role === "admin";
-  const isForeman = role === "foreman";
-  const requiredNoticeDays = isForeman ? 28 : 14;
+  const { user, effectiveRole, displayName } = useAuth();
+  const { can } = useAccess();
+  const isAdmin = can("timeOff.approve");
+  const notice = noticeFor(effectiveRole);
+  const requiredNoticeDays = notice.days;
   const [items, setItems] = useState<TimeOff[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -537,7 +540,7 @@ const TimeOffPage = () => {
               <AlertTriangle className="h-5 w-5 text-amber-500" /> Short notice
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {isForeman ? "Foremen are expected to give at least 4 weeks' notice" : "Employees are expected to give at least 2 weeks' notice"} for vacation and personal days.
+              {notice.text} for vacation and personal days.
               {startDate && ` This request starts in ${noticeDaysFromNow(startDate)} day${noticeDaysFromNow(startDate) === 1 ? "" : "s"}.`} You can submit it anyway, but approval is not guaranteed.
             </AlertDialogDescription>
           </AlertDialogHeader>

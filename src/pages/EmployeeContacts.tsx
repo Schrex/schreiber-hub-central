@@ -1,4 +1,6 @@
 import { independentLaunch } from "@/lib/launchScope";
+import { requireAffectedRows } from "@/lib/affectedRows";
+import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, MapPin, Contact, Download, KeyRound } from "lucide-react";
@@ -6,6 +8,7 @@ import * as XLSX from "xlsx";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -212,11 +215,11 @@ const EmployeeContacts = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const focusId = searchParams.get("focus");
-  const { role: realRole, effectiveRole, user } = useAuth();
-  const role = effectiveRole ?? realRole;
-  const canEdit = role === "foreman" || role === "admin";
-  const canDelete = role === "admin";
-  const canConvert = role === "admin";
+  const { user } = useAuth();
+  const { can } = useAccess();
+  // Mirrors employee_contacts RLS: insert/update/delete are office|admin. UI gating only.
+  const canEdit = can("employeeContacts.edit");
+  const canConvert = can("employeeContacts.convert");
 
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
   const [positions, setPositions] = useState<Map<string, CurrentPosition>>(new Map());
@@ -374,9 +377,14 @@ const EmployeeContacts = () => {
     };
 
     if (editing) {
-      const { error } = await supabase.from("employee_contacts").update(payload).eq("id", editing.id);
-      if (error) {
-        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      let saveError: string | null = null;
+      try {
+        await requireAffectedRows(supabase.from("employee_contacts").update(payload).eq("id", editing.id).select("id"));
+      } catch (e) {
+        saveError = errorMessage(e, "Could not save the contact.");
+      }
+      if (saveError) {
+        toast({ title: "Save failed", description: saveError, variant: "destructive" });
       } else {
         // Optionally save the position assignment (admin only, contact must have a login)
         if (canConvert && editing.converted_user_id && posFormDirty && posForm.position_id) {
@@ -435,12 +443,14 @@ const EmployeeContacts = () => {
 
   const remove = async (c: EmployeeContact) => {
     if (!confirm(`Delete contact "${c.name}"?`)) return;
-    const { error } = await supabase.from("employee_contacts").delete().eq("id", c.id);
-    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Contact deleted" });
-      load();
+    try {
+      await requireAffectedRows(supabase.from("employee_contacts").delete().eq("id", c.id).select("id"));
+    } catch (e) {
+      toast({ title: "Delete failed", description: errorMessage(e, "Could not delete the contact."), variant: "destructive" });
+      return;
     }
+    toast({ title: "Contact deleted" });
+    load();
   };
 
   const handleImport = async (file: File) => {
@@ -927,7 +937,7 @@ const EmployeeContacts = () => {
                         <KeyRound className="h-3.5 w-3.5" />
                       </Button>
                     )}
-                    {canDelete && (
+                    {canEdit && (
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(c)} aria-label="Delete">
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </Button>

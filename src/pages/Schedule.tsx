@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,11 +73,12 @@ type TimeOff = {
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 
 const Schedule = () => {
-  const { user, role: realRole, effectiveRole, displayName } = useAuth();
-  const role = effectiveRole ?? realRole;
+  const { user, displayName } = useAuth();
+  const { can } = useAccess();
   const navigate = useNavigate();
-  const canEdit = role === "office" || role === "admin";
-  const canEditNotes = canEdit || role === "foreman";
+  const canEdit = can("schedule.edit");
+  const canEditNotes = can("schedule.notes.edit");
+  const canUseWhiteboard = can("whiteboard.use");
 
   const [selectedDate, setSelectedDate] = useState<string>(todayStr());
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -614,7 +616,7 @@ const Schedule = () => {
             <h1 className="font-display text-lg font-semibold">Schedule</h1>
             <p className="text-xs text-muted-foreground">Crews assigned to jobs</p>
           </div>
-          {(role === "office" || role === "admin" || role === "foreman") && (
+          {canUseWhiteboard && (
             <Button
               variant="outline"
               size="sm"

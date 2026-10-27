@@ -5,6 +5,7 @@ import { ArrowLeft, Plus, UserPlus, Briefcase, DollarSign, Phone, Mail, User } f
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,8 +61,9 @@ const referralSchema = z.object({
 });
 
 const Referrals = () => {
-  const { user, role, displayName } = useAuth();
-  const isManager = role === "office" || role === "admin";
+  const { user, displayName } = useAuth();
+  const { can } = useAccess();
+  const isManager = can("referrals.manage");
   const [tab, setTab] = useState<RefType>("hire");
   const [items, setItems] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);

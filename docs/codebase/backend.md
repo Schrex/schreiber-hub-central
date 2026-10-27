@@ -125,6 +125,7 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 | `test:local:roles` | Per-role uploads, salary privacy, no self-promotion |
 | `test:local:employee` | create-employee handler + RPC races |
 | `test:local:jobs-status` | Jobs lifecycle trigger/checks as office, employee, service role |
+| `test:local:access` (`local-access-policy.mjs`) | UI access rules (`src/lib/accessRules.ts`) never allow more than RLS: probes each table-linked rule (81 checks) per role + assigned/unassigned foreman; wider RLS must be a recorded `narrower`. Tables only, no storage buckets; `ui-only` rules listed, not probed |
 
 Run individually: `local-accident-photo-replacement.mjs`, `local-storage-api-acceptance.mjs`,
 `local-private-talk-media-acceptance.mjs`, Python `local-*-triggers.py` / `*-activation.py`.
