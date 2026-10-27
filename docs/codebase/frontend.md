@@ -33,17 +33,20 @@ BottomNav themselves — watch for a double nav.
 
 ## Auth and roles
 
-- `src/hooks/useAuth.tsx` → `AuthProvider` / `useAuth()`: `session`, `user`, `role`,
-  `effectiveRole`, `previewRole`, `setPreviewRole`, `displayName`, `positionTitle`, `loading`, `signOut`.
-- `loadProfile` reads `user_roles` (primary = highest of admin > office > foreman > employee),
-  `profiles.display_name`, `employee_positions` → `positions_public(title)`.
+- `src/hooks/useAuth.tsx` → `AuthProvider` / `useAuth()`: `session`, `user`, `role`, `roles`,
+  `rolesLoaded`, `effectiveRole`, `previewRole`, `setPreviewRole`, `displayName`, `positionTitle`,
+  `loading`, `signOut`. `loading` = `!rolesLoaded`: stays true until the session is known and its
+  roles have loaded (a failed load ends ready with no roles).
+- `loadProfile` reads `user_roles` (`roles` = all held, highest first; `role` = primary, highest of
+  admin > office > foreman > employee), `profiles.display_name`, `employee_positions` →
+  `positions_public(title)` current as of `todayInNewYork()`.
 - Admin preview-as-role: `components/home/RoleSwitcher.tsx`, sessionStorage `previewRole`.
 - Role checks are inline per page (`role === "office" || role === "admin"`); only shared helper
   is `visibleFileSources()` in `components/jobs/jobFiles.ts`. Some pages use
   `effectiveRole ?? role` (JobDetail, Whiteboard, Schedule, EmployeeContacts), others real `role`.
 - Login (`pages/Auth.tsx`): email/password via Supabase; Google via
   `integrations/lovable` (disabled locally and under `independentLaunch`).
-- Known issues: route guard uses real role; `loading` clears before profile loads (see overview).
+- Known issues: route guard uses real role (see overview).
 
 ## Data access
 

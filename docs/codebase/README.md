@@ -75,8 +75,6 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 
 - `ProtectedRoute` checks the real `role`, not `effectiveRole`: an admin previewing as employee
   can still open `/hr`, `/admin/*`. Pages mix real vs preview role inconsistently.
-- `useAuth` sets `loading=false` before `loadProfile` finishes; `requireRole` routes can
-  redirect to `/` on first load while `role` is still null.
 - AI (`*.lovable.dev` gateway) and Twilio SMS Edge functions depend on retired Lovable
   services; likely broken in production (unverified). `notify-talk-attendees` hardcodes a
   `lovable.app` URL. `independentLaunch` flag hides most of these features.
