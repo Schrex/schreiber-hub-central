@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { judge, uiAllows } from "../../scripts/local-access-policy.mjs";
+import { judge } from "../../scripts/local-access-policy.mjs";
+import { decide } from "@/lib/accessDecision";
 
-const foreman = { roles: ["foreman"], assignedForeman: false };
-const assigned = { roles: ["foreman"], assignedForeman: true };
-const office = { roles: ["office"], assignedForeman: false };
+const job = { foremanId: "assigned" };
+const as = (id: string, roles: ("foreman" | "office")[]) => ({ userId: id, roles, previewRole: null });
 
 describe("access policy probe verdicts", () => {
-  it("UI allows a role from its explicit set, or the assigned foreman when orJobForeman", () => {
-    expect(uiAllows({ roles: ["office", "admin"] }, office)).toBe(true);
-    expect(uiAllows({ roles: ["office", "admin"] }, assigned)).toBe(false);
-    expect(uiAllows({ roles: ["office", "admin"], orJobForeman: true }, assigned)).toBe(true);
-    expect(uiAllows({ roles: ["office", "admin"], orJobForeman: true }, foreman)).toBe(false);
+  it("probe and UI share one decision: explicit role set, or the assigned foreman when orJobForeman", () => {
+    expect(decide({ roles: ["office", "admin"], rls: "ui-only" }, as("office", ["office"]), job)).toBe(true);
+    expect(decide({ roles: ["office", "admin"], rls: "ui-only" }, as("assigned", ["foreman"]), job)).toBe(false);
+    expect(decide({ roles: ["office", "admin"], orJobForeman: true, rls: "ui-only" }, as("assigned", ["foreman"]), job)).toBe(true);
+    expect(decide({ roles: ["office", "admin"], orJobForeman: true, rls: "ui-only" }, as("other", ["foreman"]), job)).toBe(false);
   });
 
   it("matches when UI and RLS agree for every actor", () => {

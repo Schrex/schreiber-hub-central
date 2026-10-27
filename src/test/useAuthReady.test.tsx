@@ -1,11 +1,13 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { noticeFor } from '@/lib/timeOffNotice';
 
-const { getSession, rolesQuery, positionsLte } = vi.hoisted(() => ({
+const { getSession, rolesQuery, positionsLte, profileQuery } = vi.hoisted(() => ({
   getSession: vi.fn(),
   rolesQuery: vi.fn(),
   positionsLte: vi.fn(),
+  profileQuery: vi.fn(),
 }));
 
 vi.mock('@/integrations/supabase/client', () => ({ supabase: {
@@ -16,7 +18,7 @@ vi.mock('@/integrations/supabase/client', () => ({ supabase: {
   },
   from: (table: string) => {
     if (table === 'user_roles') return { select: () => ({ eq: rolesQuery }) };
-    if (table === 'profiles') return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { display_name: 'Synthetic Admin' } }) }) }) };
+    if (table === 'profiles') return { select: () => ({ eq: () => ({ maybeSingle: profileQuery }) }) };
     return { select: () => ({ eq: () => ({ lte: (col: string, value: string) => {
       positionsLte(col, value);
       return { order: () => ({ limit: async () => ({ data: [] }) }) };
@@ -25,14 +27,20 @@ vi.mock('@/integrations/supabase/client', () => ({ supabase: {
 } }));
 
 const Probe = () => {
-  const { session, loading, role, roles, rolesLoaded } = useAuth();
-  return <output data-testid="auth">{JSON.stringify({ session: !!session, loading, role, roles, rolesLoaded })}</output>;
+  const { session, loading, role, roles, rolesLoaded, displayName, effectiveRole } = useAuth();
+  return (
+    <>
+      <output data-testid="auth">{JSON.stringify({ session: !!session, loading, role, roles, rolesLoaded })}</output>
+      <output data-testid="name">{displayName ?? ''}</output>
+      <output data-testid="notice">{noticeFor(effectiveRole).days}</output>
+    </>
+  );
 };
 const state = () => JSON.parse(screen.getByTestId('auth').textContent ?? '{}');
 const session = { user: { id: 'synthetic-admin' } };
 
-beforeEach(() => { sessionStorage.clear(); });
-afterEach(() => { cleanup(); vi.useRealTimers(); getSession.mockReset(); rolesQuery.mockReset(); positionsLte.mockReset(); });
+beforeEach(() => { sessionStorage.clear(); profileQuery.mockResolvedValue({ data: { display_name: 'Synthetic Admin' } }); });
+afterEach(() => { cleanup(); vi.useRealTimers(); getSession.mockReset(); rolesQuery.mockReset(); positionsLte.mockReset(); profileQuery.mockReset(); });
 
 describe('auth readiness', () => {
   it('stays loading after the session is known until roles load, then exposes every role held', async () => {
@@ -59,6 +67,40 @@ describe('auth readiness', () => {
     render(<AuthProvider><Probe /></AuthProvider>);
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
     expect(state()).toEqual({ session: true, loading: false, role: null, roles: [], rolesLoaded: true });
+  });
+
+  it('treats a returned roles error as a failed load, then reloads roles on resume', async () => {
+    getSession.mockResolvedValue({ data: { session } });
+    rolesQuery.mockResolvedValueOnce({ data: null, error: { message: 'synthetic permission error' } });
+    render(<AuthProvider><Probe /></AuthProvider>);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(state()).toEqual({ session: true, loading: false, role: null, roles: [], rolesLoaded: true });
+    rolesQuery.mockResolvedValueOnce({ data: [{ role: 'office' }], error: null });
+    await act(async () => { window.dispatchEvent(new Event('focus')); await Promise.resolve(); await Promise.resolve(); });
+    expect(state()).toEqual({ session: true, loading: false, role: 'office', roles: ['office'], rolesLoaded: true });
+  });
+
+  it('is ready once roles settle, before the profile and position finish', async () => {
+    getSession.mockResolvedValue({ data: { session } });
+    rolesQuery.mockResolvedValue({ data: [{ role: 'employee' }], error: null });
+    let finishProfile!: (value: { data: { display_name: string } }) => void;
+    profileQuery.mockReturnValue(new Promise(resolve => { finishProfile = resolve; }));
+    render(<AuthProvider><Probe /></AuthProvider>);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(state()).toEqual({ session: true, loading: false, role: 'employee', roles: ['employee'], rolesLoaded: true });
+    expect(screen.getByTestId('name').textContent).toBe('');
+    await act(async () => { finishProfile({ data: { display_name: 'Synthetic Employee' } }); });
+    expect(screen.getByTestId('name').textContent).toBe('Synthetic Employee');
+  });
+
+  it('shows an admin previewing as foreman the foreman notice period', async () => {
+    sessionStorage.setItem('previewRole', 'foreman');
+    getSession.mockResolvedValue({ data: { session } });
+    rolesQuery.mockResolvedValue({ data: [{ role: 'admin' }], error: null });
+    render(<AuthProvider><Probe /></AuthProvider>);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(screen.getByTestId('notice').textContent).toBe('28');
+    sessionStorage.clear();
   });
 
   it('uses the New York business date for the current position, not UTC', async () => {

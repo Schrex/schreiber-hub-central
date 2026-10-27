@@ -60,7 +60,7 @@ const weekStartStr = (d: Date) => format(startOfWeek(d, { weekStartsOn: 1 }), "y
 const Whiteboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { ready, can } = useAccess();
+  const { can } = useAccess();
   const canUse = can("whiteboard.use");
 
   const [weekStart, setWeekStart] = useState<string>(weekStartStr(new Date()));
@@ -621,7 +621,6 @@ const Whiteboard = () => {
     setTaskDraft(null);
   };
 
-  if (!ready) return <div className="min-h-screen bg-background" />;
   if (!canUse) {
     return (
       <div className="min-h-screen bg-background p-6">
