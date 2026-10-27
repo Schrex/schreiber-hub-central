@@ -1,4 +1,5 @@
 import { independentLaunch } from "@/lib/launchScope";
+import { requireAffectedRows } from "@/lib/affectedRows";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus, Upload, Search, Pencil, Trash2, Phone, Mail, MapPin, Contact, Download, KeyRound } from "lucide-react";
@@ -214,8 +215,9 @@ const EmployeeContacts = () => {
   const focusId = searchParams.get("focus");
   const { role: realRole, effectiveRole, user } = useAuth();
   const role = effectiveRole ?? realRole;
-  const canEdit = role === "foreman" || role === "admin";
-  const canDelete = role === "admin";
+  // Mirrors employee_contacts RLS: insert/update/delete are office|admin. UI gating only.
+  const canEdit = role === "office" || role === "admin";
+  const canDelete = role === "office" || role === "admin";
   const canConvert = role === "admin";
 
   const [contacts, setContacts] = useState<EmployeeContact[]>([]);
@@ -374,7 +376,9 @@ const EmployeeContacts = () => {
     };
 
     if (editing) {
-      const { error } = await supabase.from("employee_contacts").update(payload).eq("id", editing.id);
+      const error = await requireAffectedRows(
+        supabase.from("employee_contacts").update(payload).eq("id", editing.id).select("id"),
+      ).then(() => null, (e: { message?: string }) => e);
       if (error) {
         toast({ title: "Save failed", description: error.message, variant: "destructive" });
       } else {
@@ -435,7 +439,9 @@ const EmployeeContacts = () => {
 
   const remove = async (c: EmployeeContact) => {
     if (!confirm(`Delete contact "${c.name}"?`)) return;
-    const { error } = await supabase.from("employee_contacts").delete().eq("id", c.id);
+    const error = await requireAffectedRows(
+      supabase.from("employee_contacts").delete().eq("id", c.id).select("id"),
+    ).then(() => null, (e: { message?: string }) => e);
     if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     else {
       toast({ title: "Contact deleted" });
