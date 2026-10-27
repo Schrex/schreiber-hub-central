@@ -4,6 +4,7 @@ import { ArrowLeft, Wrench, Trash2, Plus, Pencil } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -77,8 +78,9 @@ const rentalSchema = z.object({
 
 const EquipmentRental = () => {
   const navigate = useNavigate();
-  const { user, role, displayName } = useAuth();
-  const isOffice = role === "office" || role === "admin";
+  const { user, displayName } = useAuth();
+  const { can } = useAccess();
+  const isOffice = can("equipmentRental.manage");
 
   const [items, setItems] = useState<Equipment[]>([]);
   const [myRentals, setMyRentals] = useState<Rental[]>([]);

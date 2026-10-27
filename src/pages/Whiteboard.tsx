@@ -18,6 +18,7 @@ import {
 } from "@dnd-kit/core";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -58,9 +59,9 @@ const weekStartStr = (d: Date) => format(startOfWeek(d, { weekStartsOn: 1 }), "y
 
 const Whiteboard = () => {
   const navigate = useNavigate();
-  const { role: realRole, effectiveRole, user } = useAuth();
-  const role = effectiveRole ?? realRole;
-  const canUse = role === "office" || role === "admin" || role === "foreman";
+  const { user } = useAuth();
+  const { ready, can } = useAccess();
+  const canUse = can("whiteboard.use");
 
   const [weekStart, setWeekStart] = useState<string>(weekStartStr(new Date()));
   const [tiles, setTiles] = useState<Tile[]>([]);
@@ -620,6 +621,7 @@ const Whiteboard = () => {
     setTaskDraft(null);
   };
 
+  if (!ready) return <div className="min-h-screen bg-background" />;
   if (!canUse) {
     return (
       <div className="min-h-screen bg-background p-6">
