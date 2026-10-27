@@ -17,7 +17,10 @@ const contact = {
 };
 
 vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({ role: mocks.role, effectiveRole: mocks.role, user: { id: 'synthetic-user' } }),
+  useAuth: () => ({
+    role: mocks.role, effectiveRole: mocks.role, user: { id: 'synthetic-user' },
+    roles: [mocks.role], previewRole: null, rolesLoaded: true,
+  }),
 }));
 vi.mock('@/hooks/use-toast', () => ({ toast: mocks.toast }));
 vi.mock('@/lib/currentPositions', () => ({ fetchCurrentPositions: async () => new Map() }));
