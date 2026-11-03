@@ -70,13 +70,13 @@ BottomNav themselves — watch for a double nav.
   (real primary) gates `setPreviewRole`; `loading` for session waits (Auth, TakeSafetyTalk).
 - RLS parity: `bun run test:local:access` (in `verify:backend`, needs the local backend) checks
   every table-linked rule against RLS; see [backend.md](backend.md#backend-tests-bun-run-verifybackend).
-- Login (`pages/Auth.tsx`): email/password via Supabase; Google via
-  `integrations/lovable` (disabled locally and under `independentLaunch`).
+- Login (`pages/Auth.tsx`): email/password via Supabase; Google via Supabase OAuth
+  (`signInWithOAuth`, not configured in production; disabled locally and under `independentLaunch`).
 
 ## Data access
 
-- Client: `src/integrations/supabase/client.ts` (generated, don't edit); env
-  `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`. Auth storage via `previewAuthStorage.ts`.
+- Client: `src/integrations/supabase/client.ts`; env `VITE_SUPABASE_URL`,
+  `VITE_SUPABASE_PUBLISHABLE_KEY`. Auth session stored in `localStorage`.
 - Types: `src/integrations/supabase/types.ts` (generated from the local backend, so it includes
   candidate migrations such as the jobs status columns; CLI 2.121.0 + prettier). Production may lag.
 - Pattern: `supabase.from(...)` in `useEffect`/handlers + `useState`; errors via sonner `toast`.
@@ -129,6 +129,8 @@ Spelling: table/bucket `swpppp_*` / `swpppp-reports` has 3 p's; component is `Sw
 - `VITE_INDEPENDENT_LAUNCH` or `VITE_REHEARSAL_BACKEND` → `independentLaunch`
   (`lib/launchScope.ts`): disables signup, Google, celebrations banner, AI/recording/read-aloud/
   notification features in Safety, AI in ScopeOfWork/ForemanBrief/Submittals, contact→user conversion.
+- `integrationsParked` (`lib/launchScope.ts`, constant `true`): turns off AI and crew-SMS UI in
+  every build because those Edge functions are parked (`parked/README.md`).
 
 ## UI conventions
 
@@ -137,7 +139,7 @@ Spelling: table/bucket `swpppp_*` / `swpppp-reports` has 3 p's; component is `Sw
 - Forms: plain `useState`; zod in 8 forms; react-hook-form only in `ui/form.tsx`.
 - Dates: date-fns v3, react-day-picker. Also xlsx, tus-js-client, exifr, react-leaflet, @dnd-kit.
 - `@/` → `src/`. Pages default-export; feature components named exports.
-- Unused: recharts, `NavLink.tsx`. `lovable-tagger` still in `vite.config.ts` (dev mode).
+- Unused: recharts, `NavLink.tsx`.
 
 ## Tests
 

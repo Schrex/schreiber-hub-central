@@ -1,4 +1,4 @@
-import { independentLaunch } from "@/lib/launchScope";
+import { integrationsParked } from "@/lib/launchScope";
 import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { ClipboardList, Pencil, Save, X, Sparkles } from "lucide-react";
@@ -62,7 +62,7 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
   };
 
   const generate = async () => {
-    if (independentLaunch) return;
+    if (integrationsParked) return;
     if (brief && !confirm("Replace the existing briefing with one generated from the contract?")) return;
     setGenerating(true);
     try {
@@ -91,7 +91,7 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
         </h2>
         {canEdit && !editing && (
           <div className="flex items-center gap-1.5">
-            {hasContract && !independentLaunch && (
+            {hasContract && !integrationsParked && (
               <button
                 type="button"
                 onClick={generate}

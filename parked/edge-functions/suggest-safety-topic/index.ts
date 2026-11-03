@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { AI_NOT_CONFIGURED, aiChatCompletion, aiSettings } from '../_shared/ai.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,8 +42,8 @@ Deno.serve(async (req) => {
     const roles = Array.from(new Set((assigns ?? []).map((a: { role_on_job: string | null }) => (a.role_on_job ?? '').trim()).filter(Boolean)))
     const taskNotes = (assigns ?? []).map((a: { notes: string | null }) => a.notes).filter(Boolean)
 
-    const lovableKey = Deno.env.get('LOVABLE_API_KEY')
-    if (!lovableKey) throw new Error('LOVABLE_API_KEY not set')
+    const ai = aiSettings()
+    if (!ai) return new Response(JSON.stringify({ error: AI_NOT_CONFIGURED }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
     // Look at existing talks library for matches first
     const { data: talks } = await supabase
@@ -67,17 +68,12 @@ Return JSON:
   "reasoning": "one short sentence why"
 }`
 
-    const aiResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${lovableKey}` },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'You match crew tasks to relevant safety talks. Be concise.' },
-          { role: 'user', content: prompt },
-        ],
-        response_format: { type: 'json_object' },
-      }),
+    const aiResp = await aiChatCompletion(ai, {
+      messages: [
+        { role: 'system', content: 'You match crew tasks to relevant safety talks. Be concise.' },
+        { role: 'user', content: prompt },
+      ],
+      response_format: { type: 'json_object' },
     })
     if (!aiResp.ok) {
       const t = await aiResp.text()

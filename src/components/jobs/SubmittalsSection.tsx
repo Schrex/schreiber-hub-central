@@ -1,4 +1,4 @@
-import { independentLaunch } from "@/lib/launchScope";
+import { integrationsParked } from "@/lib/launchScope";
 import type { TablesUpdate } from "@/integrations/supabase/types";
 import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
@@ -168,7 +168,7 @@ export const SubmittalsSection = ({ jobId }: { jobId: string }) => {
         let title = f.name.replace(/\.[^.]+$/, "");
         let category: string | null = null;
         let aiCategorized = false;
-        if (!independentLaunch) try {
+        if (!integrationsParked) try {
           const { data: ai } = await supabase.functions.invoke<{ fields?: { confidence?: number; title?: string; category?: string } }>("categorize-document", {
             body: { kind: "submittal", bucket: "job-submittals", path, fileName: f.name },
           });

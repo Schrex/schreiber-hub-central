@@ -22,7 +22,8 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 - Backend: Supabase (Postgres 17, Auth, Storage, Edge functions in Deno). Authorization is
   enforced by RLS + `has_role()`; client role checks are UI gating only.
 - Hosting: Cloudflare Pages (static upload) + independent Supabase project `acgqjjbrnkmeazswdnzp`.
-  Originally built on Lovable; Lovable hosting/sync is retired but traces remain.
+  Originally built on Lovable; the code no longer calls Lovable services (migration names and
+  the legacy talk-media URL rewrite remain).
 - Tooling: Bun 1.3.14, Node from .nvmrc, Vitest, Playwright, ESLint, pinned Supabase CLI 2.121.0
   via npx, Docker for the local backend.
 
@@ -35,11 +36,12 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 | `src/components/ui/` | shadcn primitives |
 | `src/hooks/` | `useAuth` (session + roles), `useResumeRefresh`, `useWeather` |
 | `src/lib/` | helpers: `launchScope`, `talkMedia`, `resumableUpload`, `weather`, `affectedRows` (0-row write = permission error), `access` + `accessRules` (UI role gating: `can`/`useAccess`, rule table), `jobs` (NY today, job sort/grouping, badge map, search escaping) |
-| `src/integrations/` | Generated Supabase client + `types.ts`, Lovable auth (do not hand-edit) |
+| `src/integrations/` | Supabase client + generated `types.ts` (do not hand-edit types) |
 | `src/test/` | Vitest unit tests (some colocated `*.test.tsx` too) |
 | `e2e/` | Playwright specs (11, `.mjs`) |
 | `supabase/migrations/` | Applied production migration history (79) — never edit |
-| `supabase/functions/` | 24 Edge functions + `_shared/` (Postmark, email templates) |
+| `supabase/functions/` | 17 Edge functions + `_shared/` (Postmark, email templates) |
+| `parked/` | Parked AI + crew-SMS features (not deployed); see `parked/README.md` |
 | `local/` | Local backend config, seed, candidate migrations, hr-bootstrap |
 | `scripts/` | verify, local backend tests, release guards, worktree helper, historical rehearsal ops |
 | `tooling/release/` | Pinned wrangler for the upload job only |
@@ -55,7 +57,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 - **"rehearsal" / "hub-rehearsal" means PRODUCTION.** `dev:rehearsal` and `scripts/rehearsal-*`
   hit the live project with real data; treat them as historical, never run routinely.
 - Plain `bun run dev` reads `.env` and can target production. Use `dev:local`.
-- `supabase/config.toml` `project_id` is the old Lovable project, not the target.
+- `supabase/config.toml` `project_id` is a neutral label, not the production project.
   Always name the production project explicitly; never `supabase db push`.
 - No staging environment exists.
 
@@ -79,9 +81,9 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
   loading until roles load, so direct admin-route opens no longer bounce home; any role held
   counts (like `has_role()`); employee-contact edit is office|admin like RLS. Guarded by
   `src/test/noInlineRoleChecks.test.ts`; RLS parity by `test:local:access`.
-- AI (`*.lovable.dev` gateway) and Twilio SMS Edge functions depend on retired Lovable
-  services; likely broken in production (unverified). `notify-talk-attendees` hardcodes a
-  `lovable.app` URL. `independentLaunch` flag hides most of these features.
+- AI and crew-SMS features are parked in `parked/` (Lovable-free, untested, not deployed) and
+  switched off in the UI by `integrationsParked`. Production may still hold old Lovable-based
+  copies of those functions; deleting them is a separate authorized operation.
 - "Today" is computed inconsistently outside the jobs helpers: `SafetyViolationDialog` uses the
   UTC date (`toISOString().slice(0,10)`), `Safety.tsx` and the rest of `Schedule.tsx` (week strip,
   past-day locks, date mins) use the browser's local date, `AccidentReportDialog` uses local time.

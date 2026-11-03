@@ -129,6 +129,30 @@ read-only recovery preflight passed. No actual rollback was performed.
   the access rules. Remaining UTC "today" uses
   (`lib/currentPositions.ts`, MyPosition, AdminPositions, Dispatch, job sections) are unchanged.
 
+## Lovable code dependencies removed — November 3, 2026
+
+- Lockfiles (`bun.lock`, `remotion/bun.lock`) no longer point at Lovable's private npm cache;
+  frozen installs work from the public registry with unchanged integrity hashes.
+- Frontend: removed `lovable-tagger`, `@lovable.dev/cloud-auth-js`, `integrations/lovable` and
+  the Lovable preview auth broker (session now in `localStorage`). Google sign-in uses Supabase
+  OAuth; still disabled under `independentLaunch` and not configured in production.
+  Link-preview images use `app-icon.png` instead of Lovable file storage.
+- Parked AI and crew-SMS features (`parked/README.md`): categorize-document,
+  extract-foreman-brief, extract-scope-from-contract, generate-toolbox-talk,
+  suggest-safety-topic and notify-talk-attendees moved to `parked/edge-functions/` (not
+  deployed, not in `typecheck:edge`); their UI is off in every build via `integrationsParked`.
+  Parked code is Lovable-free (provider-neutral AI adapter, direct Twilio) but untested.
+- Email is Postmark-only: Lovable send path, Lovable suppression webhook branch and
+  `preview-transactional-email` removed. `process-email-queue` still requires
+  `EMAIL_PROVIDER=postmark`, so an unset secret keeps delivery off as before.
+- Verified in a cloud session: `verify:app`, `verify:lint`, `deno check` on changed Edge
+  functions. Full `typecheck:edge` cannot run there (esm.sh blocked); CI covers it.
+- Not done: nothing deployed. Edge function changes take effect only through a release; production may
+  still have the old `preview-transactional-email` and the parked functions deployed (unchecked); deleting
+  them is a separate authorized operation. Committed `.env` still names the old
+  Lovable project (not inspected). Applied migration names and the `talkMedia` legacy URL
+  rewrite intentionally keep Lovable-era identifiers.
+
 ## Outstanding operational items
 
 - Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved

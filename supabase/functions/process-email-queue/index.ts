@@ -1,5 +1,4 @@
 import { createPostmarkAdapter } from '../_shared/postmark-email.ts'
-import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const MAX_RETRIES = 5
@@ -72,13 +71,14 @@ async function moveToDlq(
 }
 
 async function processQueue(req: Request): Promise<Response> {
-  const provider = Deno.env.get('EMAIL_PROVIDER') ?? 'lovable'
-  const apiKey = Deno.env.get(provider === 'postmark' ? 'POSTMARK_SERVER_TOKEN' : 'LOVABLE_API_KEY')
+  // Postmark is the only provider. EMAIL_PROVIDER=postmark stays an explicit switch.
+  const provider = Deno.env.get('EMAIL_PROVIDER')
+  const apiKey = Deno.env.get('POSTMARK_SERVER_TOKEN')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const workerAuthToken = Deno.env.get('EMAIL_WORKER_AUTH_TOKEN') ?? supabaseServiceKey
 
-  if (!['lovable', 'postmark'].includes(provider) || !apiKey || !supabaseUrl || !supabaseServiceKey || !workerAuthToken) {
+  if (provider !== 'postmark' || !apiKey || !supabaseUrl || !supabaseServiceKey || !workerAuthToken) {
     console.error('Missing required environment variables')
     return new Response(
       JSON.stringify({ error: 'Server configuration error' }),
@@ -103,17 +103,17 @@ async function processQueue(req: Request): Promise<Response> {
   }
 
   // No queue claims or log writes while delivery is disabled.
-  if (provider === 'postmark' && Deno.env.get('EMAIL_DELIVERY_ENABLED') !== 'true') {
+  if (Deno.env.get('EMAIL_DELIVERY_ENABLED') !== 'true') {
     return new Response(JSON.stringify({ skipped: true, reason: 'delivery_disabled' }),
       { headers: { 'Content-Type': 'application/json' } })
   }
-  const postmark = provider === 'postmark' ? createPostmarkAdapter({
+  const postmark = createPostmarkAdapter({
     serverToken: apiKey,
     messageStream: Deno.env.get('POSTMARK_MESSAGE_STREAM') ?? 'outbound',
     unsubscribeEndpoint: `${supabaseUrl}/functions/v1/handle-email-unsubscribe`,
-  }, fetch) : null
+  }, fetch)
   const postmarkFrom = Deno.env.get('POSTMARK_FROM')
-  if (postmark && !postmarkFrom) {
+  if (!postmarkFrom) {
     return new Response(JSON.stringify({ error: 'Postmark sender required' }), { status: 500 })
   }
   // Default to controlled delivery; production fan-out requires an explicit mode.
@@ -149,8 +149,8 @@ async function processQueue(req: Request): Promise<Response> {
   let totalProcessed = 0
   let sendFailures = 0
 
-  // 2. Process auth_emails first (priority), then transactional_emails
-  for (const queue of (postmark ? ['transactional_emails'] : ['auth_emails', 'transactional_emails'])) {
+  // 2. Process the transactional_emails queue
+  for (const queue of ['transactional_emails']) {
     const { data: messages } = await checked(supabase.rpc('read_email_batch', {
       queue_name: queue,
       batch_size: batchSize,
@@ -252,56 +252,33 @@ async function processQueue(req: Request): Promise<Response> {
 
       try {
         // Recheck local suppression at delivery time, including after enqueue.
-        if (postmark) {
-          const { data: suppressed } = await checked(supabase
-            .from('suppressed_emails').select('email').eq('email', payload.to.toLowerCase()).maybeSingle())
-          if (suppressed) {
-            await moveToDlq(supabase, queue, msg, 'Recipient suppressed')
-            continue
-          }
+        const { data: suppressed } = await checked(supabase
+          .from('suppressed_emails').select('email').eq('email', payload.to.toLowerCase()).maybeSingle())
+        if (suppressed) {
+          await moveToDlq(supabase, queue, msg, 'Recipient suppressed')
+          continue
         }
-        if (postmark) {
-          const outcome = await postmark.deliver({
-            ...payload,
-            from: postmarkFrom!,
+        const outcome = await postmark.deliver({
+          ...payload,
+          from: postmarkFrom,
+        })
+        if (outcome.kind === 'configuration_error') {
+          // Stop without discarding messages; repair provider settings first.
+          return new Response(JSON.stringify({ processed: totalProcessed, stopped: 'provider_configuration' }), { status: 503 })
+        }
+        if (outcome.kind === 'suppressed' || outcome.kind === 'permanent_rejection') {
+          await moveToDlq(supabase, queue, msg, `Postmark ${outcome.kind}; HTTP ${outcome.status}; code ${outcome.providerCode}`)
+          continue
+        }
+        if (outcome.kind === 'rate_limited') {
+          throw Object.assign(new Error('Postmark rate limited'), {
+            status: 429, retryAfterSeconds: outcome.retryAfterSeconds,
           })
-          if (outcome.kind === 'configuration_error') {
-            // Stop without discarding messages; repair provider settings first.
-            return new Response(JSON.stringify({ processed: totalProcessed, stopped: 'provider_configuration' }), { status: 503 })
-          }
-          if (outcome.kind === 'suppressed' || outcome.kind === 'permanent_rejection') {
-            await moveToDlq(supabase, queue, msg, `Postmark ${outcome.kind}; HTTP ${outcome.status}; code ${outcome.providerCode}`)
-            continue
-          }
-          if (outcome.kind === 'rate_limited') {
-            throw Object.assign(new Error('Postmark rate limited'), {
-              status: 429, retryAfterSeconds: outcome.retryAfterSeconds,
-            })
-          }
-          if (outcome.kind === 'ambiguous') {
-            // Retain existing bounded retry policy. A lost receipt can cause duplicates.
-            throw new Error('Postmark acceptance uncertain; retry may duplicate delivery')
-          }
-        } else await sendLovableEmail(
-          {
-            run_id: payload.run_id,
-            to: payload.to,
-            from: payload.from,
-            sender_domain: payload.sender_domain,
-            subject: payload.subject,
-            html: payload.html,
-            text: payload.text,
-            purpose: payload.purpose,
-            label: payload.label,
-            idempotency_key: payload.idempotency_key,
-            unsubscribe_token: payload.unsubscribe_token,
-            message_id: payload.message_id,
-          },
-          // sendUrl is optional — when LOVABLE_SEND_URL is not set, the library
-          // falls back to the default Lovable API endpoint (https://api.lovable.dev).
-          // Set LOVABLE_SEND_URL as a Supabase secret to override (e.g. for local dev).
-          { apiKey, sendUrl: Deno.env.get('LOVABLE_SEND_URL') }
-        )
+        }
+        if (outcome.kind === 'ambiguous') {
+          // Retain existing bounded retry policy. A lost receipt can cause duplicates.
+          throw new Error('Postmark acceptance uncertain; retry may duplicate delivery')
+        }
 
         // Log success
         await checked(supabase.from('email_send_log').insert({
