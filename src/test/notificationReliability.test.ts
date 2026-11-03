@@ -43,9 +43,9 @@ function harness(name: string, resolve: (op: Operation) => Result, overrides: Re
   const source = readFileSync(`supabase/functions/${name}/index.ts`, 'utf8').replace(/^import .*\n/gm, '');
   // Execute the real entry point with synthetic dependencies; never load Deno or network SDKs.
   const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None } }).outputText;
-  new Function('Deno', 'createClient', 'createPostmarkAdapter', 'sendLovableEmail', compiled)(
+  new Function('Deno', 'createClient', 'createPostmarkAdapter', compiled)(
     { env: { get: (key: string) => env[key] }, serve: (fn: typeof handler) => { handler = fn; } },
-    createClient, () => ({ deliver }), vi.fn(),
+    createClient, () => ({ deliver }),
   );
   return { operations, deliver, createClient, request: (token = 'synthetic-service', method = 'POST') => handler(new Request(
     'https://example.test?token=synthetic-unsubscribe', { method, headers: token ? { Authorization: `Bearer ${token}` } : {} },

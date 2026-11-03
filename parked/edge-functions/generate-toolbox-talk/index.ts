@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { AI_NOT_CONFIGURED, aiChatCompletion, aiSettings } from '../_shared/ai.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,8 +41,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'topic is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const lovableKey = Deno.env.get('LOVABLE_API_KEY')
-    if (!lovableKey) throw new Error('LOVABLE_API_KEY not set')
+    const ai = aiSettings()
+    if (!ai) return new Response(JSON.stringify({ error: AI_NOT_CONFIGURED }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
     // 1) TEXT — punchy, foreman-style
     const systemPrompt = `You write 2-3 minute toolbox talks for Schreiber Excavating crews. Keep it tight, plain-spoken, and field-focused. No fluff.`
@@ -62,17 +63,12 @@ Return JSON:
   ]
 }`
 
-    const aiResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${lovableKey}` },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        response_format: { type: 'json_object' },
-      }),
+    const aiResp = await aiChatCompletion(ai, {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      response_format: { type: 'json_object' },
     })
 
     if (!aiResp.ok) {
@@ -85,19 +81,14 @@ Return JSON:
     const aiData = await aiResp.json()
     const parsed = JSON.parse(aiData.choices?.[0]?.message?.content ?? '{}')
 
-    // 2) IMAGE — generate via Lovable AI image model and upload to storage
+    // 2) IMAGE — only when an image model is configured; upload to storage
     let image_url: string | null = null
-    try {
+    if (ai.imageModel) try {
       const imgPrompt = parsed.image_prompt || `Realistic photo of ${topic} on a heavy civil excavation jobsite, safe practice focus, no text`
-      const imgResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${lovableKey}` },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash-image',
-          messages: [{ role: 'user', content: imgPrompt }],
-          modalities: ['image', 'text'],
-        }),
-      })
+      const imgResp = await aiChatCompletion(ai, {
+        messages: [{ role: 'user', content: imgPrompt }],
+        modalities: ['image', 'text'],
+      }, ai.imageModel)
       if (imgResp.ok) {
         const imgData = await imgResp.json()
         const dataUrl: string | undefined = imgData.choices?.[0]?.message?.images?.[0]?.image_url?.url

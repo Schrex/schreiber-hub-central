@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
       job = data
     }
 
-    // Recipients: all office + admin staff (Lovable Cloud emails), plus optional extras (e.g. customer)
+    // Recipients: all office + admin staff (their account emails), plus optional extras (e.g. customer)
     const { data: officeUsers } = await admin
       .from('user_roles')
       .select('user_id, role')

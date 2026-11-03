@@ -12,7 +12,7 @@ Part of the [codebase map](README.md). Last checked @ `f026a29`. Authoritative d
   the live project with real data (anon key prompt). `scripts/rehearsal-*` and
   `scripts/rehearsal/*.sql` are historical migration-era operators — do not run.
 - **Local**: disposable Docker Supabase, see [backend.md](backend.md#local-backend).
-- Lovable: Cloud project paused, GitHub access removed.
+- Lovable: Cloud project paused, GitHub access removed; no Lovable code dependencies remain.
 - Pages/Access tokens expire 2027-01-20.
 
 ## Branch → release flow
@@ -68,5 +68,5 @@ Current: `README.md`, `CLAUDE.md`, `DEVELOPMENT_PROGRESS.md` (status + open gaps
 
 Historical (evidence only, "do not rerun"): `docs/migration-*.md`, `docs/verification/*`,
 `docs/archive/*`, `local/AUDIT.md`, `local/LINT_BACKLOG.md`, `local/SCHEMA_RECONCILIATION.md`,
-`local/SCHEMA_REQUEST.md`, `local/reference/`, `.lovable/plan.md`.
+`local/SCHEMA_REQUEST.md`, `local/reference/`.
 Real migration exports live outside the repo (`~/Schrex/archive`).

@@ -1,4 +1,4 @@
-import { independentLaunch } from "@/lib/launchScope";
+import { integrationsParked } from "@/lib/launchScope";
 import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Sparkles } from "lucide-react";
@@ -65,7 +65,7 @@ export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
   };
 
   const extractFromContract = async () => {
-    if (independentLaunch) return;
+    if (integrationsParked) return;
     if (!hasContract) { toast.error("Upload a contract first"); return; }
     const replace = items.length > 0
       ? confirm("Replace existing scope items with items extracted from the contract?\n\nClick Cancel to append instead.")
@@ -92,7 +92,7 @@ export const ScopeOfWorkSection = ({ jobId }: { jobId: string }) => {
         <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
           Scope of work
         </h2>
-        {canEdit && hasContract && !independentLaunch && (
+        {canEdit && hasContract && !integrationsParked && (
           <Button size="sm" variant="ghost" onClick={extractFromContract} disabled={extracting}>
             <Sparkles className="h-3.5 w-3.5" />
             <span className="ml-1 text-xs">{extracting ? "Extracting…" : "From contract"}</span>

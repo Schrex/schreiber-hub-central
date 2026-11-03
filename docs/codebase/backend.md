@@ -71,17 +71,16 @@ files), office/admin (handbook), admin (onboarding templates); some owner folder
 
 ## Edge functions
 
-`supabase/functions/` (24 + `_shared/`). Typical auth: verify caller JWT, then role lookup.
+`supabase/functions/` (17 + `_shared/`). Typical auth: verify caller JWT, then role lookup.
 Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 
 | Group | Functions | Notes |
 | --- | --- | --- |
-| AI (Lovable gateway, `LOVABLE_API_KEY`) | categorize-document, extract-foreman-brief, extract-scope-from-contract, generate-toolbox-talk, suggest-safety-topic | Gateway retired → likely broken |
+| Parked (in `parked/edge-functions/`, not deployed) | categorize-document, extract-foreman-brief, extract-scope-from-contract, generate-toolbox-talk, suggest-safety-topic, notify-talk-attendees | AI + crew SMS; see `parked/README.md` |
 | Speech | speak-toolbox-talk, transcribe-toolbox-talk | Deepgram/ElevenLabs — out of scope, secrets removed |
-| SMS | notify-talk-attendees | Twilio via Lovable connector; hardcoded `lovable.app` URL |
 | Workflows → email | request-truck, decide-truck-request, request-safety-inspection, submit-safety-violation, submit-accident-report, complete-safety-talk | enqueue via send-transactional-email |
 | Employees | convert-employee-contact, create-employee | create-employee needs candidate RPCs; disabled in prod |
-| Email pipeline | send-transactional-email, process-email-queue (Postmark), handle-email-suppression (webhook), handle-email-unsubscribe, preview-transactional-email | Controls: `EMAIL_DELIVERY_ENABLED`, `EMAIL_DELIVERY_MODE`, `EMAIL_ALLOWED_RECIPIENTS` |
+| Email pipeline | send-transactional-email, process-email-queue (Postmark), handle-email-suppression (Postmark webhook), handle-email-unsubscribe | Postmark only (`EMAIL_PROVIDER=postmark`). Controls: `EMAIL_DELIVERY_ENABLED`, `EMAIL_DELIVERY_MODE`, `EMAIL_ALLOWED_RECIPIENTS` |
 | Scheduled / inbound | daily-celebrations (bearer secret), inbound-swpppp-email (webhook secret) | |
 
 `request-truck` returns 409 for jobs that aren't `active` (static check only; runtime unverified).

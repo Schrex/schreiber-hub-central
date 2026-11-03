@@ -46,7 +46,7 @@ export const getContactPickerUnavailableReason = (): string | null => {
   if (typeof window !== "undefined") {
     try {
       if (window.self !== window.top) {
-        return "The phone Contacts picker only opens when the app is opened directly, not inside the Lovable preview frame. Open the app in a published/full browser tab on Android Chrome, or import a .vcf contact file here.";
+        return "The phone Contacts picker only opens when the app is opened directly, not inside an embedded frame. Open the app in a full browser tab on Android Chrome, or import a .vcf contact file here.";
       }
     } catch {
       return "The phone Contacts picker cannot open from this embedded preview. Open the app directly, or import a .vcf contact file here.";

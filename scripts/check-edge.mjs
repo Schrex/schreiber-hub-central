@@ -10,18 +10,13 @@ const functions = [
   "handle-email-suppression",
   "complete-safety-talk",
   "decide-truck-request",
-  "extract-foreman-brief",
-  "extract-scope-from-contract",
-  "generate-toolbox-talk",
   "inbound-swpppp-email",
-  "notify-talk-attendees",
   "request-safety-inspection",
   "request-truck",
   "send-transactional-email",
   "speak-toolbox-talk",
   "submit-accident-report",
   "submit-safety-violation",
-  "suggest-safety-topic",
   "transcribe-toolbox-talk"
 ];
 const result = spawnSync('npx', ['--yes', 'deno@2.5.6', 'check', '--no-lock',

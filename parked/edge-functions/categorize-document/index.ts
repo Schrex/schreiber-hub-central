@@ -1,6 +1,7 @@
 // Auto-categorize an uploaded document (submittal, permit, swppp, estimate, contract)
-// using Lovable AI. Returns suggested metadata so the client can prefill or save instantly.
+// using the configured AI provider (see _shared/ai.ts). Returns suggested metadata so the client can prefill or save instantly.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { AI_NOT_CONFIGURED, aiChatCompletion, aiSettings } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -142,8 +143,8 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!lovableKey) return json(500, { error: "LOVABLE_API_KEY not configured" });
+    const ai = aiSettings();
+    if (!ai) return json(503, { error: AI_NOT_CONFIGURED });
 
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -180,24 +181,19 @@ Deno.serve(async (req) => {
     const mime = isPdf ? "application/pdf" : (blob.type || "image/jpeg");
 
     const tool = schemaFor(kind);
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: SYSTEM(kind) },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: `Filename: ${fileName ?? path}\nClassify this document.` },
-              { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
-            ],
-          },
-        ],
-        tools: [{ type: "function", function: tool }],
-        tool_choice: { type: "function", function: { name: tool.name } },
-      }),
+    const aiResp = await aiChatCompletion(ai, {
+      messages: [
+        { role: "system", content: SYSTEM(kind) },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: `Filename: ${fileName ?? path}\nClassify this document.` },
+            { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
+          ],
+        },
+      ],
+      tools: [{ type: "function", function: tool }],
+      tool_choice: { type: "function", function: { name: tool.name } },
     });
 
     if (!aiResp.ok) {

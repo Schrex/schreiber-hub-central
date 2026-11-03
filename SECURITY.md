@@ -48,13 +48,13 @@ Database-level triggers enforce:
 - Email confirmation required before sign-in
 - **HIBP (Have I Been Pwned) leaked-password check enabled** — passwords found in known breaches are rejected
 - Sessions are JWT-based with automatic refresh
-- **Admins should enable MFA** in their account settings (Lovable Cloud → Users)
+- **Admins should enable MFA** in their account settings (Supabase dashboard → Authentication)
 
 ### Function Hardening
 All database functions use `SET search_path = public` to prevent search-path hijacking attacks.
 
 ### Secrets
-API keys and service credentials are stored in Lovable Cloud secret storage, never in source code.
+API keys and service credentials are stored as Supabase Edge function secrets and GitHub Actions secrets, never in source code.
 
 ## 4. Physical & Network Safeguards
 - Hosted on Supabase (SOC 2 Type II certified) on AWS infrastructure
@@ -64,7 +64,7 @@ API keys and service credentials are stored in Lovable Cloud secret storage, nev
 ## 5. Breach Response (NY SHIELD Requirement)
 
 In the event of unauthorized access to private information:
-1. **Immediate**: Revoke compromised credentials, rotate API keys via Lovable Cloud → Backend → Settings.
+1. **Immediate**: Revoke compromised credentials, rotate API keys and Edge function secrets in the Supabase dashboard (production project `acgqjjbrnkmeazswdnzp`).
 2. **Within 24 hours**: Review `pay_audit_log` to determine scope.
 3. **"Most expedient time possible, without unreasonable delay"** (NY § 899-aa): Notify affected NY residents.
 4. Notify NY Attorney General, Department of State, and Division of State Police if more than 500 NY residents affected.
