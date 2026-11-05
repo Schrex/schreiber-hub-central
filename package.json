@@ -22,6 +22,7 @@
     "test:local:employee": "node scripts/local-employee-creation.mjs",
     "test:local:roles": "node scripts/local-role-boundaries.mjs",
     "test:local:jobs-status": "node scripts/local-jobs-status.mjs",
+    "test:local:lookahead": "node scripts/local-lookahead-rls.mjs",
     "test:local:access": "node scripts/local-access-policy.mjs",
     "local:audit-schema": "node scripts/schema-audit.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",

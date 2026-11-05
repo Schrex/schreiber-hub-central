@@ -1,5 +1,16 @@
 # Development progress
 
+## Cobblestone look-ahead grid (CL-1) — November 5, 2026
+
+Local-only candidate migration, seed, and job-page tabs for a published
+Mon–Fri task grid on synthetic Cobblestone (`J2607`). Not applied to production.
+`supabase/migrations/` was not edited. Editor, XML import, and the Problem
+button are later tickets.
+
+Verified on a disposable local backend: `verify:app`, `verify:lint` (30 existing
+warnings, 0 errors), `verify:edge`, `verify:backend` (including
+`test:local:lookahead`), and `verify:browser`.
+
 ## Production baseline — October 22, 2026
 
 The verified release at `ac61bb695304d2cb319f5c3605d43f446ed99bca` is the starting

@@ -25,6 +25,12 @@ Source of truth: `supabase/migrations/` (78 applied files, mostly Lovable UUID n
 - `jobs` → `job_contacts`, `job_contact_template_slots` (seeded by trigger on insert),
   `job_estimates`, `job_exclusions`, `job_notes`, `job_permits`, `job_photos`, `job_plans`,
   `job_scope_items`, `job_submittals`, `job_unit_pricing`, `dig_tickets`.
+- `jobs.lookahead_grid_enabled` (default false) gates the task look-ahead. Tables, local
+  candidate only: `lookahead_plans` → `lookahead_tasks` → `lookahead_task_days`, plus
+  `lookahead_plan_holidays`, `lookahead_acks`, `lookahead_changes`, `lookahead_views`,
+  `lookahead_import_runs`. Published and superseded plans are readable by any signed-in
+  user; drafts and grid writes are office/admin. No cost or rate columns. Not applied
+  to production.
 - `jobs` status lifecycle (`supabase/migrations/20261026010000_jobs_status_lifecycle.sql`; applied in production 2026-10-26):
   columns `completed_at`, `completed_by` (→ auth users, `ON DELETE SET NULL`), `hold_reason`;
   checks `jobs_completion_matches_status`, `jobs_hold_reason_matches_status`; `BEFORE INSERT OR
@@ -90,9 +96,9 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 ## Migration workflow
 
 - `supabase/migrations/` = applied production history. Never edit or replay.
-- `local/candidate-migrations/` = 12 unapplied candidates (time-off permissions, attendance RLS
+- `local/candidate-migrations/` = 13 unapplied candidates (time-off permissions, attendance RLS
   fix, safety notification dedup, contact sync, job-contact seed dupes, queue/service grants,
-  accident-photo storage policy, inactive email dispatcher, employee creation).
+  accident-photo storage policy, inactive email dispatcher, employee creation, look-ahead grid).
   Promotion needs release review + explicit authorization; applied one file at a time to a
   named project (see `docs/add-employee-release.md`).
 - `local/hr-bootstrap.sql` recreates pay/benefit tables no migration creates — local only.
@@ -103,9 +109,9 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 
 - `scripts/prepare-local.mjs` builds `.local-backend/supabase/`: copies migrations (rejects
   `net.http_`, `cron.schedule`, vault writes), stubs the historical employee-account seed and
-  the Cloud-owned realtime migration, injects hr-bootstrap + an ordering fix, copies 2
-  candidates (time-off permissions, employee creation), `local/config.toml`, `local/seed.sql`.
-  No Edge functions.
+  the Cloud-owned realtime migration, injects hr-bootstrap + an ordering fix, copies 3
+  candidates (time-off permissions, employee creation, look-ahead grid), `local/config.toml`,
+  `local/seed.sql`. No Edge functions.
 - Ports: API 55321, DB 55322 (shadow 55320), Studio 55323, mail capture 55324. Postgres 17.
   Realtime, edge runtime, analytics disabled.
 - `local/seed.sql`: truncates everything; users `employee@`, `other@`, `admin@example.test`
@@ -124,6 +130,7 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 | `test:local:roles` | Per-role uploads, salary privacy, no self-promotion |
 | `test:local:employee` | create-employee handler + RPC races |
 | `test:local:jobs-status` | Jobs lifecycle trigger/checks as office, employee, service role |
+| `test:local:lookahead` | Published look-ahead read by an employee; draft hidden; task insert denied; holiday/weekend marks rejected |
 | `test:local:access` (`local-access-policy.mjs`) | UI access rules (`src/lib/accessRules.ts`) never allow more than RLS: probes each table-linked rule (81 checks) per role + assigned/unassigned foreman; wider RLS must be a recorded `narrower`. Tables only, no storage buckets; `ui-only` rules listed, not probed |
 
 Run individually: `local-accident-photo-replacement.mjs`, `local-storage-api-acceptance.mjs`,

@@ -1756,6 +1756,7 @@ export type Database = {
           hold_reason: string | null
           id: string
           job_number: string | null
+          lookahead_grid_enabled: boolean
           latitude: number | null
           longitude: number | null
           name: string
@@ -1785,6 +1786,7 @@ export type Database = {
           hold_reason?: string | null
           id?: string
           job_number?: string | null
+          lookahead_grid_enabled?: boolean
           latitude?: number | null
           longitude?: number | null
           name: string
@@ -1813,6 +1815,7 @@ export type Database = {
           hold_reason?: string | null
           id?: string
           job_number?: string | null
+          lookahead_grid_enabled?: boolean
           latitude?: number | null
           longitude?: number | null
           name?: string
@@ -1822,6 +1825,293 @@ export type Database = {
           start_date?: string | null
           status?: Database["public"]["Enums"]["job_status"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      lookahead_acks: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          kind: string
+          plan_id: string
+          task_id: string | null
+          user_id: string
+          work_date: string | null
+        }
+        ComputedFields: never
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          plan_id: string
+          task_id?: string | null
+          user_id: string
+          work_date?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          plan_id?: string
+          task_id?: string | null
+          user_id?: string
+          work_date?: string | null
+        }
+        Relationships: []
+      }
+      lookahead_changes: {
+        Row: {
+          action: string
+          bulk_op_id: string | null
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          plan_id: string
+          task_id: string | null
+        }
+        ComputedFields: never
+        Insert: {
+          action: string
+          bulk_op_id?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          plan_id: string
+          task_id?: string | null
+        }
+        Update: {
+          action?: string
+          bulk_op_id?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          plan_id?: string
+          task_id?: string | null
+        }
+        Relationships: []
+      }
+      lookahead_import_runs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          decision: string | null
+          error_message: string | null
+          id: string
+          input_checksum: string | null
+          input_filename: string | null
+          job_id: string
+          kind: string
+          parser_version: string | null
+          plan_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          summary: Json | null
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          decision?: string | null
+          error_message?: string | null
+          id?: string
+          input_checksum?: string | null
+          input_filename?: string | null
+          job_id: string
+          kind: string
+          parser_version?: string | null
+          plan_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status: string
+          summary?: Json | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          decision?: string | null
+          error_message?: string | null
+          id?: string
+          input_checksum?: string | null
+          input_filename?: string | null
+          job_id?: string
+          kind?: string
+          parser_version?: string | null
+          plan_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          summary?: Json | null
+        }
+        Relationships: []
+      }
+      lookahead_plan_holidays: {
+        Row: {
+          holiday_date: string
+          label: string
+          plan_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          holiday_date: string
+          label: string
+          plan_id: string
+        }
+        Update: {
+          holiday_date?: string
+          label?: string
+          plan_id?: string
+        }
+        Relationships: []
+      }
+      lookahead_plans: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          job_id: string
+          published_at: string | null
+          published_by: string | null
+          replaces_plan_id: string | null
+          source: string
+          source_checksum: string | null
+          source_filename: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          week_start: string
+          weeks: number
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          job_id: string
+          published_at?: string | null
+          published_by?: string | null
+          replaces_plan_id?: string | null
+          source: string
+          source_checksum?: string | null
+          source_filename?: string | null
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+          week_start: string
+          weeks?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          job_id?: string
+          published_at?: string | null
+          published_by?: string | null
+          replaces_plan_id?: string | null
+          source?: string
+          source_checksum?: string | null
+          source_filename?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          week_start?: string
+          weeks?: number
+        }
+        Relationships: []
+      }
+      lookahead_task_days: {
+        Row: {
+          task_id: string
+          work_date: string
+        }
+        ComputedFields: never
+        Insert: {
+          task_id: string
+          work_date: string
+        }
+        Update: {
+          task_id?: string
+          work_date?: string
+        }
+        Relationships: []
+      }
+      lookahead_tasks: {
+        Row: {
+          carried_from_task_id: string | null
+          contractor_name: string
+          contractor_type: string
+          group_name: string | null
+          id: string
+          is_placeholder_skipped: boolean
+          mpp_unique_id: number | null
+          mpp_wbs: string | null
+          name: string
+          note: string | null
+          outline_number: string | null
+          pct_complete: number | null
+          plan_id: string
+          sort_order: number
+        }
+        ComputedFields: never
+        Insert: {
+          carried_from_task_id?: string | null
+          contractor_name?: string
+          contractor_type: string
+          group_name?: string | null
+          id?: string
+          is_placeholder_skipped?: boolean
+          mpp_unique_id?: number | null
+          mpp_wbs?: string | null
+          name: string
+          note?: string | null
+          outline_number?: string | null
+          pct_complete?: number | null
+          plan_id: string
+          sort_order: number
+        }
+        Update: {
+          carried_from_task_id?: string | null
+          contractor_name?: string
+          contractor_type?: string
+          group_name?: string | null
+          id?: string
+          is_placeholder_skipped?: boolean
+          mpp_unique_id?: number | null
+          mpp_wbs?: string | null
+          name?: string
+          note?: string | null
+          outline_number?: string | null
+          pct_complete?: number | null
+          plan_id?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      lookahead_views: {
+        Row: {
+          last_seen_at: string
+          plan_id: string
+          user_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          last_seen_at?: string
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          last_seen_at?: string
+          plan_id?: string
+          user_id?: string
         }
         Relationships: []
       }

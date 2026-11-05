@@ -1,4 +1,5 @@
 import { JobFilesSection } from "@/components/jobs/JobFilesSection";
+import { JobDetailTabs } from "@/components/jobs/JobDetailTabs";
 import { JobStatusBadge } from "@/components/jobs/JobStatusBadge";
 import { JobStatusSection } from "@/components/jobs/JobStatusSection";
 import { useEffect, useState } from "react";
@@ -16,6 +17,7 @@ import { PlansSection } from "@/components/jobs/PlansSection";
 import { PhotosSection } from "@/components/jobs/PhotosSection";
 import { JobInfoSection } from "@/components/jobs/JobInfoSection";
 import { JobLookahead } from "@/components/jobs/JobLookahead";
+import { LookaheadGrid } from "@/components/jobs/lookahead/LookaheadGrid";
 import { SafetyInspectionButton } from "@/components/jobs/SafetyInspectionButton";
 import { RequestTruckButton } from "@/components/jobs/RequestTruckButton";
 import { ForemanPicker } from "@/components/jobs/ForemanPicker";
@@ -48,6 +50,7 @@ interface Job {
   hold_reason: string | null;
   completed_at: string | null;
   completed_by: string | null;
+  lookahead_grid_enabled?: boolean;
 }
 
 const JobDetail = () => {
@@ -102,10 +105,103 @@ const JobDetail = () => {
   const mapsUrl = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
     : null;
+  const lookaheadEnabled = job.lookahead_grid_enabled === true;
+
+  const statusSection = (
+    <JobStatusSection
+      job={job}
+      canChangeStatus={canChangeStatus}
+      onChanged={(fields) => setJob((current) => (current ? { ...current, ...fields } : current))}
+    />
+  );
+  const filesSection = <JobFilesSection jobId={job.id} />;
+  const driveSection = <DriveTimeFromShop lat={lat} lon={lon} />;
+  const weatherSection = coords ? (
+    <section>
+      <h2 className="mb-2 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
+        Weather on site
+      </h2>
+      <WeatherCard forecast={weather.forecast} coords={weather.coords} loading={weather.loading} />
+    </section>
+  ) : (
+    <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+      Add an address to see on-site weather.
+    </div>
+  );
+  const privateSection = canSeePrivate ? (
+    <section className="space-y-2 rounded-2xl border border-border bg-surface p-4">
+      <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
+        Job details
+      </h2>
+      {job.customer && <Row label="Customer" value={job.customer} />}
+      {job.gc && <Row label="GC" value={job.gc} />}
+      <ForemanPicker
+        jobId={job.id}
+        foremanId={job.foreman_id}
+        onChange={(newId) => setJob((current) => (current ? { ...current, foreman_id: newId } : current))}
+      />
+      {job.on_site_contact_name && (
+        <Row icon={<User className="h-3.5 w-3.5" />} label="On-site" value={job.on_site_contact_name} />
+      )}
+      {job.on_site_contact_phone && (
+        <a href={`tel:${job.on_site_contact_phone}`} className="block">
+          <Row icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={job.on_site_contact_phone} />
+        </a>
+      )}
+      {(job.start_date || job.end_date) && (
+        <Row
+          icon={<Calendar className="h-3.5 w-3.5" />}
+          label="Dates"
+          value={`${job.start_date ?? "?"} → ${job.end_date ?? "?"}`}
+        />
+      )}
+      {job.notes && (
+        <div className="pt-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Notes</p>
+          <p className="text-sm">{job.notes}</p>
+        </div>
+      )}
+    </section>
+  ) : null;
+  const contactsSection = canSeePrivate ? (
+    <JobContactsSection jobId={job.id} jobName={job.name} foremanId={job.foreman_id} />
+  ) : null;
+  const contractSection = canSeeContract ? <ContractSection jobId={job.id} /> : null;
+  const briefSection = canSeePrivate ? <ForemanBriefSection jobId={job.id} /> : null;
+  const scopeSection = <ScopeOfWorkSection jobId={job.id} />;
+  const submittalsSection = <SubmittalsSection jobId={job.id} />;
+  const swpppSection = <SwpppSection jobId={job.id} jobNumber={job.job_number} />;
+  const reportSection = canSeeJobReport ? <JobInfoSection jobNumber={job.job_number} /> : null;
+  const crewSection = <JobLookahead jobId={job.id} />;
+  const plansSection = <PlansSection jobId={job.id} />;
+  const photosSection = (
+    <PhotosSection
+      jobId={job.id}
+      jobLabel={job.job_number ? `#${job.job_number} · ${job.name}` : job.name}
+      address={job.address}
+    />
+  );
+  const permitsSection = <PermitsSection jobId={job.id} />;
+  const digSection = <DigTicketsSection jobId={job.id} />;
+  const truckSection = job.status === "active" ? (
+    <RequestTruckButton jobId={job.id} jobAddress={job.address} />
+  ) : null;
+  const inspectionSection = <SafetyInspectionButton jobId={job.id} />;
+  const accidentSection = (
+    <AccidentReportButton presetJob={{ id: job.id, name: job.name, job_number: job.job_number }} variant="outline" />
+  );
+  const violationSection = canSeePrivate ? (
+    <SafetyViolationButton presetJob={{ id: job.id, name: job.name, job_number: job.job_number }} variant="outline" />
+  ) : null;
+  const mapsSection = mapsUrl ? (
+    <Button asChild variant="outline" className="w-full">
+      <a href={mapsUrl} target="_blank" rel="noreferrer">Open in Maps</a>
+    </Button>
+  ) : null;
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-2xl space-y-5 px-4 py-6">
+      <div className={`mx-auto space-y-5 px-4 py-6 ${lookaheadEnabled ? "max-w-6xl" : "max-w-2xl"}`}>
         <Link to="/jobs" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> All jobs
         </Link>
@@ -127,104 +223,74 @@ const JobDetail = () => {
             </a>
           )}
         </div>
-        <JobStatusSection
-          job={job}
-          canChangeStatus={canChangeStatus}
-          onChanged={(fields) => setJob((j) => (j ? { ...j, ...fields } : j))}
-        />
-        <JobFilesSection jobId={job.id} />
-        <DriveTimeFromShop lat={lat} lon={lon} />
 
-        {/* Per-job weather */}
-        {coords ? (
-          <section>
-            <h2 className="mb-2 font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
-              Weather on site
-            </h2>
-            <WeatherCard forecast={weather.forecast} coords={weather.coords} loading={weather.loading} />
-          </section>
+        {lookaheadEnabled ? (
+          <JobDetailTabs
+            lookahead={(
+              <>
+                <LookaheadGrid jobId={job.id} jobName={job.name} jobNumber={job.job_number} />
+                {crewSection}
+              </>
+            )}
+            jobInfo={(
+              <>
+                {statusSection}
+                {privateSection}
+                {contactsSection}
+                {contractSection}
+                {briefSection}
+                {scopeSection}
+                {submittalsSection}
+                {swpppSection}
+                {reportSection}
+                {weatherSection}
+                {driveSection}
+                {mapsSection}
+              </>
+            )}
+            files={(
+              <>
+                {filesSection}
+                {plansSection}
+                {photosSection}
+              </>
+            )}
+            field={(
+              <>
+                {digSection}
+                {permitsSection}
+                {truckSection}
+                {inspectionSection}
+                {accidentSection}
+                {violationSection}
+              </>
+            )}
+          />
         ) : (
-          <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-            Add an address to see on-site weather.
-          </div>
-        )}
-
-        {/* Foreman+ private info */}
-        {canSeePrivate && (
-          <section className="space-y-2 rounded-2xl border border-border bg-surface p-4">
-            <h2 className="font-display text-xs uppercase tracking-[0.22em] text-muted-foreground">
-              Job details
-            </h2>
-            {job.customer && <Row label="Customer" value={job.customer} />}
-            {job.gc && <Row label="GC" value={job.gc} />}
-            <ForemanPicker
-              jobId={job.id}
-              foremanId={job.foreman_id}
-              onChange={(newId) => setJob((j) => (j ? { ...j, foreman_id: newId } : j))}
-            />
-            {job.on_site_contact_name && (
-              <Row icon={<User className="h-3.5 w-3.5" />} label="On-site" value={job.on_site_contact_name} />
-            )}
-            {job.on_site_contact_phone && (
-              <a href={`tel:${job.on_site_contact_phone}`} className="block">
-                <Row icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={job.on_site_contact_phone} />
-              </a>
-            )}
-            {(job.start_date || job.end_date) && (
-              <Row
-                icon={<Calendar className="h-3.5 w-3.5" />}
-                label="Dates"
-                value={`${job.start_date ?? "?"} → ${job.end_date ?? "?"}`}
-              />
-            )}
-            {job.notes && (
-              <div className="pt-2">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Notes</p>
-                <p className="text-sm">{job.notes}</p>
-              </div>
-            )}
-          </section>
-        )}
-
-        {canSeePrivate && (
-          <JobContactsSection jobId={job.id} jobName={job.name} foremanId={job.foreman_id} />
-        )}
-
-        {canSeeContract && (
-          <ContractSection jobId={job.id} />
-        )}
-        {canSeePrivate && <ForemanBriefSection jobId={job.id} />}
-        <ScopeOfWorkSection jobId={job.id} />
-        <SubmittalsSection jobId={job.id} />
-        <SwpppSection jobId={job.id} jobNumber={job.job_number} />
-
-        {canSeeJobReport && <JobInfoSection jobNumber={job.job_number} />}
-        <JobLookahead jobId={job.id} />
-        <PlansSection jobId={job.id} />
-        <PhotosSection
-          jobId={job.id}
-          jobLabel={job.job_number ? `#${job.job_number} · ${job.name}` : job.name}
-          address={job.address}
-        />
-        <PermitsSection jobId={job.id} />
-        <DigTicketsSection jobId={job.id} />
-
-        {job.status === "active" && (
-          <RequestTruckButton jobId={job.id} jobAddress={job.address} />
-        )}
-
-        <SafetyInspectionButton jobId={job.id} />
-
-        <AccidentReportButton presetJob={{ id: job.id, name: job.name, job_number: job.job_number }} variant="outline" />
-
-        {canSeePrivate && (
-          <SafetyViolationButton presetJob={{ id: job.id, name: job.name, job_number: job.job_number }} variant="outline" />
-        )}
-
-        {mapsUrl && (
-          <Button asChild variant="outline" className="w-full">
-            <a href={mapsUrl} target="_blank" rel="noreferrer">Open in Maps</a>
-          </Button>
+          <>
+            {statusSection}
+            {filesSection}
+            {driveSection}
+            {weatherSection}
+            {privateSection}
+            {contactsSection}
+            {contractSection}
+            {briefSection}
+            {scopeSection}
+            {submittalsSection}
+            {swpppSection}
+            {reportSection}
+            {crewSection}
+            {plansSection}
+            {photosSection}
+            {permitsSection}
+            {digSection}
+            {truckSection}
+            {inspectionSection}
+            {accidentSection}
+            {violationSection}
+            {mapsSection}
+          </>
         )}
       </div>
     </div>
