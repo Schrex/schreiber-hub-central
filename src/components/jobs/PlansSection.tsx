@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FileText, Upload, Download, Trash2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -87,9 +88,9 @@ interface Plan {
 }
 
 export const PlansSection = ({ jobId }: { jobId: string }) => {
-  const { role: realRole, effectiveRole, displayName } = useAuth();
-  const role = effectiveRole ?? realRole;
-  const canManage = role === "office" || role === "admin";
+  const { displayName } = useAuth();
+  const { can } = useAccess();
+  const canManage = can("job.plans.edit");
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadingCat, setUploadingCat] = useState<Category | null>(null);

@@ -28,6 +28,7 @@ import { AppTile } from "@/components/home/AppTile";
 import { RoleSwitcher } from "@/components/home/RoleSwitcher";
 import { CelebrationsBanner } from "@/components/home/CelebrationsBanner";
 import { useAuth, type Role } from "@/hooks/useAuth";
+import { useAccess, type PlainAccessAction } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 
 type Tile = {
@@ -35,7 +36,8 @@ type Tile = {
   label: string;
   hint?: string;
   icon: typeof Calendar;
-  roles: Role[];
+  /** Access action gating the tile; omitted = every signed-in user. */
+  action?: PlainAccessAction;
   badge?: string | number;
   restricted?: "foreman" | "office" | "admin";
   to?: string;
@@ -43,28 +45,29 @@ type Tile = {
 };
 
 const TILES: Tile[] = [
-  { key: "schedule", label: "Schedule", hint: "Today + this week", icon: Calendar, roles: ["employee", "foreman", "office", "admin"], to: "/schedule", badge: "Today" },
-  { key: "jobs", label: "Jobs", hint: "Plans, GPS, contacts", icon: Briefcase, roles: ["employee", "foreman", "office", "admin"], to: "/jobs" },
-  { key: "trucking", label: "Trucking", hint: "Today's truck orders", icon: Truck, roles: ["employee", "foreman", "office", "admin"], to: "/dispatch" },
-  { key: "vendors", label: "Vendors", hint: "Suppliers + contacts", icon: Truck, roles: ["employee", "foreman", "office", "admin"], to: "/vendors" },
-  { key: "employee-contacts", label: "Employee Contacts", hint: "Crew phone book", icon: Users, roles: ["employee", "foreman", "office", "admin"], to: "/employee-contacts" },
-  { key: "maintenance", label: "Equipment", hint: "Log issues (HCSS)", icon: Wrench, roles: ["employee", "foreman", "office", "admin"], href: "https://mr.hcssapps.com" },
-  { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, roles: ["foreman", "admin"], href: "https://app.clearstory.build" },
-  { key: "receipts", label: "Submit Receipt", hint: "Bill Spend & Expense", icon: Receipt, roles: ["employee", "foreman", "office", "admin"], href: "https://app.divvy.co/" },
-  { key: "perks", label: "My Perks", hint: "Apparel, time off & referrals", icon: Sparkles, roles: ["employee", "foreman", "office", "admin"], to: "/perks" },
+  { key: "schedule", label: "Schedule", hint: "Today + this week", icon: Calendar, to: "/schedule", badge: "Today" },
+  { key: "jobs", label: "Jobs", hint: "Plans, GPS, contacts", icon: Briefcase, to: "/jobs" },
+  { key: "trucking", label: "Trucking", hint: "Today's truck orders", icon: Truck, to: "/dispatch" },
+  { key: "vendors", label: "Vendors", hint: "Suppliers + contacts", icon: Truck, to: "/vendors" },
+  { key: "employee-contacts", label: "Employee Contacts", hint: "Crew phone book", icon: Users, to: "/employee-contacts" },
+  { key: "maintenance", label: "Equipment", hint: "Log issues (HCSS)", icon: Wrench, href: "https://mr.hcssapps.com" },
+  { key: "clearstory", label: "Clearstory", hint: "CORs & RFIs", icon: ClipboardList, action: "clearstory.open", href: "https://app.clearstory.build" },
+  { key: "receipts", label: "Submit Receipt", hint: "Bill Spend & Expense", icon: Receipt, href: "https://app.divvy.co/" },
+  { key: "perks", label: "My Perks", hint: "Apparel, time off & referrals", icon: Sparkles, to: "/perks" },
   
-  { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, roles: ["foreman", "office", "admin"], to: "/tools" },
-  { key: "safety", label: "Safety", hint: "Rules & toolbox talks", icon: HardHat, roles: ["employee", "foreman", "office", "admin"], to: "/safety" },
-  { key: "myposition", label: "My Position", hint: "Title, pay & range — private", icon: IdCard, roles: ["employee", "foreman", "office", "admin"], to: "/my-position" },
-  { key: "hr", label: "HR", hint: "Reviews, pay, time off, contacts & new hires", icon: Briefcase, roles: ["admin"], to: "/hr" },
-  { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, roles: ["admin"], to: "/admin/users" },
+  { key: "tools", label: "Tools", hint: "Calculators & utilities", icon: Calculator, action: "tools.open", to: "/tools" },
+  { key: "safety", label: "Safety", hint: "Rules & toolbox talks", icon: HardHat, to: "/safety" },
+  { key: "myposition", label: "My Position", hint: "Title, pay & range — private", icon: IdCard, to: "/my-position" },
+  { key: "hr", label: "HR", hint: "Reviews, pay, time off, contacts & new hires", icon: Briefcase, action: "admin.open", to: "/hr" },
+  { key: "admin", label: "Admin", hint: "Users & settings", icon: Settings, action: "admin.open", to: "/admin/users" },
 ];
 
 const Index = () => {
-  const { role, effectiveRole: ctxRole, setPreviewRole, displayName, positionTitle, signOut } = useAuth();
+  const { effectiveRole: ctxRole, setPreviewRole, displayName, positionTitle, signOut } = useAuth();
+  const access = useAccess();
   const navigate = useNavigate();
   const effectiveRole: Role = ctxRole ?? "employee";
-  const visible = TILES.filter((t) => t.roles.includes(effectiveRole));
+  const visible = TILES.filter((t) => !t.action || access.can(t.action));
 
   const handleTile = (t: Tile) => {
     if (t.to) {
@@ -98,7 +101,7 @@ const Index = () => {
         <WeatherStrip />
         {!independentLaunch && <CelebrationsBanner />}
 
-        {role === "admin" && (
+        {access.can("preview.switch") && (
           <RoleSwitcher value={effectiveRole} onChange={setPreviewRole} />
         )}
 

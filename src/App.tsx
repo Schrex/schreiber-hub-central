@@ -68,15 +68,15 @@ const App = () => (
             <Route path="/org-chart" element={<ProtectedRoute><OrgChart /></ProtectedRoute>} />
             <Route
               path="/admin/positions"
-              element={<ProtectedRoute requireRole="admin"><AdminPositions /></ProtectedRoute>}
+              element={<ProtectedRoute requireAction="admin.open"><AdminPositions /></ProtectedRoute>}
             />
             <Route
               path="/hr"
-              element={<ProtectedRoute requireRole="admin"><HR /></ProtectedRoute>}
+              element={<ProtectedRoute requireAction="admin.open"><HR /></ProtectedRoute>}
             />
             <Route
               path="/admin/users"
-              element={<ProtectedRoute requireRole="admin"><AdminUsers /></ProtectedRoute>}
+              element={<ProtectedRoute requireAction="admin.open"><AdminUsers /></ProtectedRoute>}
             />
             <Route path="/safety" element={<ProtectedRoute><Safety /></ProtectedRoute>} />
             <Route path="/safety/take/:token" element={<ProtectedRoute><TakeSafetyTalk /></ProtectedRoute>} />

@@ -6,6 +6,7 @@ import * as XLSX from "xlsx";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -167,9 +168,10 @@ const parseVCards = (text: string): VCardContact[] => {
 
 const Vendors = () => {
   const navigate = useNavigate();
-  const { role, user } = useAuth();
-  const canEdit = role === "foreman" || role === "office" || role === "admin";
-  const canDelete = role === "office" || role === "admin";
+  const { user } = useAuth();
+  const { can } = useAccess();
+  const canEdit = can("vendors.edit");
+  const canDelete = can("vendors.delete");
 
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);

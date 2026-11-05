@@ -25,7 +25,7 @@ Source of truth: `supabase/migrations/` (78 applied files, mostly Lovable UUID n
 - `jobs` → `job_contacts`, `job_contact_template_slots` (seeded by trigger on insert),
   `job_estimates`, `job_exclusions`, `job_notes`, `job_permits`, `job_photos`, `job_plans`,
   `job_scope_items`, `job_submittals`, `job_unit_pricing`, `dig_tickets`.
-- `jobs` status lifecycle (`supabase/migrations/20261026010000_jobs_status_lifecycle.sql`; promoted, production apply pending — see `docs/jobs-status-release.md`):
+- `jobs` status lifecycle (`supabase/migrations/20261026010000_jobs_status_lifecycle.sql`; applied in production 2026-10-26):
   columns `completed_at`, `completed_by` (→ auth users, `ON DELETE SET NULL`), `hold_reason`;
   checks `jobs_completion_matches_status`, `jobs_hold_reason_matches_status`; `BEFORE INSERT OR
   UPDATE` trigger `jobs_status_lifecycle` sets `completed_by = auth.uid()` on entering complete
@@ -71,17 +71,16 @@ files), office/admin (handbook), admin (onboarding templates); some owner folder
 
 ## Edge functions
 
-`supabase/functions/` (24 + `_shared/`). Typical auth: verify caller JWT, then role lookup.
+`supabase/functions/` (17 + `_shared/`). Typical auth: verify caller JWT, then role lookup.
 Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 
 | Group | Functions | Notes |
 | --- | --- | --- |
-| AI (Lovable gateway, `LOVABLE_API_KEY`) | categorize-document, extract-foreman-brief, extract-scope-from-contract, generate-toolbox-talk, suggest-safety-topic | Gateway retired → likely broken |
+| Parked (in `parked/edge-functions/`, not deployed) | categorize-document, extract-foreman-brief, extract-scope-from-contract, generate-toolbox-talk, suggest-safety-topic, notify-talk-attendees | AI + crew SMS; see `parked/README.md` |
 | Speech | speak-toolbox-talk, transcribe-toolbox-talk | Deepgram/ElevenLabs — out of scope, secrets removed |
-| SMS | notify-talk-attendees | Twilio via Lovable connector; hardcoded `lovable.app` URL |
 | Workflows → email | request-truck, decide-truck-request, request-safety-inspection, submit-safety-violation, submit-accident-report, complete-safety-talk | enqueue via send-transactional-email |
 | Employees | convert-employee-contact, create-employee | create-employee needs candidate RPCs; disabled in prod |
-| Email pipeline | send-transactional-email, process-email-queue (Postmark), handle-email-suppression (webhook), handle-email-unsubscribe, preview-transactional-email | Controls: `EMAIL_DELIVERY_ENABLED`, `EMAIL_DELIVERY_MODE`, `EMAIL_ALLOWED_RECIPIENTS` |
+| Email pipeline | send-transactional-email, process-email-queue (Postmark), handle-email-suppression (Postmark webhook), handle-email-unsubscribe | Postmark only (`EMAIL_PROVIDER=postmark`). Controls: `EMAIL_DELIVERY_ENABLED`, `EMAIL_DELIVERY_MODE`, `EMAIL_ALLOWED_RECIPIENTS` |
 | Scheduled / inbound | daily-celebrations (bearer secret), inbound-swpppp-email (webhook secret) | |
 
 `request-truck` returns 409 for jobs that aren't `active` (static check only; runtime unverified).
@@ -91,8 +90,6 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 ## Migration workflow
 
 - `supabase/migrations/` = applied production history. Never edit or replay.
-  Exception: `20261026010000_jobs_status_lifecycle.sql` is promoted but not yet applied in
-  production; apply it per `docs/jobs-status-release.md` before the Jobs frontend ships.
 - `local/candidate-migrations/` = 12 unapplied candidates (time-off permissions, attendance RLS
   fix, safety notification dedup, contact sync, job-contact seed dupes, queue/service grants,
   accident-photo storage policy, inactive email dispatcher, employee creation).
@@ -127,6 +124,7 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 | `test:local:roles` | Per-role uploads, salary privacy, no self-promotion |
 | `test:local:employee` | create-employee handler + RPC races |
 | `test:local:jobs-status` | Jobs lifecycle trigger/checks as office, employee, service role |
+| `test:local:access` (`local-access-policy.mjs`) | UI access rules (`src/lib/accessRules.ts`) never allow more than RLS: probes each table-linked rule (81 checks) per role + assigned/unassigned foreman; wider RLS must be a recorded `narrower`. Tables only, no storage buckets; `ui-only` rules listed, not probed |
 
 Run individually: `local-accident-photo-replacement.mjs`, `local-storage-api-acceptance.mjs`,
 `local-private-talk-media-acceptance.mjs`, Python `local-*-triggers.py` / `*-activation.py`.

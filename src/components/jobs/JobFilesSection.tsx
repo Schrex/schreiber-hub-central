@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAccess } from '@/lib/access';
 import { Button } from '@/components/ui/button';
-import { jobFileUrl, loadJobFiles, type JobFile } from './jobFiles';
+import { jobFileUrl, loadJobFiles, visibleFileSources, type FileSource, type JobFile } from './jobFiles';
 
 export function JobFilesSection({ jobId }: { jobId: string }) {
-  const { role, effectiveRole } = useAuth();
-  const activeRole = effectiveRole ?? role;
-  // A keyed child removes private rows immediately when role/job changes, before
-  // effects run. Its cleanup also prevents a late signed URL from opening.
-  return <FileList key={`${jobId}:${activeRole}`} jobId={jobId} role={activeRole} />;
+  const { can } = useAccess();
+  const sources = visibleFileSources(can);
+  const sourceKey = sources.join(',');
+  // A keyed child removes private rows immediately when visible sources/job change,
+  // before effects run. Its cleanup also prevents a late signed URL from opening.
+  return <FileList key={`${jobId}:${sourceKey}`} jobId={jobId} sources={sources} />;
 }
-function FileList({ jobId, role }: { jobId: string; role: ReturnType<typeof useAuth>['role'] }) {
+function FileList({ jobId, sources }: { jobId: string; sources: FileSource[] }) {
   const [result, setResult] = useState<Awaited<ReturnType<typeof loadJobFiles>> | null>(null);
   const [error, setError] = useState('');
   const [pending, setPending] = useState<string | null>(null);
@@ -23,9 +24,11 @@ function FileList({ jobId, role }: { jobId: string; role: ReturnType<typeof useA
   useEffect(() => {
     let current = true;
     setResult(null);
-    loadJobFiles(jobId, role).then(value => { if (current) setResult(value); });
+    loadJobFiles(jobId, sources).then(value => { if (current) setResult(value); });
     return () => { current = false; };
-  }, [jobId, role, revision]);
+    // `sources` is fixed for this keyed instance (key includes it).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId, revision]);
 
   async function access(file: JobFile, download: boolean) {
     setPending(file.id);

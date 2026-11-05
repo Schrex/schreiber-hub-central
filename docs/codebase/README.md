@@ -1,6 +1,7 @@
 # Codebase map — overview
 
-Last checked against `develop` @ `f026a29` (2026-10-25). Update this map when routes, tables,
+Last checked against `develop` @ `f026a29` (2026-10-25); auth/roles against
+`feature/access-policy` @ `8fa0fcc` (2026-10-27). Update this map when routes, tables,
 Edge functions, environments or release steps change. Detail files are read on demand:
 
 - [frontend.md](frontend.md) — routes, auth/roles, data access, features → files, UI, tests
@@ -21,7 +22,8 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 - Backend: Supabase (Postgres 17, Auth, Storage, Edge functions in Deno). Authorization is
   enforced by RLS + `has_role()`; client role checks are UI gating only.
 - Hosting: Cloudflare Pages (static upload) + independent Supabase project `acgqjjbrnkmeazswdnzp`.
-  Originally built on Lovable; Lovable hosting/sync is retired but traces remain.
+  Originally built on Lovable; the code no longer calls Lovable services (migration names and
+  the legacy talk-media URL rewrite remain).
 - Tooling: Bun 1.3.14, Node from .nvmrc, Vitest, Playwright, ESLint, pinned Supabase CLI 2.121.0
   via npx, Docker for the local backend.
 
@@ -33,12 +35,13 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 | `src/components/<feature>/` | Feature components (jobs, schedule, safety, home, dispatch, whiteboard…) |
 | `src/components/ui/` | shadcn primitives |
 | `src/hooks/` | `useAuth` (session + roles), `useResumeRefresh`, `useWeather` |
-| `src/lib/` | helpers: `launchScope`, `talkMedia`, `resumableUpload`, `weather`, `jobs` (NY today, job sort/grouping, badge map, search escaping) |
-| `src/integrations/` | Generated Supabase client + `types.ts`, Lovable auth (do not hand-edit) |
+| `src/lib/` | helpers: `launchScope`, `talkMedia`, `resumableUpload`, `weather`, `affectedRows` (0-row write = permission error), `access` + `accessRules` (UI role gating: `can`/`useAccess`, rule table), `jobs` (NY today, job sort/grouping, badge map, search escaping) |
+| `src/integrations/` | Supabase client + generated `types.ts` (do not hand-edit types) |
 | `src/test/` | Vitest unit tests (some colocated `*.test.tsx` too) |
 | `e2e/` | Playwright specs (11, `.mjs`) |
 | `supabase/migrations/` | Applied production migration history (79) — never edit |
-| `supabase/functions/` | 24 Edge functions + `_shared/` (Postmark, email templates) |
+| `supabase/functions/` | 17 Edge functions + `_shared/` (Postmark, email templates) |
+| `parked/` | Parked AI + crew-SMS features (not deployed); see `parked/README.md` |
 | `local/` | Local backend config, seed, candidate migrations, hr-bootstrap |
 | `scripts/` | verify, local backend tests, release guards, worktree helper, historical rehearsal ops |
 | `tooling/release/` | Pinned wrangler for the upload job only |
@@ -54,7 +57,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 - **"rehearsal" / "hub-rehearsal" means PRODUCTION.** `dev:rehearsal` and `scripts/rehearsal-*`
   hit the live project with real data; treat them as historical, never run routinely.
 - Plain `bun run dev` reads `.env` and can target production. Use `dev:local`.
-- `supabase/config.toml` `project_id` is the old Lovable project, not the target.
+- `supabase/config.toml` `project_id` is a neutral label, not the production project.
   Always name the production project explicitly; never `supabase db push`.
 - No staging environment exists.
 
@@ -73,17 +76,20 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 
 ## Known issues (not yet fixed)
 
-- `ProtectedRoute` checks the real `role`, not `effectiveRole`: an admin previewing as employee
-  can still open `/hr`, `/admin/*`. Pages mix real vs preview role inconsistently.
-- `useAuth` sets `loading=false` before `loadProfile` finishes; `requireRole` routes can
-  redirect to `/` on first load while `role` is still null.
-- AI (`*.lovable.dev` gateway) and Twilio SMS Edge functions depend on retired Lovable
-  services; likely broken in production (unverified). `notify-talk-attendees` hardcodes a
-  `lovable.app` URL. `independentLaunch` flag hides most of these features.
+- Fixed (#43, `feature/access-policy`): UI gating goes through `lib/access.ts` (`can`/`useAccess`).
+  `ProtectedRoute` honours preview (admin previewing hides `/hr`, `/admin/*`); `useAuth` stays
+  loading until roles load, so direct admin-route opens no longer bounce home; any role held
+  counts (like `has_role()`); employee-contact edit is office|admin like RLS. Guarded by
+  `src/test/noInlineRoleChecks.test.ts`; RLS parity by `test:local:access`.
+- AI and crew-SMS features are parked in `parked/` (Lovable-free, untested, not deployed) and
+  switched off in the UI by `integrationsParked`. Production may still hold old Lovable-based
+  copies of those functions; deleting them is a separate authorized operation.
 - "Today" is computed inconsistently outside the jobs helpers: `SafetyViolationDialog` uses the
   UTC date (`toISOString().slice(0,10)`), `Safety.tsx` and the rest of `Schedule.tsx` (week strip,
   past-day locks, date mins) use the browser's local date, `AccidentReportDialog` uses local time.
-  Only the Schedule carry-forward uses `todayInNewYork()` (`lib/jobs.ts`).
+  Only the Schedule carry-forward and `useAuth` position lookup use `todayInNewYork()` (`lib/jobs.ts`);
+  `lib/currentPositions.ts` (and MyPosition, AdminPositions, Dispatch, several job sections) still
+  use the UTC date, so evenings in New York can read tomorrow's positions/dates.
 - Realtime and Edge runtime are disabled locally — subscriptions and functions untested locally.
 - 2 high-severity SheetJS (xlsx) advisories; 30 lint warnings; no proven production backup restore.
 
@@ -92,7 +98,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 | Task | Start at |
 | --- | --- |
 | Add/change a page or route | `src/App.tsx`, [frontend.md](frontend.md#routes) |
-| Role/permission behaviour | `src/hooks/useAuth.tsx`, RLS in [backend.md](backend.md#authorization) |
+| Role/permission behaviour | `src/lib/accessRules.ts` + `src/lib/access.ts`, [frontend.md](frontend.md#auth-and-roles), RLS in [backend.md](backend.md#authorization) |
 | New table / RLS / RPC | [backend.md](backend.md#migration-workflow) — write a candidate migration |
 | Edge function | `supabase/functions/<name>/`, [backend.md](backend.md#edge-functions) |
 | File uploads / buckets | [backend.md](backend.md#storage), `src/lib/resumableUpload.ts` |

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { HardHat, Check, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { toast } from "@/hooks/use-toast";
 import {
   Select,
@@ -23,9 +23,8 @@ interface ForemanOption {
 }
 
 export const ForemanPicker = ({ jobId, foremanId, onChange }: Props) => {
-  const { role: realRole, effectiveRole } = useAuth();
-  const role = effectiveRole ?? realRole;
-  const canEdit = role === "office" || role === "admin";
+  const { can } = useAccess();
+  const canEdit = can("jobs.edit");
   const [foremen, setForemen] = useState<ForemanOption[]>([]);
   const [current, setCurrent] = useState<string | null>(foremanId);
   const [saving, setSaving] = useState(false);

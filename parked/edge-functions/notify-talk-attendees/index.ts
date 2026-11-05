@@ -6,22 +6,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://id-preview--be4f9bee-f0ea-4d93-8142-1b82027df08c.lovable.app'
-const TWILIO_GATEWAY = 'https://connector-gateway.lovable.dev/twilio'
+const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://app.schreiberexcavating.com'
 
+// Direct Twilio REST API. Off until TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and
+// TWILIO_FROM_NUMBER are set as Edge function secrets.
 async function sendSms(to: string, body: string) {
-  const lovableKey = Deno.env.get('LOVABLE_API_KEY')
-  const twilioKey = Deno.env.get('LOVABLE_CONNECTOR_TWILIO_API_KEY')
+  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
+  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN')
   const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER')
-  if (!lovableKey || !twilioKey || !fromNumber) {
+  if (!accountSid || !authToken || !fromNumber) {
     return { ok: false, reason: 'twilio_not_configured' }
   }
   try {
-    const resp = await fetch(`${TWILIO_GATEWAY}/Messages.json`, {
+    const resp = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        'X-Connection-Api-Key': twilioKey,
+        Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({ To: to, From: fromNumber, Body: body }),

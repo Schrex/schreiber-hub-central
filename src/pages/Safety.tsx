@@ -1,6 +1,6 @@
 import { useResumeRefresh } from "@/hooks/useResumeRefresh";
 import { TalkMedia } from "@/components/safety/TalkMedia";
-import { independentLaunch } from "@/lib/launchScope";
+import { independentLaunch, integrationsParked } from "@/lib/launchScope";
 import type { Json } from "@/integrations/supabase/types";
 import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useRef, useState } from "react";
@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShieldAlert, BookOpen, Mic, Plus, Sparkles, Settings as SettingsIcon, Play, Square, Users, CheckCircle2, Volume2, Pause } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,10 +28,11 @@ interface SessionRow { id: string; talk_id: string; foreman_id: string; foreman_
 interface Attendee { id: string; session_id: string; user_id: string | null; attendee_name: string; signature_data: string | null; signed_at: string | null; quiz_score: number | null; quiz_total: number | null; quiz_completed_at: string | null; }
 
 const Safety = () => {
-  const { role, user, displayName } = useAuth();
-  const isAdmin = role === "admin";
+  const { user, displayName } = useAuth();
+  const { can } = useAccess();
+  const isAdmin = can("safety.manage");
   // Only foremen lead toolbox talks. Admins can also access for oversight.
-  const isForeman = role === "foreman" || isAdmin;
+  const isForeman = can("safety.sessions.run");
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,7 +48,7 @@ const Safety = () => {
 
         <div className="mt-4 space-y-2">
           <AccidentReportButton />
-          {(role === "foreman" || role === "office" || isAdmin) && <SafetyViolationButton />}
+          {can("safety.violation.report") && <SafetyViolationButton />}
         </div>
 
         <Tabs defaultValue="rules" className="mt-5">
@@ -159,7 +161,7 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
   useEffect(() => { load(); }, []);
 
   const generateAI = async () => {
-    if (independentLaunch) return;
+    if (integrationsParked) return;
     if (!aiTopic.trim()) return;
     setAiBusy(true);
     try {
@@ -191,7 +193,7 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
       category: form.category.trim() || null,
       content: form.content,
       quiz_questions: form.quiz_questions.map(q => ({ ...q })),
-      created_with_ai: !independentLaunch,
+      created_with_ai: !integrationsParked,
       image_url: form.image_url || null,
       voice_script: form.voice_script || null,
       video_url: form.video_url || null,
@@ -254,7 +256,7 @@ const TalksTab = ({ isAdmin }: { isAdmin: boolean }) => {
               <p className="text-xs uppercase tracking-wider text-primary"><Sparkles className="inline h-3 w-3 mr-1" />AI assist</p>
               <div className="flex gap-2">
                 <Input placeholder="Topic e.g. trench shoring" value={aiTopic} onChange={(e) => setAiTopic(e.target.value)} />
-                <Button onClick={generateAI} disabled={independentLaunch || aiBusy || !aiTopic.trim()}>{aiBusy ? "…" : "Generate"}</Button>
+                <Button onClick={generateAI} disabled={integrationsParked || aiBusy || !aiTopic.trim()}>{aiBusy ? "…" : "Generate"}</Button>
               </div>
             </div>
             <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
@@ -361,7 +363,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
   }, [pickedJobId, userId]);
 
   const suggestTopic = async () => {
-    if (independentLaunch) return;
+    if (integrationsParked) return;
     if (!pickedJobId) return;
     setAiBusy(true);
     setAiHint(null);
@@ -389,7 +391,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
     try {
       const { data: sess, error: sErr } = await supabase.from("toolbox_talk_sessions").insert({
         talk_id: selectedTalkId, foreman_id: userId, foreman_name: foremanName, status: "in_progress",
-        job_id: pickedJobId, topic_source: independentLaunch ? "manual" : "ai_schedule", delivery_mode: "remote",
+        job_id: pickedJobId, topic_source: integrationsParked ? "manual" : "ai_schedule", delivery_mode: "remote",
       }).select("*").single();
       if (sErr) throw sErr;
 
@@ -403,7 +405,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
       }
 
       // SMS delivery is deferred for independent launch.
-      if (!independentLaunch) {
+      if (!integrationsParked) {
       const { error: nErr } = await supabase.functions.invoke("notify-talk-attendees", {
         body: { sessionId: sess.id },
       });
@@ -470,7 +472,7 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Talk</Label>
-            <Button size="sm" variant="ghost" onClick={suggestTopic} disabled={independentLaunch || !pickedJobId || aiBusy}>
+            <Button size="sm" variant="ghost" onClick={suggestTopic} disabled={integrationsParked || !pickedJobId || aiBusy}>
               <Sparkles className="mr-1 h-3 w-3" />{aiBusy ? "Thinking…" : "Suggest from schedule"}
             </Button>
           </div>
@@ -484,10 +486,10 @@ const SessionsTab = ({ userId, foremanName, isAdmin }: { userId: string; foreman
         </div>
 
         <Button className="w-full" size="lg" onClick={startSession} disabled={!selectedTalkId || starting}>
-          <Play className="mr-2 h-4 w-4" />{starting ? "Starting…" : (independentLaunch ? "Confirm & start" : `Confirm & start — notify ${includeIds.size} crew`)}
+          <Play className="mr-2 h-4 w-4" />{starting ? "Starting…" : (integrationsParked ? "Confirm & start" : `Confirm & start — notify ${includeIds.size} crew`)}
         </Button>
         <p className="text-[11px] text-muted-foreground text-center">
-          {independentLaunch ? "Crew can join through the app to take the quiz and sign. No notifications will be sent." : "Crew gets a notification on their phones to join, take the quiz, and sign."}
+          {integrationsParked ? "Crew can join through the app to take the quiz and sign. No notifications will be sent." : "Crew gets a notification on their phones to join, take the quiz, and sign."}
         </p>
       </div>
 
@@ -597,7 +599,7 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
     setPickUserId("");
     loadAttendees();
     // Notify the newly added attendee
-    if (!independentLaunch) supabase.functions.invoke("notify-talk-attendees", { body: { sessionId: session.id } }).catch(() => {});
+    if (!integrationsParked) supabase.functions.invoke("notify-talk-attendees", { body: { sessionId: session.id } }).catch(() => {});
   };
 
   const startRec = async () => {
@@ -778,7 +780,7 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
           <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Step 2 · Crew completes quiz &amp; signs</p>
             <p className="text-sm">
-              {independentLaunch ? "Ask crew members to open the app, take the quiz, and sign. No notifications were sent." : "Each crew member got a notification. They open it on their phone, take the quiz, and sign."}
+              {integrationsParked ? "Ask crew members to open the app, take the quiz, and sign. No notifications were sent." : "Each crew member got a notification. They open it on their phone, take the quiz, and sign."}
               You'll see the live count below.
             </p>
 
@@ -803,9 +805,9 @@ const ActiveSessionView = ({ session, talk, onExit }: { session: SessionRow; tal
               size="sm"
               variant="outline"
               className="w-full"
-              disabled={independentLaunch}
+              disabled={integrationsParked}
               onClick={async () => {
-                if (independentLaunch) return;
+                if (integrationsParked) return;
                 const { error } = await supabase.functions.invoke("notify-talk-attendees", { body: { sessionId: session.id } });
                 if (error) toast.error(error.message); else toast.success("Reminder sent");
               }}

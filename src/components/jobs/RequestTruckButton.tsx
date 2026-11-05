@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { toast } from "sonner";
 
 interface Props {
@@ -16,9 +16,8 @@ interface Props {
 }
 
 export const RequestTruckButton = ({ jobId, jobAddress }: Props) => {
-  const { role: realRole, effectiveRole } = useAuth();
-  const role = effectiveRole ?? realRole;
-  const canRequest = role === "foreman" || role === "office" || role === "admin";
+  const { can } = useAccess();
+  const canRequest = can("trucks.request");
 
   const today = new Date().toISOString().slice(0, 10);
   const [open, setOpen] = useState(false);

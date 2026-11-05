@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { can, type AccessRole } from '@/lib/access';
 import { fileEntry, jobFileUrl, loadJobFiles, visibleFileSources } from './jobFiles';
+const sourcesFor = (role: AccessRole | null) =>
+  visibleFileSources(action => can({ ready: true, userId: 'synthetic-user', roles: role ? [role] : [], previewRole: null }, action));
 const mocks = vi.hoisted(() => ({ from: vi.fn(), storage: vi.fn(), signed: vi.fn() }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: mocks.from, storage: { from: mocks.storage } } }));
 beforeEach(() => { vi.clearAllMocks(); mocks.storage.mockReturnValue({ createSignedUrl: mocks.signed }); });
@@ -19,16 +22,16 @@ function dataSources(fail?: string) {
 describe('job file aggregation', () => {
   it('does not query restricted sources for employee and scopes queries to job', async () => {
     const filters = dataSources();
-    await loadJobFiles('chosen-job', 'employee');
+    await loadJobFiles('chosen-job', sourcesFor('employee'));
     expect(mocks.from.mock.calls.map(([table]) => table).sort()).toEqual(['job_permits', 'job_photos', 'job_plans', 'swpppp_reports']);
     expect(filters.every(([, key, value]) => key === 'job_id' && value === 'chosen-job')).toBe(true);
-    expect(visibleFileSources(null)).toEqual([]);
-    expect(visibleFileSources('foreman')).toContain('Submittals');
-    expect(visibleFileSources('foreman')).not.toContain('Contract');
+    expect(sourcesFor(null)).toEqual([]);
+    expect(sourcesFor('foreman')).toContain('Submittals');
+    expect(sourcesFor('foreman')).not.toContain('Contract');
   });
   it('keeps both plan versions and contract for office while reporting partial failures', async () => {
     dataSources('job_photos');
-    const result = await loadJobFiles('chosen-job', 'office');
+    const result = await loadJobFiles('chosen-job', sourcesFor('office'));
     expect(result.failed).toEqual(['Photos']);
     expect(result.files.map(file => file.id)).toEqual(['Contract:chosen-job', 'Plans:new', 'Plans:old']);
     expect(result.files.find(file => file.id === 'Plans:old')?.detail).toContain('Previous version');

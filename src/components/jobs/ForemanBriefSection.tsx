@@ -1,9 +1,9 @@
-import { independentLaunch } from "@/lib/launchScope";
+import { integrationsParked } from "@/lib/launchScope";
 import { errorMessage } from "@/lib/errorMessage";
 import { useEffect, useState } from "react";
 import { ClipboardList, Pencil, Save, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAccess } from "@/lib/access";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
@@ -16,9 +16,8 @@ interface Props {
 }
 
 export const ForemanBriefSection = ({ jobId }: Props) => {
-  const { role, effectiveRole } = useAuth();
-  const r = effectiveRole ?? role;
-  const canEdit = r === "office" || r === "admin";
+  const { can } = useAccess();
+  const canEdit = can("job.brief.edit");
 
   const [brief, setBrief] = useState<string>("");
   const [draft, setDraft] = useState<string>("");
@@ -63,7 +62,7 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
   };
 
   const generate = async () => {
-    if (independentLaunch) return;
+    if (integrationsParked) return;
     if (brief && !confirm("Replace the existing briefing with one generated from the contract?")) return;
     setGenerating(true);
     try {
@@ -92,7 +91,7 @@ export const ForemanBriefSection = ({ jobId }: Props) => {
         </h2>
         {canEdit && !editing && (
           <div className="flex items-center gap-1.5">
-            {hasContract && !independentLaunch && (
+            {hasContract && !integrationsParked && (
               <button
                 type="button"
                 onClick={generate}

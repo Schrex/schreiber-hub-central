@@ -1,6 +1,6 @@
 // SubscriptionChange covers hard bounces, complaints and manual/unsubscribe
 // suppressions. Postmark does not sign webhooks; configure a separate secret in
-// its HttpHeaders, never reuse the API token or Lovable signature verifier.
+// its HttpHeaders, never reuse the API token as the webhook secret.
 export interface SuppressionRow {
   email: string
   reason: 'bounce' | 'complaint' | 'unsubscribe'

@@ -18,9 +18,9 @@ Lovable URL and editor are no longer the deployment or development workflow.
 - Production deployment is a separate, explicitly authorized operation; merging a pull request does not establish a release.
 - See [project guidance](CLAUDE.md), [development progress](DEVELOPMENT_PROGRESS.md), and [hosting and recovery notes](docs/migration-hosting-recovery.md).
 
-Historical migration records and deferred integration code still reference Lovable.
-Those references are retained for recovery and follow-up work; they do not mean
-Lovable repository sync is active.
+The app code no longer depends on Lovable services. Historical migration records,
+applied migration names and the legacy talk-media URL rewrite still mention the
+former Lovable project; they are retained as evidence and for old data.
 
 For the branch-to-production workflow, see [the release process](docs/release-process.md).
 
