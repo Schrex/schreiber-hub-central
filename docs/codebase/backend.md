@@ -28,9 +28,10 @@ Source of truth: `supabase/migrations/` (78 applied files, mostly Lovable UUID n
 - `jobs.lookahead_grid_enabled` (default false) gates the task look-ahead. Tables, local
   candidate only: `lookahead_plans` → `lookahead_tasks` → `lookahead_task_days`, plus
   `lookahead_plan_holidays`, `lookahead_acks`, `lookahead_changes`, `lookahead_views`,
-  `lookahead_import_runs`. Published and superseded plans are readable by any signed-in
-  user; drafts and grid writes are office/admin. No cost or rate columns. Not applied
-  to production.
+  `lookahead_import_runs`. The live published plan is readable by any signed-in user.
+  Drafts, superseded versions, and grid writes are office/admin. `publish_lookahead_upload`
+  replaces the live plan from an MSPDI upload and turns the job flag on. No cost or
+  rate columns. Not applied to production.
 - `jobs` status lifecycle (`supabase/migrations/20261026010000_jobs_status_lifecycle.sql`; applied in production 2026-10-26):
   columns `completed_at`, `completed_by` (→ auth users, `ON DELETE SET NULL`), `hold_reason`;
   checks `jobs_completion_matches_status`, `jobs_hold_reason_matches_status`; `BEFORE INSERT OR

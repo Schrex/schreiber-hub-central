@@ -45,6 +45,8 @@ export const ACCESS_RULES = {
   // Jobs
   /** Create a job, assign its foreman, change its status. */
   "jobs.edit": { roles: OFFICE, rls: writes("jobs") },
+  /** Upload and publish a task look-ahead. Office and admin only. */
+  "lookahead.upload": { roles: OFFICE, rls: writes("lookahead_plans") },
   /** Customer, brief, contacts and other non-crew job details. */
   "jobs.private.view": { roles: FIELD, rls: "ui-only" },
   "jobs.report.view": { roles: ["foreman"], rls: "ui-only" },

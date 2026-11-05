@@ -70,6 +70,25 @@ export function formatWeekSpan(start: string, end: string): string {
   return `${MONTHS[startMonth - 1]} ${startDay}–${MONTHS[endMonth - 1]} ${endDay}`;
 }
 
+/** Monday of the calendar week that contains `iso` (Sunday belongs to the previous Monday). */
+export function mondayOf(iso: string): string {
+  const day = isoWeekday(iso);
+  const back = day === 0 ? 6 : day - 1;
+  return addIsoDays(iso, -back);
+}
+
+/** This week plus the next three, Monday–Friday. `asOf` is a calendar date. */
+export function rollingLookaheadWindow(asOf: string): {
+  weekStart: string;
+  weeks: 4;
+  thisWeek: string[];
+  nextWeeks: string[];
+} {
+  const weekStart = mondayOf(asOf);
+  const columns = planColumns(weekStart, 4);
+  return { weekStart, weeks: 4, thisWeek: columns.slice(0, 5), nextWeeks: columns.slice(5) };
+}
+
 /** Mon–Fri columns for `weeks` weeks beginning on `weekStart` (a Monday). */
 export function planColumns(weekStart: string, weeks: number): string[] {
   const columns: string[] = [];

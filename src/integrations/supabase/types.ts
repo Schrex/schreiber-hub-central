@@ -3568,6 +3568,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      publish_lookahead_upload: {
+        Args: { p_job_id: string; p_payload: Json }
+        Returns: string
+      }
       prepare_employee_creation: {
         Args: { caller_id: string; details: Json }
         Returns: string
