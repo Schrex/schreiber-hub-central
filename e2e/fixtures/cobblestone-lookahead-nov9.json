@@ -1,0 +1,58 @@
+{
+  "weekStart": "2026-11-09",
+  "weeks": 3,
+  "holidays": ["2026-11-26", "2026-11-27"],
+  "rows": [
+    {
+      "name": "Strip Topsoil",
+      "group": "Grading/Dirt work",
+      "who": "Schreiber",
+      "contractorType": "schreiber",
+      "days": ["2026-11-09"]
+    },
+    {
+      "name": "Cut to export",
+      "group": "Grading/Dirt work",
+      "who": "Schreiber",
+      "contractorType": "schreiber",
+      "days": ["2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13", "2026-11-16"]
+    },
+    {
+      "name": "Cut to fill",
+      "group": "Grading/Dirt work",
+      "who": "Schreiber",
+      "contractorType": "schreiber",
+      "days": ["2026-11-16", "2026-11-17", "2026-11-18"]
+    },
+    {
+      "name": "Tap sleeve w/valve",
+      "group": "Water",
+      "who": "Schreiber",
+      "contractorType": "schreiber",
+      "days": ["2026-11-18", "2026-11-19"]
+    },
+    {
+      "name": "Sample Tap",
+      "group": "Water",
+      "who": "Schreiber",
+      "contractorType": "schreiber",
+      "days": ["2026-11-19"]
+    },
+    {
+      "name": "Hot Box",
+      "group": "Water",
+      "who": "Schreiber",
+      "contractorType": "schreiber",
+      "days": ["2026-11-20", "2026-11-23", "2026-11-24", "2026-11-25"]
+    }
+  ],
+  "skippedPlaceholders": [
+    "Respread topsoil (open areas)",
+    "Respread topsoil (tight areas)",
+    "Excavate",
+    "Install Light bases w/ conduit",
+    "Layout",
+    "Curb prep",
+    "Curbs"
+  ]
+}

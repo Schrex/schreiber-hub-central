@@ -101,6 +101,14 @@ Synthetic accounts: `employee@example.test`, `other@example.test`, and
 `admin@example.test`. Each uses the disposable local password `LocalOnly-12345!`.
 Use email/password sign-in; Google sign-in is disabled in this local mode.
 
+The seed also inserts a synthetic Cobblestone job (`job_number` J2607,
+Cobblestone Place / Van Epps) with `lookahead_grid_enabled` and one published
+Mon–Fri task grid for the week of 2026-11-09 (Thanksgiving 2026-11-26 and
+2026-11-27 are holidays). It contains no cost or rate figures. Sign in as any
+synthetic user and open that job; Look-ahead is the default tab. A fresh
+`bun run local:reset` is required after the look-ahead candidate is added,
+because `local:start` keeps an already-running database.
+
 `dev:local` gets keys from the local CLI, requires the exact loopback API URL,
 and passes frontend settings only to the child Vite process. It does not write
 credentials to tracked files or change the production `.env` file. A service-role
