@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { todayInNewYork } from "@/lib/jobs";
-import { formatMdYy, formatWeekSpan, planColumns, weekdayLabel } from "@/lib/lookaheadGrid";
-import { cn } from "@/lib/utils";
+import { LookaheadWeeks, type LookaheadWeekTask } from "@/components/jobs/lookahead/LookaheadWeeks";
 
 interface PlanRow {
   id: string;
-  week_start: string;
-  weeks: number;
-  status: string;
   published_at: string | null;
 }
 
@@ -29,11 +24,6 @@ interface HolidayRow {
   holiday_date: string;
   label: string;
 }
-
-const taskCol =
-  "sticky left-0 z-20 w-32 min-w-32 max-w-32 bg-surface px-2 text-left sm:w-40 sm:min-w-40 sm:max-w-40";
-const whoCol =
-  "sticky left-32 z-20 w-16 min-w-16 max-w-16 bg-surface px-1 text-left sm:left-40 sm:w-24 sm:min-w-24 sm:max-w-24";
 
 function publishedLabel(publishedAt: string | null): string {
   if (!publishedAt) return "Published";
@@ -58,8 +48,7 @@ export function LookaheadGrid({
   jobNumber: string | null;
 }) {
   const [plan, setPlan] = useState<PlanRow | null>(null);
-  const [tasks, setTasks] = useState<TaskRow[]>([]);
-  const [marks, setMarks] = useState<Set<string>>(new Set());
+  const [tasks, setTasks] = useState<LookaheadWeekTask[]>([]);
   const [holidays, setHolidays] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -71,7 +60,7 @@ export function LookaheadGrid({
       setFailed(false);
       const planResult = await supabase
         .from("lookahead_plans")
-        .select("id, week_start, weeks, status, published_at")
+        .select("id, published_at")
         .eq("job_id", jobId)
         .eq("status", "published")
         .maybeSingle();
@@ -85,7 +74,6 @@ export function LookaheadGrid({
       setPlan(published);
       if (!published) {
         setTasks([]);
-        setMarks(new Set());
         setHolidays(new Map());
         setLoading(false);
         return;
@@ -110,11 +98,9 @@ export function LookaheadGrid({
       }
       const taskRows = (taskResult.data ?? []) as TaskRow[];
       const holidayRows = (holidayResult.data ?? []) as HolidayRow[];
-      setTasks(taskRows);
       setHolidays(new Map(holidayRows.map((row) => [row.holiday_date, row.label])));
-
       if (taskRows.length === 0) {
-        setMarks(new Set());
+        setTasks([]);
         setLoading(false);
         return;
       }
@@ -128,8 +114,19 @@ export function LookaheadGrid({
         setLoading(false);
         return;
       }
-      const dayRows = (dayResult.data ?? []) as DayRow[];
-      setMarks(new Set(dayRows.map((row) => `${row.task_id}|${row.work_date}`)));
+      const daysByTask = new Map<string, string[]>();
+      for (const row of (dayResult.data ?? []) as DayRow[]) {
+        const list = daysByTask.get(row.task_id) ?? [];
+        list.push(row.work_date);
+        daysByTask.set(row.task_id, list);
+      }
+      setTasks(taskRows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        groupName: row.group_name ?? "",
+        contractorName: row.contractor_name,
+        days: daysByTask.get(row.id) ?? [],
+      })));
       setLoading(false);
     })();
     return () => {
@@ -150,11 +147,7 @@ export function LookaheadGrid({
           Look ahead
         </h2>
         <p className="mt-1 text-sm font-medium">{title}</p>
-        {plan && (
-          <p className="text-xs text-muted-foreground">
-            Week of {formatMdYy(plan.week_start)} ({plan.weeks} wks) · {publishedLabel(plan.published_at)}
-          </p>
-        )}
+        {plan && <p className="text-xs text-muted-foreground">{publishedLabel(plan.published_at)}</p>}
       </div>
 
       {loading ? (
@@ -164,162 +157,8 @@ export function LookaheadGrid({
       ) : !plan ? (
         <p className="py-6 text-center text-sm text-muted-foreground">No published look-ahead for this job.</p>
       ) : (
-        <Grid plan={plan} tasks={tasks} marks={marks} holidays={holidays} />
+        <LookaheadWeeks tasks={tasks} holidays={holidays} />
       )}
     </section>
-  );
-}
-
-function Grid({
-  plan,
-  tasks,
-  marks,
-  holidays,
-}: {
-  plan: PlanRow;
-  tasks: TaskRow[];
-  marks: Set<string>;
-  holidays: Map<string, string>;
-}) {
-  const columns = planColumns(plan.week_start, plan.weeks);
-  const today = todayInNewYork();
-  const weeks: string[][] = [];
-  for (let index = 0; index < columns.length; index += 5) weeks.push(columns.slice(index, index + 5));
-  let lastGroup = "";
-
-  return (
-    <>
-      <p className="text-[11px] text-muted-foreground">X marks a working day. HOL is a holiday.</p>
-      <div className="overflow-x-auto" data-testid="lookahead-scroll">
-        <table className="w-max min-w-full border-collapse text-xs">
-          <caption className="sr-only">Task look-ahead, Monday through Friday</caption>
-          <thead>
-            <tr>
-              <th className={cn(taskCol, "z-30 bg-surface")} scope="col" />
-              <th className={cn(whoCol, "z-30 bg-surface")} scope="col" />
-              {weeks.map((week) => (
-                <th
-                  key={week[0]}
-                  colSpan={week.length}
-                  scope="colgroup"
-                  className="border-b border-l border-border px-1 py-1 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
-                >
-                  {formatWeekSpan(week[0], week[week.length - 1])}
-                </th>
-              ))}
-            </tr>
-            <tr className="border-b border-border">
-              <th className={cn(taskCol, "z-30 bg-surface py-1 text-[10px] font-semibold uppercase tracking-wider")} scope="col">
-                Task
-              </th>
-              <th className={cn(whoCol, "z-30 bg-surface py-1 text-[10px] font-semibold uppercase tracking-wider")} scope="col">
-                Who
-              </th>
-              {columns.map((date) => {
-                const holiday = holidays.has(date);
-                const isToday = date === today && !holiday;
-                return (
-                  <th
-                    key={date}
-                    scope="col"
-                    className={cn(
-                      "w-8 min-w-8 border-l border-border px-0 py-1 text-center font-medium",
-                      holiday && "bg-warning/30",
-                      isToday && "bg-primary/20",
-                    )}
-                  >
-                    <span className="block text-[10px] text-muted-foreground">{weekdayLabel(date)}</span>
-                    <span className="block">{Number(date.slice(8))}</span>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {tasks.map((task) => {
-              const group = task.group_name?.trim() ?? "";
-              const showGroup = group.length > 0 && group !== lastGroup;
-              if (showGroup) lastGroup = group;
-              return (
-                <GroupAndRow
-                  key={task.id}
-                  task={task}
-                  columns={columns}
-                  marks={marks}
-                  holidays={holidays}
-                  today={today}
-                  showGroup={showGroup}
-                  group={group}
-                />
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
-}
-
-function GroupAndRow({
-  task,
-  columns,
-  marks,
-  holidays,
-  today,
-  showGroup,
-  group,
-}: {
-  task: TaskRow;
-  columns: string[];
-  marks: Set<string>;
-  holidays: Map<string, string>;
-  today: string;
-  showGroup: boolean;
-  group: string;
-}) {
-  return (
-    <>
-      {showGroup && (
-        <tr>
-          <th
-            colSpan={2 + columns.length}
-            data-testid="lookahead-group"
-            className="bg-muted px-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wider"
-          >
-            <span className="sticky left-2">{group}</span>
-          </th>
-        </tr>
-      )}
-      <tr className="border-b border-border/70">
-        <th className={cn(taskCol, "py-2 font-medium")} scope="row">
-          <span className="block truncate" title={task.name}>{task.name}</span>
-        </th>
-        <td className={cn(whoCol, "py-2 text-[11px] text-muted-foreground")} data-testid="lookahead-who">
-          <span className="block truncate">{task.contractor_name}</span>
-        </td>
-        {columns.map((date) => {
-          const holiday = holidays.get(date);
-          const marked = marks.has(`${task.id}|${date}`);
-          const isToday = date === today && !holiday;
-          const text = holiday ? "HOL" : marked ? "X" : "";
-          return (
-            <td
-              key={date}
-              data-testid="lookahead-cell"
-              data-task={task.name}
-              data-date={date}
-              className={cn(
-                "w-8 min-w-8 border-l border-border px-0 py-2 text-center font-semibold",
-                holiday && "bg-warning/30",
-                isToday && "bg-primary/20",
-              )}
-              title={holiday ?? undefined}
-            >
-              {text}
-            </td>
-          );
-        })}
-      </tr>
-    </>
   );
 }

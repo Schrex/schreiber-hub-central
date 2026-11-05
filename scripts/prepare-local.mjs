@@ -35,6 +35,8 @@ await copyFile(path.join(root, 'local/candidate-migrations/20261022010000_employ
   path.join(target, 'migrations/20261022010000_employee_creation.sql'));
 await copyFile(path.join(root, 'local/candidate-migrations/20261105190000_lookahead_grid.sql'),
   path.join(target, 'migrations/20261105190000_lookahead_grid.sql'));
+await copyFile(path.join(root, 'local/candidate-migrations/20261105193000_lookahead_publish_upload.sql'),
+  path.join(target, 'migrations/20261105193000_lookahead_publish_upload.sql'));
 await copyFile(path.join(root, 'local/config.toml'), path.join(target, 'config.toml'));
 await copyFile(path.join(root, 'local/seed.sql'), path.join(target, 'seed.sql'));
 await copyFile(path.join(root, 'local/hr-bootstrap.sql'),

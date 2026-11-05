@@ -1,5 +1,13 @@
 # Development progress
 
+## Look-ahead XML upload — November 5, 2026
+
+Office and admin can upload a Microsoft Project XML export on any job, preview
+this week above the next three, and publish it as the live grid. The publish
+RPC supersedes the previous version and turns `lookahead_grid_enabled` on.
+Field users see only the published grid. The Cobblestone MSPDI fixture is
+synthetic. Candidate migration only; production migrations were not edited.
+
 ## Cobblestone look-ahead grid (CL-1) — November 5, 2026
 
 Local-only candidate migration, seed, and job-page tabs for a published

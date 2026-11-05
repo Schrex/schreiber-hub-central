@@ -62,8 +62,10 @@ test('Seeded Cobblestone look-ahead grid', async ({ browser }, testInfo) => {
     await page.goto(`/jobs/${job.id}`);
     await expect(page.getByRole('heading', { name: job.name, level: 1 })).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Look-ahead' })).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByTestId('lookahead-grid')).toContainText('Week of 11/9/26 (3 wks)');
+    await expect(page.getByRole('heading', { name: /^This week/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Next 3 weeks/ })).toBeVisible();
     await expect(page.getByTestId('lookahead-grid')).toContainText('Published');
+    await expect(page.getByRole('button', { name: 'Upload look-ahead' })).toHaveCount(0);
     await expect(page.getByTestId('lookahead-group').filter({ hasText: 'Grading/Dirt work' })).toBeVisible();
     await expect(page.getByTestId('lookahead-group').filter({ hasText: 'Water' })).toBeVisible();
     await expect(page.getByTestId('lookahead-who').first()).toContainText('Schreiber');

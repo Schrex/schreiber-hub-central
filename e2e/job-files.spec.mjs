@@ -57,6 +57,7 @@ test('job Files shows private signed attachments and preserves contract visibili
     await foreman.setViewportSize({ width: 390, height: 844 });
     await foreman.getByRole('region', { name: 'Job files' }).screenshot({ path: testInfo.outputPath('job-files-mobile.png') });
     const admin = await login('admin@example.test');
+    await admin.getByRole('tab', { name: 'Files' }).click();
     await expect(admin.getByRole('region', { name: 'Job files' }).getByText('Private contract.txt', { exact: true })).toBeVisible();
   } finally {
     for (const context of contexts) await context.close();

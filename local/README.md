@@ -103,10 +103,14 @@ Use email/password sign-in; Google sign-in is disabled in this local mode.
 
 The seed also inserts a synthetic Cobblestone job (`job_number` J2607,
 Cobblestone Place / Van Epps) with `lookahead_grid_enabled` and one published
-Mon–Fri task grid for the week of 2026-11-09 (Thanksgiving 2026-11-26 and
-2026-11-27 are holidays). It contains no cost or rate figures. Sign in as any
+Mon–Fri task grid (Thanksgiving 2026-11-26 and 2026-11-27 are holidays). The
+page shows the current week above the next three. Office and admin can upload
+a Microsoft Project XML export from the Look-ahead tab of any job; publishing
+replaces the live grid and turns the flag on. The checked-in
+`e2e/fixtures/cobblestone.mspdi.xml` is synthetic, generated from the task CSV,
+not Rick's file. Nothing in the seed or fixture is a real cost. Sign in as any
 synthetic user and open that job; Look-ahead is the default tab. A fresh
-`bun run local:reset` is required after the look-ahead candidate is added,
+`bun run local:reset` is required after a look-ahead candidate is added,
 because `local:start` keeps an already-running database.
 
 `dev:local` gets keys from the local CLI, requires the exact loopback API URL,

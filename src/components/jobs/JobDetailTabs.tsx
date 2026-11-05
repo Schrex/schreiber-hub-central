@@ -6,14 +6,16 @@ export function JobDetailTabs({
   jobInfo,
   files,
   field,
+  defaultTab = "lookahead",
 }: {
   lookahead: ReactNode;
   jobInfo: ReactNode;
   files: ReactNode;
   field: ReactNode;
+  defaultTab?: "lookahead" | "info" | "files" | "field";
 }) {
   return (
-    <Tabs defaultValue="lookahead" className="w-full">
+    <Tabs defaultValue={defaultTab} className="w-full">
       <TabsList className="grid h-auto w-full grid-cols-4 gap-0.5" data-testid="job-detail-tabs">
         <TabsTrigger value="lookahead" className="min-h-11 px-1 text-xs sm:text-sm">
           Look-ahead

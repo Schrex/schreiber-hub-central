@@ -26,6 +26,7 @@ const EXPECTED: Record<string, string> = {
   'clearstory.open': 'FA',
   'tools.open': 'FOA',
   'jobs.edit': 'OA',
+  'lookahead.upload': 'OA',
   'jobs.private.view': 'FOA',
   'jobs.report.view': 'F',
   'job.contacts.edit': 'OA',

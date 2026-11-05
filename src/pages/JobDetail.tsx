@@ -18,6 +18,7 @@ import { PhotosSection } from "@/components/jobs/PhotosSection";
 import { JobInfoSection } from "@/components/jobs/JobInfoSection";
 import { JobLookahead } from "@/components/jobs/JobLookahead";
 import { LookaheadGrid } from "@/components/jobs/lookahead/LookaheadGrid";
+import { LookaheadUpload } from "@/components/jobs/lookahead/LookaheadUpload";
 import { SafetyInspectionButton } from "@/components/jobs/SafetyInspectionButton";
 import { RequestTruckButton } from "@/components/jobs/RequestTruckButton";
 import { ForemanPicker } from "@/components/jobs/ForemanPicker";
@@ -62,6 +63,7 @@ const JobDetail = () => {
   const canSeeContract = can("job.contract.view");
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lookaheadRevision, setLookaheadRevision] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -106,6 +108,8 @@ const JobDetail = () => {
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
     : null;
   const lookaheadEnabled = job.lookahead_grid_enabled === true;
+  const canUpload = can("lookahead.upload");
+  const showLookaheadTabs = lookaheadEnabled || canUpload;
 
   const statusSection = (
     <JobStatusSection
@@ -201,7 +205,7 @@ const JobDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className={`mx-auto space-y-5 px-4 py-6 ${lookaheadEnabled ? "max-w-6xl" : "max-w-2xl"}`}>
+      <div className={`mx-auto space-y-5 px-4 py-6 ${showLookaheadTabs ? "max-w-6xl" : "max-w-2xl"}`}>
         <Link to="/jobs" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> All jobs
         </Link>
@@ -224,11 +228,19 @@ const JobDetail = () => {
           )}
         </div>
 
-        {lookaheadEnabled ? (
+        {showLookaheadTabs ? (
           <JobDetailTabs
+            defaultTab={lookaheadEnabled ? "lookahead" : "info"}
             lookahead={(
               <>
-                <LookaheadGrid jobId={job.id} jobName={job.name} jobNumber={job.job_number} />
+                <LookaheadUpload
+                  jobId={job.id}
+                  onPublished={() => {
+                    setJob((current) => (current ? { ...current, lookahead_grid_enabled: true } : current));
+                    setLookaheadRevision((revision) => revision + 1);
+                  }}
+                />
+                <LookaheadGrid key={lookaheadRevision} jobId={job.id} jobName={job.name} jobNumber={job.job_number} />
                 {crewSection}
               </>
             )}

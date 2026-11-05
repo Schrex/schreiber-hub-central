@@ -21,6 +21,8 @@ const denied = (result, label) => {
 const prefix = `lookahead-rls-${randomUUID()}`;
 let officeId;
 let draftId;
+let foremanId;
+let uploadJobId;
 
 try {
   const email = `${prefix}@example.test`;
@@ -111,8 +113,61 @@ try {
   const removed = await office.from('lookahead_tasks').delete().eq('id', draftTask.id);
   assert.equal(removed.error, null, removed.error?.message);
   console.log('PASS: drafts stay office-only; holiday and weekend marks are rejected.');
+
+  uploadJobId = ok(await service.from('jobs').insert({ name: `${prefix} upload`, status: 'active', lookahead_grid_enabled: false }).select('id, lookahead_grid_enabled').single()).id;
+  const uploadJob = { id: uploadJobId };
+  const payload = {
+    source_filename: 'synthetic.xml',
+    week_start: '2026-11-02',
+    weeks: 4,
+    skipped_placeholder_count: 1,
+    holidays: [{ date: '2026-11-26', label: 'Thanksgiving' }],
+    tasks: [{
+      name: 'Hot Box', group_name: 'Water', contractor_type: 'schreiber', contractor_name: 'Schreiber',
+      sort_order: 1, mpp_unique_id: 29, days: ['2026-11-23', '2026-11-24', '2026-11-25'],
+    }],
+  };
+  denied(await employee.rpc('publish_lookahead_upload', { p_job_id: uploadJob.id, p_payload: payload }), 'employee upload');
+  const foremanEmail = `${prefix}-foreman@example.test`;
+  const foremanPassword = `Local-${randomUUID()}!`;
+  foremanId = ok(await service.auth.admin.createUser({ email: foremanEmail, password: foremanPassword, email_confirm: true })).user.id;
+  ok(await service.from('user_roles').delete().eq('user_id', foremanId));
+  ok(await service.from('user_roles').insert({ user_id: foremanId, role: 'foreman' }));
+  const foreman = client(status.ANON_KEY);
+  ok(await foreman.auth.signInWithPassword({ email: foremanEmail, password: foremanPassword }));
+  denied(await foreman.rpc('publish_lookahead_upload', { p_job_id: uploadJob.id, p_payload: payload }), 'foreman upload');
+  const poisoned = await office.rpc('publish_lookahead_upload', { p_job_id: uploadJob.id, p_payload: { ...payload, cost: 10 } });
+  assert.ok(poisoned.error, 'a cost field must be rejected');
+
+  const firstId = ok(await office.rpc('publish_lookahead_upload', { p_job_id: uploadJob.id, p_payload: payload }));
+  assert.equal(ok(await service.from('jobs').select('lookahead_grid_enabled').eq('id', uploadJob.id).single()).lookahead_grid_enabled, true);
+  const live = ok(await employee.from('lookahead_plans').select('id, status, source').eq('job_id', uploadJob.id).eq('status', 'published'));
+  assert.equal(live.length, 1);
+  assert.equal(live[0].id, firstId);
+  assert.equal(live[0].source, 'mspdi_xml');
+  const seenDays = ok(await employee.from('lookahead_task_days').select('work_date').eq('task_id',
+    ok(await employee.from('lookahead_tasks').select('id').eq('plan_id', firstId).single()).id,
+  ));
+  assert.deepEqual(seenDays.map((day) => day.work_date).sort(), ['2026-11-23', '2026-11-24', '2026-11-25']);
+
+  const admin = client(status.ANON_KEY);
+  ok(await admin.auth.signInWithPassword({ email: 'admin@example.test', password: 'LocalOnly-12345!' }));
+  const secondId = ok(await admin.rpc('publish_lookahead_upload', {
+    p_job_id: uploadJob.id,
+    p_payload: { ...payload, tasks: [{ ...payload.tasks[0], name: 'Sample Tap', days: ['2026-11-19'] }] },
+  }));
+  assert.notEqual(secondId, firstId);
+  assert.equal(ok(await employee.from('lookahead_plans').select('id').eq('id', firstId)).length, 0, 'field users do not see replaced versions');
+  assert.equal(ok(await office.from('lookahead_plans').select('status').eq('id', firstId).single()).status, 'superseded');
+  assert.equal(ok(await employee.from('lookahead_plans').select('id').eq('id', secondId)).length, 1);
+  console.log('PASS: office and admin can publish; foreman and employee cannot; replaced versions stay off the field view.');
 } finally {
+  if (uploadJobId) await service.from('jobs').delete().eq('id', uploadJobId);
   if (draftId) await service.from('lookahead_plans').delete().eq('id', draftId);
+  if (foremanId) {
+    await service.from('employee_contacts').delete().eq('converted_user_id', foremanId);
+    await service.auth.admin.deleteUser(foremanId);
+  }
   if (officeId) {
     await service.from('employee_contacts').delete().eq('converted_user_id', officeId);
     await service.auth.admin.deleteUser(officeId);

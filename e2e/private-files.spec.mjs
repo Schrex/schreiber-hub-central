@@ -39,6 +39,7 @@ test('private job photo and document open through signed URLs and survive refres
     await page.goto(`/jobs/${id}`);
     const photo = page.getByAltText(caption, { exact: true });
     const assertPhoto = async () => {
+      await page.getByRole('tab', { name: 'Files' }).click();
       await photo.scrollIntoViewIfNeeded();
       await expect(photo).toBeVisible();
       await expect.poll(() => photo.evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
@@ -56,6 +57,7 @@ test('private job photo and document open through signed URLs and survive refres
     await assertPhoto();
     await page.screenshot({ path: testInfo.outputPath('private-photo-after-resume.png') });
 
+    await page.getByRole('tab', { name: 'Job info' }).click();
     const popupPromise = context.waitForEvent('page');
     await page.getByRole('button', { name: contractName, exact: true }).click();
     const document = await popupPromise;

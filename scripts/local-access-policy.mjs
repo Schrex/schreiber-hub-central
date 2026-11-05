@@ -75,6 +75,7 @@ async function main() {
     // Minimal synthetic row per table. `user` is the actor for inserts and another employee for fixtures.
     const fixtures = {
       jobs: () => ({ name: label() }),
+      lookahead_plans: () => ({ job_id: jobId, week_start: '2026-11-09', weeks: 3, status: 'draft', source: 'manual' }),
       job_contacts: () => ({ job_id: jobId, name: label() }),
       dig_tickets: () => ({ job_id: jobId }),
       job_permits: () => ({ job_id: jobId, permit_type: label() }),
