@@ -101,6 +101,23 @@ Synthetic accounts: `employee@example.test`, `other@example.test`, and
 `admin@example.test`. Each uses the disposable local password `LocalOnly-12345!`.
 Use email/password sign-in; Google sign-in is disabled in this local mode.
 
+### Click-through demo (one command)
+
+To try a feature by hand, run `bun run local:demo`. It starts Docker if a cloud session
+has it stopped (on a laptop, open Docker Desktop first), starts the backend if needed, adds
+synthetic demo data, and serves the app at http://127.0.0.1:8080 until Ctrl+C. Rerunning it is
+safe. Demo data: job `Demo Main St Sewer` (DEMO-001) scheduled today (New York) for
+`foreman@example.test` (foreman), `crew1@example.test` and `crew2@example.test` (crew), plus
+two toolbox talks, one with a quiz. Same password as above.
+
+- `bun run local:demo --seed-only` adds the data without starting the app.
+- `bun run local:demo --clean` removes it again; the backend keeps running.
+- In Claude Code, ask for "the local test environment" (`.claude/skills/local-test-env`).
+  Cloud sessions cannot show the app to you (no preview, no inbound connections); there Claude
+  drives it with Playwright and sends screenshots, or you run it on your own computer.
+- Starting a toolbox talk as a foreman currently fails with an RLS recursion error; the fix is
+  the unapplied candidate `20261019220000_attendance_policy_recursion.sql`.
+
 `dev:local` gets keys from the local CLI, requires the exact loopback API URL,
 and passes frontend settings only to the child Vite process. It does not write
 credentials to tracked files or change the production `.env` file. A service-role

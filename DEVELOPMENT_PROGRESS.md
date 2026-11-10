@@ -153,6 +153,22 @@ read-only recovery preflight passed. No actual rollback was performed.
   Lovable project (not inspected). Applied migration names and the `talkMedia` legacy URL
   rewrite intentionally keep Lovable-era identifiers.
 
+## Local click-through demo and cloud-session testing — November 10, 2026
+
+- `bun run local:demo` (`scripts/local-demo.mjs`): Docker check (starts the daemon in Claude Code
+  cloud sessions), local backend start if down, idempotent synthetic demo data (DEMO-001 job,
+  today's foreman + 2 crew, 2 toolbox talks), then `dev:local`. `--seed-only`, `--clean`.
+  Project skill `.claude/skills/local-test-env` tells Claude how to run it.
+- `playwright.config.mjs` uses the cloud session's preinstalled Chromium (or
+  `PLAYWRIGHT_CHROMIUM_PATH`); before this every browser test failed there on a browser mismatch.
+- Verified in a cloud session: Docker + `local:start`, `verify:backend` (all PASS) and
+  `verify:browser` (13/13) with demo data loaded; seed → clean → seed repeats cleanly.
+- Found by the demo: a foreman starting a toolbox talk gets "infinite recursion detected in
+  policy for relation toolbox_talk_sessions" (sessions ↔ attendees SELECT policies). The fix is
+  the unapplied candidate `20261019220000_attendance_policy_recursion.sql`. Production state not
+  checked; it likely has the same policies.
+- Cloud sessions cannot show the app to a person (no preview pane, no inbound connections).
+
 ## Outstanding operational items
 
 - Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved

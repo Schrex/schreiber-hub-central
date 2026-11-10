@@ -51,7 +51,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 
 | Name | Backend | How | Data |
 | --- | --- | --- | --- |
-| Local | Docker Supabase on 127.0.0.1:55321 | `bun run local:start` then `bun run dev:local` (8080) | Synthetic seed |
+| Local | Docker Supabase on 127.0.0.1:55321 | `bun run local:start` then `bun run dev:local` (8080); `bun run local:demo` does both plus demo data | Synthetic seed |
 | Production | Supabase `acgqjjbrnkmeazswdnzp` + Cloudflare Pages | Manual release workflows only | Real employees |
 
 - **"rehearsal" / "hub-rehearsal" means PRODUCTION.** `dev:rehearsal` and `scripts/rehearsal-*`
