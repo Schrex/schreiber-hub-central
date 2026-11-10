@@ -13,6 +13,7 @@
     "dev:rehearsal": "python3 scripts/rehearsal-dev.py",
     "local:prepare": "node scripts/prepare-local.mjs",
     "local:start": "bun run local:prepare && npx --yes supabase@2.121.0 start --workdir .local-backend",
+    "local:demo": "node scripts/local-demo.mjs",
     "local:stop": "npx --yes supabase@2.121.0 stop --workdir .local-backend",
     "local:reset": "bun run local:prepare && npx --yes supabase@2.121.0 db reset --local --workdir .local-backend",
     "test:local": "node scripts/local-smoke.mjs",
