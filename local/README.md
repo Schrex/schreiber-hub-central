@@ -97,8 +97,13 @@ bun run dev:local
 - Local database studio: http://127.0.0.1:55323
 - Captured authentication email: http://127.0.0.1:55324
 
-Synthetic accounts: `employee@example.test`, `other@example.test`, and
-`admin@example.test`. Each uses the disposable local password `LocalOnly-12345!`.
+Synthetic accounts: `employee@example.test`, `other@example.test` (employees),
+`admin@example.test`, `admin2@example.test` (admins) and `foreman2@example.test` (foreman). Each
+uses the disposable local password `LocalOnly-12345!` and is linked to a synthetic employee
+record with a fixed hire date (employee 2015-03-02, other 2022-07-01, admin 2010-01-04, admin2
+2012-05-14, foreman2 2019-08-12). The second admin makes "a different admin decides" rules
+testable. `bun run test:local:time-off` (part of `verify:backend`) checks them and holds the
+time-off backend checks; its helpers live in `scripts/local-time-off-support.mjs`.
 Use email/password sign-in; Google sign-in is disabled in this local mode.
 
 ### Click-through demo (one command)

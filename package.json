@@ -24,6 +24,7 @@
     "test:local:roles": "node scripts/local-role-boundaries.mjs",
     "test:local:jobs-status": "node scripts/local-jobs-status.mjs",
     "test:local:access": "node scripts/local-access-policy.mjs",
+    "test:local:time-off": "node scripts/local-time-off.mjs",
     "local:audit-schema": "node scripts/schema-audit.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "build": "vite build",

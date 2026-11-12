@@ -169,6 +169,16 @@ read-only recovery preflight passed. No actual rollback was performed.
   checked; it likely has the same policies.
 - Cloud sessions cannot show the app to a person (no preview pane, no inbound connections).
 
+## Time-off groundwork: seed hire dates and backend check (#63, spec #61) — November 12, 2026
+
+- `local/seed.sql` adds `admin2@` (admin) and `foreman2@example.test` (foreman) and sets fixed
+  synthetic hire dates on all five seed logins' linked employee records.
+- `scripts/prepare-local.mjs` copies time-off candidates from one ordered `TIME_OFF_CANDIDATES` list.
+- New `test:local:time-off` (`scripts/local-time-off.mjs` + `local-time-off-support.mjs`) in
+  `verify:backend`: seed roles/hire dates and a synthetic-user helper with per-run cleanup.
+- Open: seed TRUNCATE also removes rows candidate migrations insert (policy settings, holidays);
+  later tickets must re-seed them in `local/seed.sql` or fall back to built-in defaults.
+
 ## Outstanding operational items
 
 - Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved
