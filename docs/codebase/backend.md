@@ -87,6 +87,18 @@ Secrets listed by name only. `verify_jwt` flags in `supabase/config.toml`.
 
 `_shared/`: Postmark send + suppression, `profileEmails.ts`, `transactional-email-templates/`.
 
+`_shared/caller-handler.ts` (time off, spec #61): `createCallerHandler(factory, config, run, {adminOnly,
+emailSink, adminRecipients})` builds the DB client from the caller's bearer (401 without a user), so
+every write runs as the caller and RLS/triggers see `auth.uid()`; `adminOnly` refuses office/foreman
+(403). The service role is never handed to a handler: it is used only by the default email sink
+(invokes send-transactional-email) and the default read-only active-admin lookup. Helpers:
+`pickActiveAdminRecipients` (admin role + `profiles.is_active` + valid email, de-duplicated),
+`timeOffIdempotencyKey(event, requestId, recipientUserId)` → `time-off-<event>-<req>-<user>`, and
+`sendEmails` → `{emailQueued}` (false if any send fails or there are no recipients). Unit tests:
+`src/test/callerHandler.test.ts`. Browser/Node tests run handlers with `e2e/support/edgeShim.mjs`
+(`installEdgeShim(context, {name: handler})`, `callHandler`, `recordingEmailSink`), since the local
+Edge runtime is off. A function built on it must also be added to `scripts/check-edge.mjs`.
+
 ## Migration workflow
 
 - `supabase/migrations/` = applied production history. Never edit or replay.
