@@ -58,7 +58,8 @@ test('/schedule and all four Schedule links open the Daily Schedule; Back return
 
     await page.goto('/perks');
     await expectDailySchedule(page, documents,
-      () => page.locator('nav').getByRole('button', { name: 'Schedule', exact: true }).click(), '/perks');
+      // /perks renders the bottom menu twice (its own and ProtectedRoute's); both are identical.
+      () => page.locator('nav').getByRole('button', { name: 'Schedule', exact: true }).first().click(), '/perks');
 
     await page.goto(`/jobs/${job.id}`);
     await expectDailySchedule(page, documents,
