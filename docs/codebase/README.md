@@ -22,6 +22,8 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 - Backend: Supabase (Postgres 17, Auth, Storage, Edge functions in Deno). Authorization is
   enforced by RLS + `has_role()`; client role checks are UI gating only.
 - Hosting: Cloudflare Pages (static upload) + independent Supabase project `acgqjjbrnkmeazswdnzp`.
+  One Pages Function forwards `/daily-schedule*` to the separate `daily-schedule` Worker
+  (its own D1; it checks the hub sign-in itself). Everything else is static.
   Originally built on Lovable; the code no longer calls Lovable services (migration names and
   the legacy talk-media URL rewrite remain).
 - Tooling: Bun 1.3.14, Node from .nvmrc, Vitest, Playwright, ESLint, pinned Supabase CLI 2.121.0
@@ -41,6 +43,7 @@ Live at app.schreiberexcavating.com. Contains employee PII and compensation (see
 | `e2e/` | Playwright specs (11, `.mjs`) |
 | `supabase/migrations/` | Applied production migration history (79) — never edit |
 | `supabase/functions/` | 17 Edge functions + `_shared/` (Postmark, email templates) |
+| `functions/` | The one Pages Function: Daily Schedule forwarding (#98); allowed by hash in `scripts/release-policy.mjs` |
 | `parked/` | Parked AI + crew-SMS features (not deployed); see `parked/README.md` |
 | `local/` | Local backend config, seed, candidate migrations, hr-bootstrap |
 | `scripts/` | verify, local backend tests, release guards, worktree helper, historical rehearsal ops |
