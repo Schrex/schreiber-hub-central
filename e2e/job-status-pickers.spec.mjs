@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import { localStatus } from '../scripts/local-backend.mjs';
@@ -92,7 +93,11 @@ test('Accident and violation pickers include on-hold jobs but not completed ones
   }
 });
 
+// The old Schedule page is parked (#99): /schedule opens the Daily Schedule. This check runs again
+// when `schedulePageParked` in src/lib/launchScope.ts is set back to false.
+const schedulePageParked = /schedulePageParked: boolean = true;/.test(readFileSync(new URL('../src/lib/launchScope.ts', import.meta.url), 'utf8'));
 test('Schedule carry-forward copies the most recent prior day\'s active-job assignments only', async ({ browser }) => {
+  test.skip(schedulePageParked, 'Old Schedule page is parked (#99)');
   const prefix = `Carry ${randomUUID().slice(0, 8)}`;
   const contexts = [];
   const jobs = await seedJobs(prefix);

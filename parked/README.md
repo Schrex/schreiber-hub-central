@@ -1,6 +1,6 @@
 # Parked features
 
-These features were built on Lovable services (Lovable AI gateway, Lovable's Twilio
+The AI and SMS features below were built on Lovable services (Lovable AI gateway, Lovable's Twilio
 connector). Those services are retired, so the features are parked here: the code is kept
 for future development but is **not deployed and not reachable from the app**.
 
@@ -22,6 +22,25 @@ for future development but is **not deployed and not reachable from the app**.
 | Scope extraction | `extract-scope-from-contract` | Job → Scope of Work | Reads the uploaded contract and turns its scope of work into checklist items |
 | Document categorizer | `categorize-document` | Job → Submittals upload | Reads an uploaded file and pre-fills its type and details |
 | Crew talk notifications (SMS) | `notify-talk-attendees` | Safety → live talk session | Texts each crew member a link to take the quiz and sign |
+
+## Parked page: the old Schedule (#99)
+
+The hub's own Schedule page (`src/pages/Schedule.tsx`, `components/schedule/DayBoard.tsx`,
+`WeekGrid.tsx`) is parked in place, not moved: nobody used it, and "Schedule" now opens the
+separate Daily Schedule app at `/daily-schedule/` (the hub forwards that path to its Worker).
+
+- `schedulePageParked` in `src/lib/launchScope.ts` is `true`, so `/schedule`
+  (`components/schedule/ScheduleEntry.tsx`) does a real page load to `/daily-schedule/`,
+  replacing `/schedule` in history.
+- Nothing was deleted: the page code and the `schedule_assignments` table stay. Features that
+  read that table (Job Lookahead, Jobs crew-today counts, Safety, Whiteboard, job status cleanup)
+  keep working but stay empty while nobody writes it.
+- `/schedule/whiteboard` is not parked; it stays a hub page.
+
+To restore it: set `schedulePageParked` to `false`, run the app tests and the browser specs (the
+carry-forward check in `e2e/job-status-pickers.spec.mjs` runs again on its own when the switch
+is off), then release through the normal process. The old page then opens at `/schedule` again,
+for signed-in users, with its data.
 
 Google sign-in is not parked: it now uses Supabase's own Google OAuth and stays disabled
 in production until Google is configured in Supabase.
