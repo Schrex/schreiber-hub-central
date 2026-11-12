@@ -12,7 +12,7 @@ Part of the [codebase map](README.md). Last checked @ `f026a29`.
 
 Public: `/auth`, `/forgot-password`, `/reset-password` (PasswordRecovery `update`), `/unsubscribe`, `*` NotFound.
 
-Behind `<ProtectedRoute>` (session required; also renders `<BottomNav/>`):
+Behind `<ProtectedRoute>` (session required, else `/auth?next=<path+query>`; also renders `<BottomNav/>`):
 
 | Path | Page |
 | --- | --- |
@@ -72,6 +72,8 @@ BottomNav themselves — watch for a double nav.
   every table-linked rule against RLS; see [backend.md](backend.md#backend-tests-bun-run-verifybackend).
 - Login (`pages/Auth.tsx`): email/password via Supabase; Google via Supabase OAuth
   (`signInWithOAuth`, not configured in production; disabled locally and under `independentLaunch`).
+  After sign-in it goes to `?next` when `lib/safeNextPath.ts` accepts it (same-origin in-app path only;
+  absolute, `//`, backslash and `/auth` targets go home). OAuth/signup redirects still return to `/`.
 
 ## Data access
 

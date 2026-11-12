@@ -1,7 +1,8 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccess, type PlainAccessAction } from "@/lib/access";
 import { BottomNav } from "@/components/BottomNav";
+import { signInPath } from "@/lib/safeNextPath";
 
 interface Props {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ interface Props {
 export const ProtectedRoute = ({ children, requireAction }: Props) => {
   const { session } = useAuth();
   const access = useAccess();
+  const location = useLocation();
 
   // Wait for roles before acting on a denied check
   if (!access.ready) {
@@ -22,7 +24,8 @@ export const ProtectedRoute = ({ children, requireAction }: Props) => {
     );
   }
 
-  if (!session) return <Navigate to="/auth" replace />;
+  // Remember the requested in-app path so sign-in can return there
+  if (!session) return <Navigate to={signInPath(location.pathname, location.search, location.hash)} replace />;
   if (requireAction && !access.can(requireAction)) return <Navigate to="/" replace />;
 
   return (

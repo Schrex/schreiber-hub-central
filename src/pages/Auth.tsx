@@ -1,13 +1,14 @@
 import { independentLaunch } from "@/lib/launchScope";
 import { errorMessage } from "@/lib/errorMessage";
 import { useState, useEffect } from "react";
-import { useNavigate, Navigate, Link } from "react-router-dom";
+import { useNavigate, Navigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { safeNextPath } from "@/lib/safeNextPath";
 import logo from "@/assets/schreiber-logo.png";
 
 
@@ -15,6 +16,9 @@ import logo from "@/assets/schreiber-logo.png";
 const Auth = () => {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Only same-origin in-app paths are followed; anything else goes home
+  const next = safeNextPath(searchParams.get("next"));
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,11 +26,11 @@ const Auth = () => {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (session) navigate("/", { replace: true });
-  }, [session, navigate]);
+    if (session) navigate(next, { replace: true });
+  }, [session, navigate, next]);
 
   if (loading) return null;
-  if (session) return <Navigate to="/" replace />;
+  if (session) return <Navigate to={next} replace />;
 
   const handleEmail = async (e: React.FormEvent) => {
     e.preventDefault();
