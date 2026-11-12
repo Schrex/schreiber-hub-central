@@ -56,10 +56,11 @@ test('/schedule and all four Schedule links open the Daily Schedule; Back return
     await expectDailySchedule(page, documents,
       () => page.getByRole('button').filter({ hasText: 'Today + this week' }).click(), '/');
 
-    await page.goto('/perks');
+    // /jobs has exactly one bottom menu. Some pages (Perks, Whiteboard, HR, …) render a second one on
+    // top of ProtectedRoute's, where the covered copy can't be clicked.
+    await page.goto('/jobs');
     await expectDailySchedule(page, documents,
-      // /perks renders the bottom menu twice (its own and ProtectedRoute's); both are identical.
-      () => page.locator('nav').getByRole('button', { name: 'Schedule', exact: true }).first().click(), '/perks');
+      () => page.locator('nav').getByRole('button', { name: 'Schedule', exact: true }).click(), '/jobs');
 
     await page.goto(`/jobs/${job.id}`);
     await expectDailySchedule(page, documents,
