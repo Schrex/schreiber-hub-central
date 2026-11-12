@@ -10,30 +10,35 @@ imports, change providers, or re-enable integrations.
 | Item | Baseline |
 | --- | --- |
 | Live app | https://app.schreiberexcavating.com |
-| Source | `8232a077adfcfb70d9535dae714c5679d4355525` (Jobs Active/Archive, release PR #41) |
+| Source | `6a8c54216a44cd9e4dc901ec32c7baf91f4c99e2` (Daily Schedule forwarding #101, Schedule buttons #102, and #56; release PR #103) |
 | Cloudflare Pages project | `schreiber-hub-preview` (production branch `main`) |
-| Live deployment | `a4ea3102-ddc7-4084-963f-f1e62474c6df` |
+| Live deployment | `855a0911-4cf8-4fc8-b5b9-6ac4ad447a6f` |
 | Production Supabase project | `acgqjjbrnkmeazswdnzp` |
-| Exact-main verification | [40378797799](https://github.com/Schrex/schreiber-hub-central/actions/runs/40378797799) |
-| Candidate build | [40381792517](https://github.com/Schrex/schreiber-hub-central/actions/runs/40381792517) (Actions copy expires 2027-01-24; archived below) |
-| Candidate manifest SHA256 | `279858a4acc702ff0169c9c8d6693b751de057808c741b94a45f360bb1790acc` |
-| Verified deployment run | [40382959483](https://github.com/Schrex/schreiber-hub-central/actions/runs/40382959483) |
-| Successful production ledger | `7340917252` |
-| Previous retained deployment | `6a6e77f0-9371-4e44-a028-6c6ae58ae42c` at `abdde98963d91a4f91e17ac8c176347013304df2` (Add Employee) |
-| Recovery evidence for previous | draft release `add-employee-release-abdde98-20261022` (candidate ZIP + checksums) |
-| Archive of this release | draft release `production-candidate-8232a07-20261026`: candidate ZIP (SHA256 `58bf6eeb1d1488b0fb7d1733d4802811bfea2173a3b3fdca341238a29c8c3676`), SHA256SUMS, live receipt. Use as `recovery_reference` for the next release |
+| Pages Function | `functions/daily-schedule/[[path]].js` only (approved hash in `scripts/release-policy.mjs`); `_routes.json` sends only `/daily-schedule` and `/daily-schedule/*` to it |
+| Service binding | `DAILY_SCHEDULE` → Worker `daily-schedule` (environment production), on the Production deployment config only; set 2026-11-12 before the upload |
+| Exact-main verification | [43316931788](https://github.com/Schrex/schreiber-hub-central/actions/runs/43316931788) |
+| Candidate build | [43317473872](https://github.com/Schrex/schreiber-hub-central/actions/runs/43317473872) (Actions copy expires 2027-02-10; archived below) |
+| Candidate manifest SHA256 | `6fdf7881b90bdd6e6ea8ab57171a0129e3ee3b5384f74af7614e01b283f1b8bd` |
+| Verified deployment run | [43319217681](https://github.com/Schrex/schreiber-hub-central/actions/runs/43319217681) |
+| Successful production ledger | `7751274144` |
+| Previous retained deployment | `a4ea3102-ddc7-4084-963f-f1e62474c6df` at `8232a077adfcfb70d9535dae714c5679d4355525` (Jobs Active/Archive) |
+| Recovery evidence for previous | draft release `production-candidate-8232a07-20261026` (candidate ZIP, checksums, live receipt) |
+| Archive of this release | draft release `production-candidate-6a8c542-20261112`: candidate ZIP (SHA256 `4ab48362abf2e75641e59eb425b91c60764ea572737670991c8bc7632d964619`), SHA256SUMS, live receipt. Use as `recovery_reference` for the next release |
 
 Release history (newest first; ledger is authoritative, `gh api repos/Schrex/schreiber-hub-central/deployments`):
 
 | Date | Source | Deployment | Notes |
 | --- | --- | --- | --- |
+| 2026-11-12 | `6a8c542` | `855a0911-…` | Daily Schedule at `/daily-schedule/` (first Pages Function + `DAILY_SCHEDULE` binding); also ships #56 (access module, auth readiness, Lovable removal); no backend changes |
 | 2026-10-26 | `8232a07` | `a4ea3102-…` | Jobs Active/Archive; DB migration + `request-truck` v12 first |
 | 2026-10-22 | `abdde98` | `6a6e77f0-…` | Add Employee (this table was not updated then) |
 | 2026-10-22 | `ac61bb6` | `2c110f18-…` | First guarded release |
 | earlier | `ea05047` | `82bbfce8-…` | Pre-release baseline |
 
 The live identity is clean, independent mode, and points to the production backend
-above. Homepage and reset-password availability passed. These are deployment
+above. On 2026-11-12: `/`, `/auth`, `/jobs` and `/schedule/whiteboard` answered; `/daily-schedule/`
+is served by the Daily Schedule Worker (`/daily-schedule/api/me` answers 401 when signed out);
+`/schedule` loads `/daily-schedule/` with a full page load. These are deployment
 checks, not certification of all employee features or external integrations.
 
 ## Backend state
