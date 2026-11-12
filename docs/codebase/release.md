@@ -30,10 +30,19 @@ Part of the [codebase map](README.md). Last checked @ `f026a29`. Authoritative d
 6. Verify live build-info and routes; update `docs/production-baseline.md`.
 
 Guards (`scripts/release-policy.mjs`, `release-operation.mjs`): hardcoded project/backend,
-static files only, hash match to approved digest, artifact from successful main candidate run,
+static files only except the one approved Pages Function (Daily Schedule forwarding, below), hash match to approved digest, artifact from successful main candidate run,
 new source must descend from deployed source, GitHub Deployments ledger + concurrency lane.
 Recovery = separate `operation=recover` with an exact prior deployment UUID; no auto-rollback.
 Uncertain outcome → stop and inspect; never blind retry or rollback.
+
+**Daily Schedule forwarding (#98).** `functions/daily-schedule/[[path]].js` passes
+`/daily-schedule` and `/daily-schedule/*` unchanged to the `daily-schedule` Worker (service
+binding `DAILY_SCHEDULE`, set in the Pages project settings, not in a file); `public/_routes.json`
+keeps every other path static. The guard accepts only these two files by SHA256
+(`forwarding` in `release-policy.mjs`) plus the build-info marker `functions`, all together or
+none; deployments with `uses_functions` need that marker. The candidate artifact carries
+`functions/` beside `frontend/`; upload copies it into Wrangler's working directory.
+Local check: `bun run check:forwarding` (stub Worker). Detail: `docs/manual-frontend-operations.md`.
 
 Owner authorization is policy only — GitHub doesn't enforce branch protection or reviewers.
 

@@ -124,7 +124,7 @@ describe('artifact and provider trust', () => {
   it('rejects preview and mismatched provider deployments', () => {
     const deployment = { id: target, environment: 'production', latest_stage: { name: 'deploy', status: 'success' }, url: 'https://abcdef12.schreiber-hub-preview.pages.dev' };
     expect(validateDeployment(deployment, target)).toContain('pages.dev');
-    for (const patch of [{ environment: 'preview' }, { uses_functions: true }, { id: previous }, { url: 'https://evil.test' }, { url: 'https://user:pass@abcdef12.schreiber-hub-preview.pages.dev' }, { latest_stage: { name: 'deploy', status: 'failure' } }]) expect(() => validateDeployment({ ...deployment, ...patch }, target)).toThrow();
+    for (const patch of [{ environment: 'preview' }, { id: previous }, { url: 'https://evil.test' }, { url: 'https://user:pass@abcdef12.schreiber-hub-preview.pages.dev' }, { latest_stage: { name: 'deploy', status: 'failure' } }]) expect(() => validateDeployment({ ...deployment, ...patch }, target)).toThrow();
   });
   it('allows historical identity for native recovery but rejects dry-run identity', () => {
     expect(() => validateIdentity(identity(revision), revision)).not.toThrow();

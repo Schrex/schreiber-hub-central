@@ -169,6 +169,25 @@ read-only recovery preflight passed. No actual rollback was performed.
   checked; it likely has the same policies.
 - Cloud sessions cannot show the app to a person (no preview pane, no inbound connections).
 
+## Daily Schedule forwarding and release guard (#98) — November 12, 2026
+
+- Added the hub's one Pages Function, `functions/daily-schedule/[[path]].js`: it passes
+  `/daily-schedule` and `/daily-schedule/*` unchanged (URL, method, headers including
+  Authorization, body) to the `daily-schedule` Worker via service binding `DAILY_SCHEDULE`
+  and returns the answer unchanged. `public/_routes.json` keeps every other path static.
+- The release guard accepts exactly that function and routing file (SHA256 in
+  `scripts/release-policy.mjs`) plus a build-info marker, together or not at all, and still
+  refuses any other function, changed files, links, `_worker.js`, `wrangler.*` and wider
+  routing. Deployment checks accept `uses_functions` only with the approved marker.
+  The candidate artifact now carries `functions/`; upload copies it into Wrangler's cwd.
+- Verified locally: release tests (new `scripts/release-forwarding.test.mjs`) and
+  `bun run check:forwarding` against a stub Worker in Wrangler's local runtime: forwarded
+  paths keep URL/method/Authorization/cookies/body and the Worker's own headers; `/`,
+  `/schedule`, `/schedule/whiteboard`, `/daily-schedulex` stay static.
+- Not verified: a real Wrangler upload with Functions, the `uses_functions` field on a
+  live Functions deployment, and the binding in the Pages settings. Those belong to the
+  release ticket (#100), which needs explicit owner authorization. Nothing was released.
+
 ## Schedule opens the Daily Schedule; old Schedule page parked (#99) — November 12, 2026
 
 - `/schedule` (`components/schedule/ScheduleEntry.tsx`) now does
