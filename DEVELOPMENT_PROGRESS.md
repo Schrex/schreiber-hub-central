@@ -188,6 +188,20 @@ read-only recovery preflight passed. No actual rollback was performed.
   live Functions deployment, and the binding in the Pages settings. Those belong to the
   release ticket (#100), which needs explicit owner authorization. Nothing was released.
 
+## Schedule opens the Daily Schedule; old Schedule page parked (#99) — November 12, 2026
+
+- `/schedule` (`components/schedule/ScheduleEntry.tsx`) now does
+  `window.location.replace('/daily-schedule/')`, a real page load, so all four Schedule links
+  (home tile, bottom menu, Job Lookahead, Whiteboard back button) reach the forwarding
+  function (#98) and Back returns to where the link was.
+- The old Schedule page is parked behind `schedulePageParked` in `lib/launchScope.ts`; its code
+  and `schedule_assignments` are kept. `/schedule/whiteboard` is unchanged. See `parked/README.md`.
+- Tests: `src/test/scheduleEntry.test.tsx` (redirect, switch back on) and
+  `e2e/schedule-daily-schedule.spec.mjs` (all four links + direct `/schedule`, with the Worker
+  stubbed). The carry-forward browser check skips while the page is parked.
+- Must ship together with, or after, the #98 forwarding and the Daily Schedule's production
+  Worker; on its own `/daily-schedule/` would show the hub's "Not found". Released only in #100.
+
 ## Outstanding operational items
 
 - Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved

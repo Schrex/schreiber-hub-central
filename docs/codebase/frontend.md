@@ -12,13 +12,20 @@ Part of the [codebase map](README.md). Last checked @ `f026a29`.
 
 Public: `/auth`, `/forgot-password`, `/reset-password` (PasswordRecovery `update`), `/unsubscribe`, `*` NotFound.
 
+`/schedule` → `components/schedule/ScheduleEntry.tsx` (#99). While `schedulePageParked`
+(`lib/launchScope.ts`) is true it does `window.location.replace('/daily-schedule/')`: a real page
+load to the separate Daily Schedule app, which the hub forwards to its own Worker (#98; see
+[release.md](release.md)). That covers all four Schedule links (home tile, bottom menu, Job
+Lookahead, Whiteboard back button). The Daily Schedule checks sign-in itself, so this redirect
+is not behind `ProtectedRoute`. With the switch off, the old Schedule page returns (protected).
+
 Behind `<ProtectedRoute>` (session required; also renders `<BottomNav/>`):
 
 | Path | Page |
 | --- | --- |
 | `/` | Index (home tiles filtered by `effectiveRole`) |
 | `/jobs` (`?view=active` default, `?view=archive`), `/jobs/:id` | Jobs (Active/Archive tabs), JobDetail |
-| `/schedule`, `/schedule/whiteboard` | Schedule, Whiteboard |
+| `/schedule/whiteboard` | Whiteboard (`/schedule` itself: see above; old `Schedule.tsx` parked) |
 | `/dispatch` | Dispatch |
 | `/safety`, `/safety/take/:token` | Safety, TakeSafetyTalk |
 | `/time-off` | TimeOff |
@@ -98,7 +105,7 @@ BottomNav themselves — watch for a double nav.
 | --- | --- | --- |
 | Home | `pages/Index.tsx`, `components/home/*` (weather, celebrations, notifications bell) | notifications |
 | Jobs | `pages/Jobs.tsx` (Active/Archive tabs synced to `view` URL param, count-only head queries; lists in `components/jobs/ActiveJobsList.tsx`, `ArchiveJobsList.tsx` (server-side search incl. two-step foreman-name match, NY-year filter, pages of 25), reads in `jobsQueries.ts`), `pages/JobDetail.tsx` (`JobStatusSection` = archived/on-hold banners + office/admin "Change status" via `JobStatusSheet`, Undo/Reopen and leaving-active cleanup of future `schedule_assignments` + job `whiteboard_tiles` (status first, then deletes) in `lib/jobStatusChange.ts`; gated by preview-aware role), `lib/jobs.ts` helpers, `components/jobs/*` (JobInfo, Contract, ScopeOfWork, ForemanBrief, JobContacts, Plans, Photos, Permits, Swppp, Submittals, DigTickets, JobFilesSection, JobLookahead, DriveTimeFromShop, RequestTruckButton, SafetyInspectionButton) | jobs + `job_*` children, bid_* |
-| Schedule | `pages/Schedule.tsx` (~1.4k lines), `components/schedule/DayBoard.tsx`, `WeekGrid.tsx` (dnd-kit) | schedule_assignments, crews |
+| Schedule (parked, #99) | `pages/Schedule.tsx` (~1.4k lines), `components/schedule/DayBoard.tsx`, `WeekGrid.tsx` (dnd-kit) | schedule_assignments, crews |
 | Whiteboard | `pages/Whiteboard.tsx`, `components/whiteboard/*` (foreman+) | whiteboard_tiles, dispatch_orders |
 | Dispatch | `pages/Dispatch.tsx`, `components/dispatch/TruckRequestsPanel.tsx` | dispatch_orders, truck_requests |
 | Safety | `pages/Safety.tsx` (~1.2k, several subcomponents), `pages/TakeSafetyTalk.tsx`, `components/safety/*` | toolbox_talk*, safety_*, accident_reports |
@@ -113,7 +120,7 @@ Status helpers live in `lib/jobs.ts` (`todayInNewYork`, `SAFETY_PICKER_STATUSES`
 
 | Picker | Shows |
 | --- | --- |
-| Schedule board (`Schedule.tsx`) | active |
+| Schedule board (`Schedule.tsx`, parked) | active |
 | Schedule carry-forward (`Schedule.tsx` `loadAll`) | copies only active-job assignments (`jobs!inner(status)`); "today" = New York |
 | Whiteboard | active |
 | Dispatch order dialog | active, plus the job an edited order already points at; order rows show the stored `job_name` |
