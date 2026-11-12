@@ -151,3 +151,6 @@ Spelling: table/bucket `swpppp_*` / `swpppp-reports` has 3 p's; component is `Sw
   TZ America/New_York. Specs (`e2e/*.spec.mjs`): add-employee, job-files, job-status-pickers, jobs,
   jobs-archive-search, jobs-crew-today, jobs-future-cleanup, private-files, safety-refresh,
   time-off, whiteboard-refresh. Needs local backend running.
+  Server functions run in Node through the route shim `e2e/support/edgeShim.mjs` (Edge runtime is off
+  locally; `src/types/edge-modules.d.ts` maps `npm:@supabase/supabase-js@2` types for tests that import
+  `_shared/caller-handler.ts`).
