@@ -104,7 +104,7 @@ BottomNav themselves — watch for a double nav.
 | Whiteboard | `pages/Whiteboard.tsx`, `components/whiteboard/*` (foreman+) | whiteboard_tiles, dispatch_orders |
 | Dispatch | `pages/Dispatch.tsx`, `components/dispatch/TruckRequestsPanel.tsx` | dispatch_orders, truck_requests |
 | Safety | `pages/Safety.tsx` (~1.2k, several subcomponents), `pages/TakeSafetyTalk.tsx`, `components/safety/*` | toolbox_talk*, safety_*, accident_reports |
-| Time off | `pages/TimeOff.tsx` | time_off_requests |
+| Time off | `pages/TimeOff.tsx` (layout + tabs only), `components/timeoff/*`: `RequestFormDialog` (form state, notice check, insert; owns `ShortNoticeDialog`), `ApprovalsTab` (approve/deny flow; `ApprovalCard`, `ConflictDialog`, `DenyDialog`), `MyRequestsTab` (`RequestCard`, cancel), `ApprovedTab` (`ApprovedCard`), `StatusBadge`, `EmptyState`; reads/writes in `timeOffApi.ts` (incl. browser-sent approval email `notifyTeamOfApproval`), loading in `useTimeOffRequests.ts`; types, labels, zod schema and pure helpers (`renderRange`, `findConflicts`, `noticeDaysFromNow`) in `lib/timeOff.ts` | time_off_requests |
 | People/HR | `pages/EmployeeContacts.tsx` (~1.2k; AddEmployeeWizard, xlsx/vCard), `AdminUsers`, `AdminPositions`, `MyPosition`, `OrgChart`, `PerformanceReviews`, `HR` | employee_contacts, user_roles, positions, … |
 | Perks | `Apparel`, `Referrals`, `EquipmentRental`, `ShopBooking` | clothing_*, referrals, equipment_rentals, shop_reservations |
 | Other | `Vendors`, `Handbook`, `TruckingCalculator` (client only), `Unsubscribe` | vendors, handbook_documents |
