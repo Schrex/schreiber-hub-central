@@ -153,6 +153,55 @@ read-only recovery preflight passed. No actual rollback was performed.
   Lovable project (not inspected). Applied migration names and the `talkMedia` legacy URL
   rewrite intentionally keep Lovable-era identifiers.
 
+## Local click-through demo and cloud-session testing — November 10, 2026
+
+- `bun run local:demo` (`scripts/local-demo.mjs`): Docker check (starts the daemon in Claude Code
+  cloud sessions), local backend start if down, idempotent synthetic demo data (DEMO-001 job,
+  today's foreman + 2 crew, 2 toolbox talks), then `dev:local`. `--seed-only`, `--clean`.
+  Project skill `.claude/skills/local-test-env` tells Claude how to run it.
+- `playwright.config.mjs` uses the cloud session's preinstalled Chromium (or
+  `PLAYWRIGHT_CHROMIUM_PATH`); before this every browser test failed there on a browser mismatch.
+- Verified in a cloud session: Docker + `local:start`, `verify:backend` (all PASS) and
+  `verify:browser` (13/13) with demo data loaded; seed → clean → seed repeats cleanly.
+- Found by the demo: a foreman starting a toolbox talk gets "infinite recursion detected in
+  policy for relation toolbox_talk_sessions" (sessions ↔ attendees SELECT policies). The fix is
+  the unapplied candidate `20261019220000_attendance_policy_recursion.sql`. Production state not
+  checked; it likely has the same policies.
+- Cloud sessions cannot show the app to a person (no preview pane, no inbound connections).
+
+## Daily Schedule forwarding and release guard (#98) — November 12, 2026
+
+- Added the hub's one Pages Function, `functions/daily-schedule/[[path]].js`: it passes
+  `/daily-schedule` and `/daily-schedule/*` unchanged (URL, method, headers including
+  Authorization, body) to the `daily-schedule` Worker via service binding `DAILY_SCHEDULE`
+  and returns the answer unchanged. `public/_routes.json` keeps every other path static.
+- The release guard accepts exactly that function and routing file (SHA256 in
+  `scripts/release-policy.mjs`) plus a build-info marker, together or not at all, and still
+  refuses any other function, changed files, links, `_worker.js`, `wrangler.*` and wider
+  routing. Deployment checks accept `uses_functions` only with the approved marker.
+  The candidate artifact now carries `functions/`; upload copies it into Wrangler's cwd.
+- Verified locally: release tests (new `scripts/release-forwarding.test.mjs`) and
+  `bun run check:forwarding` against a stub Worker in Wrangler's local runtime: forwarded
+  paths keep URL/method/Authorization/cookies/body and the Worker's own headers; `/`,
+  `/schedule`, `/schedule/whiteboard`, `/daily-schedulex` stay static.
+- Not verified: a real Wrangler upload with Functions, the `uses_functions` field on a
+  live Functions deployment, and the binding in the Pages settings. Those belong to the
+  release ticket (#100), which needs explicit owner authorization. Nothing was released.
+
+## Schedule opens the Daily Schedule; old Schedule page parked (#99) — November 12, 2026
+
+- `/schedule` (`components/schedule/ScheduleEntry.tsx`) now does
+  `window.location.replace('/daily-schedule/')`, a real page load, so all four Schedule links
+  (home tile, bottom menu, Job Lookahead, Whiteboard back button) reach the forwarding
+  function (#98) and Back returns to where the link was.
+- The old Schedule page is parked behind `schedulePageParked` in `lib/launchScope.ts`; its code
+  and `schedule_assignments` are kept. `/schedule/whiteboard` is unchanged. See `parked/README.md`.
+- Tests: `src/test/scheduleEntry.test.tsx` (redirect, switch back on) and
+  `e2e/schedule-daily-schedule.spec.mjs` (all four links + direct `/schedule`, with the Worker
+  stubbed). The carry-forward browser check skips while the page is parked.
+- Must ship together with, or after, the #98 forwarding and the Daily Schedule's production
+  Worker; on its own `/daily-schedule/` would show the hub's "Not found". Released only in #100.
+
 ## Outstanding operational items
 
 - Per the owner, Deepgram/ElevenLabs features are out of scope. Removed both saved

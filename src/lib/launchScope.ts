@@ -7,3 +7,10 @@ export const independentLaunch = import.meta.env.VITE_INDEPENDENT_LAUNCH === "tr
  * deployed, so their UI stays off in every build until they are restored (see parked/README.md).
  */
 export const integrationsParked: boolean = true;
+
+/**
+ * The hub's old Schedule page is parked (#99): "Schedule" opens the Daily Schedule at
+ * /daily-schedule/, a separate app the hub forwards to. Set to false to bring the old page back
+ * at /schedule; its code and the schedule_assignments table are kept (see parked/README.md).
+ */
+export const schedulePageParked: boolean = true;

@@ -1,9 +1,9 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { backend, project, requireValue, validateOperation, verifyPayload, validateIdentity, validateDeployment, validateSequence } from './release-policy.mjs';
+import { backend, project, requireValue, validateOperation, verifyPayload, validateIdentity, validateDeployment, validateFunctions, validateSequence } from './release-policy.mjs';
 import { github, candidateSource } from './release-github.mjs';
 import { buildReader } from './release-http.mjs';
 
@@ -94,11 +94,15 @@ async function main() {
   const readInfo = buildReader(env);
   const current = async (expected, readIdentity = input.operation === 'deploy') => {
     const state = await cf();
-    requireValue(state.name === project && state.production_branch === 'main' && !state.source && state.uses_functions !== true &&
+    // The project may use Functions only through the approved forwarding (#98): the canonical
+    // deployment's own build identity is checked below whenever it is read.
+    requireValue(state.name === project && state.production_branch === 'main' && !state.source &&
       state.domains?.includes('app.schreiberexcavating.com'), 'Unexpected Pages project/branch/domain or Git integration.');
     const deployment = state.canonical_deployment;
     const origin = validateDeployment(deployment, expected);
-    return { id: deployment.id, info: readIdentity ? await readInfo(origin) : undefined };
+    const info = readIdentity ? await readInfo(origin) : undefined;
+    if (readIdentity) validateFunctions(deployment, info);
+    return { id: deployment.id, info };
   };
   const deps = {
     main: async () => (await github('branches/main')).commit.sha,
@@ -144,11 +148,16 @@ async function main() {
     target: async id => {
       const deployment = await cf(`/deployments/${id}`);
       const origin = validateDeployment(deployment, id);
-      return { info: await readInfo(origin) };
+      const info = await readInfo(origin);
+      validateFunctions(deployment, info);
+      return { info };
     },
     upload: async value => {
       const cwd = mkdtempSync(path.join(tmpdir(), 'schreiber-upload-'));
       const marker = `release:${env.GITHUB_RUN_ID}:${value.hash}`;
+      // Wrangler compiles ./functions from its working directory. Only the verified artifact's
+      // approved forwarding function is copied there; never the checkout's functions/ folder.
+      if (existsSync(path.join(payload, 'functions'))) cpSync(path.join(payload, 'functions'), path.join(cwd, 'functions'), { recursive: true });
       // Execute only the separately locked tool, never artifact code or app dependencies.
       execFileSync(process.execPath, [path.resolve('tooling/release/node_modules/wrangler/bin/wrangler.js'),
         'pages', 'deploy', path.join(payload, 'frontend'), '--project-name', project, '--branch', 'main',

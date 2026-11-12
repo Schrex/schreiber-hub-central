@@ -13,6 +13,7 @@
     "dev:rehearsal": "python3 scripts/rehearsal-dev.py",
     "local:prepare": "node scripts/prepare-local.mjs",
     "local:start": "bun run local:prepare && npx --yes supabase@2.121.0 start --workdir .local-backend",
+    "local:demo": "node scripts/local-demo.mjs",
     "local:stop": "npx --yes supabase@2.121.0 stop --workdir .local-backend",
     "local:reset": "bun run local:prepare && npx --yes supabase@2.121.0 db reset --local --workdir .local-backend",
     "test:local": "node scripts/local-smoke.mjs",
@@ -34,7 +35,8 @@
     "verify:edge": "node scripts/verify.mjs edge",
     "typecheck:edge": "node scripts/check-edge.mjs",
     "test:browser": "playwright test",
-    "verify:browser": "node scripts/verify.mjs browser"
+    "verify:browser": "node scripts/verify.mjs browser",
+    "check:forwarding": "node scripts/local-forwarding-check.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
