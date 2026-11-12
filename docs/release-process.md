@@ -98,6 +98,15 @@ an inactive non-production diagnostic record. Owner-authorized live upload
 39846752862 and read-only recovery preflight 39847008622 passed. See DEVELOPMENT_PROGRESS.md for current
 candidate, provider and recovery evidence; mock tests alone are not readiness proof.
 
+## Daily Schedule forwarding (#98)
+
+The release guard no longer means "static files only". It allows exactly one Pages
+Function, the Daily Schedule forwarding, plus its `_routes.json`, both pinned by SHA256
+in `scripts/release-policy.mjs`; everything else is refused as before. The first release
+that carries it must also set the `DAILY_SCHEDULE` service binding in the Pages project
+settings before the upload (owner-authorized provider change), and check
+`/daily-schedule/` live after it. See [manual operations](manual-frontend-operations.md#daily-schedule-forwarding-98).
+
 ## Recovery preparation and current baseline
 
 Main/develop reconciliation completed through PRs #14/#15; PR #16 retained essential

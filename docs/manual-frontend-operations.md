@@ -68,7 +68,43 @@ workflow in this repository. The artifact is selected by its immutable ID after
 validating the run, not downloaded from a PR or selected by a loose name. The
 controller verifies every file hash and build-info, rejects links, unexpected files,
 worker/functions/config files and non-deployable artifacts. Artifact contents are
-never executed. A separate frozen Bun lock pins Wrangler 4.152.0 and its dependencies;
+never executed. The one exception is the approved Daily Schedule forwarding (below).
+
+### Daily Schedule forwarding (#98)
+
+The hub runs exactly one Pages Function: `functions/daily-schedule/[[path]].js`. It
+passes every request on `/daily-schedule` and `/daily-schedule/*` unchanged to the
+`daily-schedule` Worker through the service binding `DAILY_SCHEDULE`, and returns
+the answer unchanged. It checks nothing; the Worker checks the hub sign-in itself.
+`public/_routes.json` sends only those two patterns to Functions, so every other path
+is served as static files and runs no function.
+
+- The candidate build copies `functions/` into the artifact beside `frontend/`
+  (`frontend/`, `functions/`, `release.json`), lists its hash under `functions` in
+  release.json and writes `functions: <forwardingId>` into build-info.json.
+- `scripts/release-policy.mjs` holds the approved SHA256 of both files (`forwarding`).
+  The guard accepts the function, `_routes.json` (artifact root only) and the
+  build-info marker only together and only with those exact hashes, or a fully
+  static build with none of them. Any other function, a changed file, a link,
+  `_worker.js`, any `wrangler.*` file or a routing file that sends more paths to
+  Functions is refused. Changing either file needs a reviewed policy change.
+- Upload copies the verified artifact's `functions/` (never the checkout's) into
+  Wrangler's empty working directory. `wrangler pages deploy` compiles
+  `./functions` from its working directory and uses the artifact's `_routes.json`
+  instead of generating one. Wrangler excludes `_routes.json` and `functions`
+  from the static assets it uploads.
+- A deployment with `uses_functions: true` is accepted (current, recovery target,
+  post-upload verification) only when its build-info names the approved
+  `forwardingId`. A current deployment that is not identity-read during recovery is
+  checked by ID only, as before.
+- The binding itself is set once in the Pages project settings (Settings →
+  Bindings → Service binding `DAILY_SCHEDULE` → Worker `daily-schedule`, Production)
+  during the release ticket, before the upload; it is not in a committed file.
+  Bindings apply to deployments made after they are set. Without it the function
+  answers 503 "Daily Schedule is not connected."
+- Local check against a stub Worker (no network, no account):
+  `bun install --cwd tooling/release --frozen-lockfile --ignore-scripts` then
+  `bun run check:forwarding`. A separate frozen Bun lock pins Wrangler 4.152.0 and its dependencies;
 only that tool is installed in the upload job, without deployment credentials or
 package lifecycle scripts. No application build/install receives the Cloudflare token.
 
@@ -83,7 +119,8 @@ A later, separately authorized `execute` dispatch additionally requires:
 
 The controller requires the workflow revision and release source to match current
 main, verifies main ancestry, reads the fixed Direct Upload project, requires
-production branch main/custom domain and no Git integration or Functions, and
+production branch main/custom domain and no Git integration, no Functions other than
+the approved forwarding, and
 compares Cloudflare's canonical deployment against the supplied previous UUID.
 Current build identity must be clean, target the same backend and precede the new
 source in Git history. Duplicate/backward forward uploads fail.
@@ -126,7 +163,8 @@ Run the same workflow with operation `recover`, first mode `plan`, supplying:
 
 Recovery uses Cloudflare's native rollback API, **not a rebuild or arbitrary artifact
 upload**. It requires the target to be a successful static production deployment
-with an immutable URL inside this Pages project. Preview deployments, Functions,
+with an immutable URL inside this Pages project. Preview deployments, Functions other
+than the approved forwarding,
 wrong/dirty backend identity and marked dry-run builds fail. Target source must
 belong to main history. This supports the historical ea05047 independent deployment
 without pretending it was built by the new candidate workflow. Legacy build-info
