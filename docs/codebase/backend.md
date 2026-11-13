@@ -109,19 +109,24 @@ Edge runtime is off. A function built on it must also be added to `scripts/check
   named project (see `docs/add-employee-release.md`).
 - `local/hr-bootstrap.sql` recreates pay/benefit tables no migration creates — local only.
 - New schema work: add a candidate migration in `local/candidate-migrations/` and wire it into
-  `scripts/prepare-local.mjs` if it should run locally.
+  `scripts/prepare-local.mjs` if it should run locally. Time-off (spec #61) candidates go in the
+  ordered `TIME_OFF_CANDIDATES` list there: one appended file name per ticket.
 
 ## Local backend
 
 - `scripts/prepare-local.mjs` builds `.local-backend/supabase/`: copies migrations (rejects
   `net.http_`, `cron.schedule`, vault writes), stubs the historical employee-account seed and
-  the Cloud-owned realtime migration, injects hr-bootstrap + an ordering fix, copies 2
-  candidates (time-off permissions, employee creation), `local/config.toml`, `local/seed.sql`.
+  the Cloud-owned realtime migration, injects hr-bootstrap + an ordering fix, copies the
+  candidates in `TIME_OFF_CANDIDATES` (time-off permissions, …) and `OTHER_CANDIDATES`
+  (employee creation), `local/config.toml`, `local/seed.sql`.
   No Edge functions.
 - Ports: API 55321, DB 55322 (shadow 55320), Studio 55323, mail capture 55324. Postgres 17.
   Realtime, edge runtime, analytics disabled.
-- `local/seed.sql`: truncates everything; users `employee@`, `other@`, `admin@example.test`
-  (shared local password in `local/README.md`). No foreman/office seed users — tests assign roles.
+- `local/seed.sql`: truncates everything (including rows candidate migrations insert); users
+  `employee@`, `other@` (employee), `admin@`, `admin2@` (admin), `foreman2@example.test`
+  (foreman), each linked to its auto-created employee record with a fixed synthetic hire date
+  (listed in `SEED_USERS`, `scripts/local-time-off-support.mjs`). Shared local password in
+  `local/README.md`. No office seed user — tests assign roles. `foreman@` belongs to `local:demo`.
 - `scripts/local-backend.mjs` only accepts the loopback API URL.
 
 ## Backend tests (`bun run verify:backend`)
@@ -136,6 +141,7 @@ Edge runtime is off. A function built on it must also be added to `scripts/check
 | `test:local:roles` | Per-role uploads, salary privacy, no self-promotion |
 | `test:local:employee` | create-employee handler + RPC races |
 | `test:local:jobs-status` | Jobs lifecycle trigger/checks as office, employee, service role |
+| `test:local:time-off` (`local-time-off.mjs`) | Time off (spec #61): seed roles + hire dates; one appended block per ticket. Helpers in `local-time-off-support.mjs`: `signInSeed`, `createRun()` → `createUser({roles, hireDate, terminationDate, isActive})`, `trackRequest`, `cleanup` |
 | `test:local:access` (`local-access-policy.mjs`) | UI access rules (`src/lib/accessRules.ts`) never allow more than RLS: probes each table-linked rule (81 checks) per role + assigned/unassigned foreman; wider RLS must be a recorded `narrower`. Tables only, no storage buckets; `ui-only` rules listed, not probed |
 
 Run individually: `local-accident-photo-replacement.mjs`, `local-storage-api-acceptance.mjs`,

@@ -16,11 +16,16 @@ DECLARE
   entry record;
   uid uuid;
 BEGIN
+  -- Synthetic logins. handle_new_user links each to a new employee record; hire dates are
+  -- fixed so balance checks are reproducible. Keep SEED_USERS in
+  -- scripts/local-time-off-support.mjs in sync. foreman@ is reserved for scripts/local-demo.mjs.
   FOR entry IN SELECT * FROM (VALUES
-    ('employee', 'Local Employee'),
-    ('other', 'Other Local Employee'),
-    ('admin', 'Local Admin')
-  ) AS people(handle, display_name)
+    ('employee', 'Local Employee', 'employee'::public.app_role, DATE '2015-03-02'),
+    ('other', 'Other Local Employee', 'employee'::public.app_role, DATE '2022-07-01'),
+    ('admin', 'Local Admin', 'admin'::public.app_role, DATE '2010-01-04'),
+    ('admin2', 'Second Local Admin', 'admin'::public.app_role, DATE '2012-05-14'),
+    ('foreman2', 'Local Foreman', 'foreman'::public.app_role, DATE '2019-08-12')
+  ) AS people(handle, display_name, role, hire_date)
   LOOP
     uid := gen_random_uuid();
     INSERT INTO auth.users (
@@ -37,8 +42,7 @@ BEGIN
     VALUES (gen_random_uuid(), uid, uid::text,
       jsonb_build_object('sub', uid::text, 'email', entry.handle || '@example.test', 'email_verified', true),
       'email', now(), now());
-    IF entry.handle = 'admin' THEN
-      UPDATE public.user_roles SET role = 'admin' WHERE user_id = uid;
-    END IF;
+    UPDATE public.user_roles SET role = entry.role WHERE user_id = uid;
+    UPDATE public.employee_contacts SET hire_date = entry.hire_date WHERE converted_user_id = uid;
   END LOOP;
 END $$;

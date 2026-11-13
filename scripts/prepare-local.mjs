@@ -27,12 +27,16 @@ for (const name of (await readdir(path.join(root, 'supabase/migrations'))).sort(
     ? '-- Local-only: omit historical employee account/password seed.\n'
     : localSource);
 }
-// Explicit local-only candidate: excluded from the production migration directory.
+// Explicit local-only candidates: excluded from the production migration directory.
 // Promotion requires a separate reviewed release; never deploy this directory.
-await copyFile(path.join(root, 'local/candidate-migrations/20261016210000_time_off_request_permissions.sql'),
-  path.join(target, 'migrations/20261016210000_time_off_request_permissions.sql'));
-await copyFile(path.join(root, 'local/candidate-migrations/20261022010000_employee_creation.sql'),
-  path.join(target, 'migrations/20261022010000_employee_creation.sql'));
+const OTHER_CANDIDATES = ['20261022010000_employee_creation.sql'];
+// Time-off candidates (spec #61), in replay order. Each ticket appends exactly one file name.
+const TIME_OFF_CANDIDATES = [
+  '20261016210000_time_off_request_permissions.sql',
+];
+for (const name of [...TIME_OFF_CANDIDATES, ...OTHER_CANDIDATES]) {
+  await copyFile(path.join(root, 'local/candidate-migrations', name), path.join(target, 'migrations', name));
+}
 await copyFile(path.join(root, 'local/config.toml'), path.join(target, 'config.toml'));
 await copyFile(path.join(root, 'local/seed.sql'), path.join(target, 'seed.sql'));
 await copyFile(path.join(root, 'local/hr-bootstrap.sql'),
